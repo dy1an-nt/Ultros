@@ -24,6 +24,10 @@ export function RunControls({ onRun, onSaveVersion }: Props) {
   const [running, setRunning] = useState(false)
   const [saving, setSaving] = useState(false)
 
+  // The catalog is filtered to configured providers, so the hardcoded default
+  // may not exist — fall back to the first available model.
+  const effectiveModel = models.some((m) => m.id === model) ? model : models[0]?.id ?? model
+
   const grouped = models.reduce<Record<string, typeof models>>((acc, m) => {
     ;(acc[m.provider] ??= []).push(m)
     return acc
@@ -32,7 +36,7 @@ export function RunControls({ onRun, onSaveVersion }: Props) {
   async function handleRun() {
     setRunning(true)
     try {
-      await onRun(model, temperature, maxTokens)
+      await onRun(effectiveModel, temperature, maxTokens)
     } finally {
       setRunning(false)
     }
@@ -53,7 +57,7 @@ export function RunControls({ onRun, onSaveVersion }: Props) {
         <div className="flex-1 min-w-48">
           <label className="block text-xs text-gray-500 mb-1">Model</label>
           <select
-            value={model}
+            value={effectiveModel}
             onChange={(e) => setModel(e.target.value)}
             disabled={modelsLoading || running}
             className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1.5 text-sm text-white focus:outline-none focus:border-indigo-500 disabled:opacity-50"

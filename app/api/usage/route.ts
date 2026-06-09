@@ -15,8 +15,9 @@ export async function GET(req: NextRequest) {
     return Response.json({ data: null, error: "days must be between 1 and 90" }, { status: 400 })
   }
 
+  // days=1 means "today only", so look back days-1 from today's UTC midnight
   const since = new Date()
-  since.setUTCDate(since.getUTCDate() - days)
+  since.setUTCDate(since.getUTCDate() - (days - 1))
   since.setUTCHours(0, 0, 0, 0)
 
   const rows = await prisma.usageSummary.findMany({

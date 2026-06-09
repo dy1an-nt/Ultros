@@ -12,7 +12,8 @@ export type ModelInfo = {
 }
 
 export type RunStats = {
-  runId: string
+  // null when generation succeeded but the run row failed to persist
+  runId: string | null
   inputTokens: number
   outputTokens: number
   costUsd: number

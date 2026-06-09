@@ -35,10 +35,28 @@ export const MODEL_CATALOG: ModelInfo[] = [
   { id: "nousresearch/hermes-3-llama-3.1-70b", displayName: "Hermes 3 70B", provider: "openrouter", category: "openrouter", contextWindow: 128000, inputPerMillion: 0.40, outputPerMillion: 0.40 },
 ]
 
+const PROVIDER_ENV_KEYS: Record<ProviderName, string> = {
+  anthropic: "ANTHROPIC_API_KEY",
+  openai: "OPENAI_API_KEY",
+  google: "GOOGLE_GENERATIVE_AI_API_KEY",
+  openrouter: "OPENROUTER_API_KEY",
+}
+
+function isProviderConfigured(provider: ProviderName): boolean {
+  return Boolean(process.env[PROVIDER_ENV_KEYS[provider]])
+}
+
 export function getModelInfo(modelId: string): ModelInfo | undefined {
   return MODEL_CATALOG.find((m) => m.id === modelId)
 }
 
+// Only models whose provider API key is configured — advertising the rest
+// guarantees runtime failures when a user selects them.
 export function getAvailableModels(): ModelInfo[] {
-  return MODEL_CATALOG
+  return MODEL_CATALOG.filter((m) => isProviderConfigured(m.provider))
+}
+
+export function isModelAvailable(modelId: string): boolean {
+  const info = getModelInfo(modelId)
+  return info !== undefined && isProviderConfigured(info.provider)
 }

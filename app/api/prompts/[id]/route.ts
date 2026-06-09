@@ -46,8 +46,23 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (!existing) return Response.json({ data: null, error: "Not found" }, { status: 404 })
   if (existing.userId !== user.id) return Response.json({ data: null, error: "Forbidden" }, { status: 403 })
 
-  const body = await req.json()
+  let body: Record<string, unknown>
+  try {
+    body = await req.json()
+  } catch {
+    return Response.json({ data: null, error: "Invalid JSON body" }, { status: 400 })
+  }
   const { title, description, tags } = body
+
+  if (title !== undefined && (typeof title !== "string" || !title.trim())) {
+    return Response.json({ data: null, error: "title must be a non-empty string" }, { status: 400 })
+  }
+  if (description !== undefined && description !== null && typeof description !== "string") {
+    return Response.json({ data: null, error: "description must be a string" }, { status: 400 })
+  }
+  if (tags !== undefined && (!Array.isArray(tags) || tags.some((t) => typeof t !== "string"))) {
+    return Response.json({ data: null, error: "tags must be an array of strings" }, { status: 400 })
+  }
 
   const updated = await prisma.prompt.update({
     where: { id },

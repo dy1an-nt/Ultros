@@ -11,6 +11,7 @@ export type RunParams = {
   temperature: number
   maxOutputTokens: number
   topP?: number
+  abortSignal?: AbortSignal
 }
 
 export function runStream(params: RunParams) {
@@ -21,6 +22,7 @@ export function runStream(params: RunParams) {
     temperature: params.temperature,
     maxOutputTokens: params.maxOutputTokens,
     topP: params.topP,
+    abortSignal: params.abortSignal,
   })
 }
 
