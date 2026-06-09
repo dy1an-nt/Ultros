@@ -6,7 +6,7 @@ const navItems = [
   { label: "Prompts", href: "/prompts", enabled: true },
   { label: "Datasets", href: "/datasets", enabled: false },
   { label: "Experiments", href: "/experiments", enabled: false },
-  { label: "Usage", href: "/usage", enabled: false },
+  { label: "Usage", href: "/usage", enabled: true },
 ]
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {

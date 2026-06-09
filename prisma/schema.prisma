@@ -8,13 +8,14 @@ datasource db {
 }
 
 model User {
-  id        String      @id @default(cuid())
-  clerkId   String      @unique
-  username  String?
-  avatarUrl String?
-  createdAt DateTime    @default(now())
-  prompts   Prompt[]
-  runs      PromptRun[]
+  id             String         @id @default(cuid())
+  clerkId        String         @unique
+  username       String?
+  avatarUrl      String?
+  createdAt      DateTime       @default(now())
+  prompts        Prompt[]
+  runs           PromptRun[]
+  usageSummaries UsageSummary[]
 }
 
 model Prompt {
@@ -70,4 +71,18 @@ model PromptRun {
 
   @@index([userId])
   @@index([promptId])
+}
+
+model UsageSummary {
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date              DateTime @db.Date
+  totalRuns         Int      @default(0)
+  totalInputTokens  Int      @default(0)
+  totalOutputTokens Int      @default(0)
+  totalCostUsd      Float    @default(0)
+
+  @@unique([userId, date])
+  @@index([userId])
 }

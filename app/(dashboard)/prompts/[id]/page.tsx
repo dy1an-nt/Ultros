@@ -142,12 +142,20 @@ export default function PromptDetailPage() {
             ))}
           </div>
         </div>
-        <Link
-          href={`/prompts/${id}/versions`}
-          className="text-sm text-gray-400 hover:text-white transition-colors shrink-0 ml-4"
-        >
-          {prompt.versions.length} {prompt.versions.length === 1 ? "version" : "versions"}
-        </Link>
+        <div className="flex items-center gap-3 shrink-0 ml-4">
+          <Link
+            href={`/prompts/${id}/compare`}
+            className="text-sm text-gray-400 hover:text-white transition-colors"
+          >
+            Compare
+          </Link>
+          <Link
+            href={`/prompts/${id}/versions`}
+            className="text-sm text-gray-400 hover:text-white transition-colors"
+          >
+            {prompt.versions.length} {prompt.versions.length === 1 ? "version" : "versions"}
+          </Link>
+        </div>
       </div>
 
       {/* Split layout */}

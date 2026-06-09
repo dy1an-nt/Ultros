@@ -1,11 +1,15 @@
 "use client"
 import { useState } from "react"
+import { useModels } from "@/hooks/useModels"
 
-const MODELS = [
-  { id: "claude-haiku-4-5", label: "Haiku 4.5 — Fast & Cheap" },
-  { id: "claude-sonnet-4-6", label: "Sonnet 4.6 — Balanced" },
-  { id: "claude-opus-4-7", label: "Opus 4.7 — Best Quality" },
-]
+const PROVIDER_LABELS: Record<string, string> = {
+  anthropic: "Claude (Anthropic)",
+  openai: "GPT (OpenAI)",
+  google: "Gemini (Google)",
+  openrouter: "OpenRouter",
+}
+
+const FALLBACK_DEFAULT_MODEL = "claude-haiku-4-5"
 
 interface Props {
   onRun: (model: string, temperature: number, maxTokens: number) => Promise<void>
@@ -13,11 +17,17 @@ interface Props {
 }
 
 export function RunControls({ onRun, onSaveVersion }: Props) {
-  const [model, setModel] = useState("claude-haiku-4-5")
+  const { data: models = [], isLoading: modelsLoading } = useModels()
+  const [model, setModel] = useState(FALLBACK_DEFAULT_MODEL)
   const [temperature, setTemperature] = useState(1.0)
   const [maxTokens, setMaxTokens] = useState(1024)
   const [running, setRunning] = useState(false)
   const [saving, setSaving] = useState(false)
+
+  const grouped = models.reduce<Record<string, typeof models>>((acc, m) => {
+    ;(acc[m.provider] ??= []).push(m)
+    return acc
+  }, {})
 
   async function handleRun() {
     setRunning(true)
@@ -45,13 +55,24 @@ export function RunControls({ onRun, onSaveVersion }: Props) {
           <select
             value={model}
             onChange={(e) => setModel(e.target.value)}
-            className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1.5 text-sm text-white focus:outline-none focus:border-indigo-500"
+            disabled={modelsLoading || running}
+            className="w-full bg-gray-900 border border-gray-700 rounded px-2 py-1.5 text-sm text-white focus:outline-none focus:border-indigo-500 disabled:opacity-50"
           >
-            {MODELS.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.label}
-              </option>
-            ))}
+            {modelsLoading ? (
+              <option value={FALLBACK_DEFAULT_MODEL}>Loading models…</option>
+            ) : models.length === 0 ? (
+              <option value={FALLBACK_DEFAULT_MODEL}>No models available</option>
+            ) : (
+              Object.entries(grouped).map(([provider, providerModels]) => (
+                <optgroup key={provider} label={PROVIDER_LABELS[provider] ?? provider}>
+                  {providerModels.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.displayName}
+                    </option>
+                  ))}
+                </optgroup>
+              ))
+            )}
           </select>
         </div>
         <div>

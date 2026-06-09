@@ -1,5 +1,8 @@
 import { streamText } from "ai"
-import { anthropic } from "./providers/claude"
+import { resolveProvider } from "./router"
+import { getAvailableModels, type ModelInfo } from "./models"
+
+export type { ModelInfo }
 
 export type RunParams = {
   model: string
@@ -10,14 +13,9 @@ export type RunParams = {
   topP?: number
 }
 
-const CLAUDE_MODELS = ["claude-haiku-4-5", "claude-sonnet-4-6", "claude-opus-4-7"]
-
 export function runStream(params: RunParams) {
-  if (!CLAUDE_MODELS.includes(params.model)) {
-    throw new Error(`Unknown model: ${params.model}`)
-  }
   return streamText({
-    model: anthropic(params.model),
+    model: resolveProvider(params.model),
     system: params.systemPrompt || undefined,
     prompt: params.userPrompt,
     temperature: params.temperature,
@@ -25,6 +23,8 @@ export function runStream(params: RunParams) {
     topP: params.topP,
   })
 }
+
+export { getAvailableModels }
 
 export function interpolateVariables(template: string, variables: Record<string, string>): string {
   return template.replace(/\{\{([^}]+)\}\}/g, (_, key) => variables[key.trim()] ?? "")

@@ -2,6 +2,7 @@ import { auth } from "@clerk/nextjs/server"
 import { NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { runStream, interpolateVariables } from "@/lib/ai"
+import { getModelInfo } from "@/lib/ai/models"
 import { calculateCost } from "@/lib/ai/pricing"
 
 export async function POST(req: NextRequest) {
@@ -53,13 +54,15 @@ export async function POST(req: NextRequest) {
     const inputTokens = usage.inputTokens ?? 0
     const outputTokens = usage.outputTokens ?? 0
     const costUsd = calculateCost(model, inputTokens, outputTokens)
+    const modelInfo = getModelInfo(model)
+
     await prisma.promptRun.create({
       data: {
         promptVersionId: version.id,
         promptId: version.promptId,
         userId: user.id,
         model,
-        provider: "anthropic",
+        provider: modelInfo?.provider ?? "unknown",
         temperature: temperature ?? 1.0,
         maxTokens: maxTokens ?? 1024,
         inputTokens,
@@ -69,6 +72,15 @@ export async function POST(req: NextRequest) {
         responseText: text,
         finishReason: "stop",
       },
+    })
+
+    // UsageSummary is a display convenience; PromptRun rows are authoritative.
+    const today = new Date()
+    today.setUTCHours(0, 0, 0, 0)
+    await prisma.usageSummary.upsert({
+      where: { userId_date: { userId: user.id, date: today } },
+      create: { userId: user.id, date: today, totalRuns: 1, totalInputTokens: inputTokens, totalOutputTokens: outputTokens, totalCostUsd: costUsd },
+      update: { totalRuns: { increment: 1 }, totalInputTokens: { increment: inputTokens }, totalOutputTokens: { increment: outputTokens }, totalCostUsd: { increment: costUsd } },
     })
   }).catch(() => {
     // Swallow — stream already sent to client
