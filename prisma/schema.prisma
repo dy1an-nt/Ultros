@@ -16,6 +16,7 @@ model User {
   prompts        Prompt[]
   runs           PromptRun[]
   usageSummaries UsageSummary[]
+  rubrics        Rubric[]
 }
 
 model Prompt {
@@ -68,9 +69,53 @@ model PromptRun {
   responseText    String
   finishReason    String?
   createdAt       DateTime      @default(now())
+  evaluations     Evaluation[]
 
   @@index([userId])
   @@index([promptId])
+}
+
+model Rubric {
+  id            String       @id @default(cuid())
+  userId        String
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name          String
+  description   String?
+  criteria      Json // Criterion[]
+  passThreshold Float // 0–1
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  evaluations   Evaluation[]
+
+  @@index([userId])
+}
+
+model Evaluation {
+  id                String    @id @default(cuid())
+  promptRunId       String
+  promptRun         PromptRun @relation(fields: [promptRunId], references: [id], onDelete: Cascade)
+  rubricId          String?
+  rubric            Rubric?   @relation(fields: [rubricId], references: [id], onDelete: SetNull)
+  userId            String // denormalized for isolation queries
+  status            String // "pending" | "running" | "complete" | "failed"
+  totalScore        Float?
+  passed            Boolean?
+  criteriaScores    Json? // CriterionScore[]
+  criteriaSnapshot  Json // { criteria: Criterion[], passThreshold: number, rubricName: string }
+  aiEvalReasoning   String?
+  evalMethod        String // "deterministic" | "ai_judge" | "mixed"
+  judgeModel        String?
+  judgeInputTokens  Int?
+  judgeOutputTokens Int?
+  judgeCostUsd      Float?
+  error             String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  completedAt       DateTime?
+
+  @@index([promptRunId])
+  @@index([userId])
+  @@index([rubricId])
 }
 
 model UsageSummary {

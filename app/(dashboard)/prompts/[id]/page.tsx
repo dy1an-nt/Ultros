@@ -7,6 +7,9 @@ import { SystemPromptPanel } from "@/components/editor/SystemPromptPanel"
 import { RunControls } from "@/components/editor/RunControls"
 import { StreamingOutput } from "@/components/editor/StreamingOutput"
 import { RunHistory } from "@/components/runs/RunHistory"
+import { EvalHistory } from "@/components/eval/EvalHistory"
+import { EvalTrigger } from "@/components/eval/EvalTrigger"
+import { Leaderboard } from "@/components/eval/Leaderboard"
 import Link from "next/link"
 
 const PromptEditor = dynamic(
@@ -22,6 +25,15 @@ type PromptVersion = {
   userPrompt: string
   variables: Record<string, string>
   createdAt: string
+}
+
+// Mirrors the run shape served by GET /api/prompts/:id/runs (same query key as RunHistory).
+type RunRow = {
+  id: string
+  model: string
+  responseText: string
+  createdAt: string
+  promptVersion: { versionNumber: number; label: string | null }
 }
 
 type PromptDetail = {
@@ -47,8 +59,17 @@ export default function PromptDetailPage() {
   const [systemPrompt, setSystemPrompt] = useState("")
   const [userPrompt, setUserPrompt] = useState("")
   const [activeVersionId, setActiveVersionId] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<"output" | "history">("output")
+  const [activeTab, setActiveTab] = useState<"output" | "history" | "evals" | "leaderboard">(
+    "output"
+  )
   const [runOutput, setRunOutput] = useState<{ text: string; done: boolean } | null>(null)
+
+  // Runs for the Evals tab — same query key/shape as RunHistory so the cache is shared.
+  const runsQuery = useQuery<{ data: RunRow[] }>({
+    queryKey: ["runs", id],
+    queryFn: () => fetch(`/api/prompts/${id}/runs`).then((r) => r.json()),
+    enabled: activeTab === "evals",
+  })
 
   const versions = data?.data?.versions ?? []
   const latestVersion = versions[0]
@@ -174,26 +195,77 @@ export default function PromptDetailPage() {
         {/* Right: output + history */}
         <div className="w-1/2 flex flex-col overflow-hidden">
           <div className="flex border-b border-gray-800 shrink-0">
-            {(["output", "history"] as const).map((tab) => (
+            {(
+              [
+                ["output", "Output"],
+                ["history", "Run History"],
+                ["evals", "Evals"],
+                ["leaderboard", "Leaderboard"],
+              ] as const
+            ).map(([tab, label]) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-4 py-2.5 text-sm font-medium capitalize transition-colors ${
+                className={`px-4 py-2.5 text-sm font-medium transition-colors ${
                   activeTab === tab
                     ? "text-white border-b-2 border-indigo-500"
                     : "text-gray-400 hover:text-white"
                 }`}
               >
-                {tab === "history" ? "Run History" : "Output"}
+                {label}
               </button>
             ))}
           </div>
           <div className="flex-1 overflow-auto p-4">
-            {activeTab === "output" ? (
-              <StreamingOutput output={runOutput} />
-            ) : (
-              <RunHistory promptId={id} />
+            {activeTab === "output" && <StreamingOutput output={runOutput} />}
+            {activeTab === "history" && <RunHistory promptId={id} />}
+            {activeTab === "evals" && (
+              <div className="space-y-6">
+                <section className="space-y-2">
+                  <h3 className="text-sm font-semibold text-gray-300">Evaluate a run</h3>
+                  {runsQuery.isLoading ? (
+                    <div className="space-y-2">
+                      {[...Array(3)].map((_, i) => (
+                        <div key={i} className="h-16 bg-gray-800 rounded animate-pulse" />
+                      ))}
+                    </div>
+                  ) : runsQuery.error ? (
+                    <div className="text-sm text-red-400 py-4">Failed to load runs.</div>
+                  ) : !runsQuery.data?.data?.length ? (
+                    <div className="text-center py-8 text-gray-600 text-sm">
+                      No runs yet — hit Run first, then evaluate the output here.
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {runsQuery.data.data.map((run) => (
+                        <div
+                          key={run.id}
+                          className="bg-gray-900 border border-gray-800 rounded-lg p-3 space-y-2"
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <span className="text-xs bg-indigo-900/50 text-indigo-300 px-2 py-0.5 rounded shrink-0">
+                              {run.model.replace("claude-", "")}
+                            </span>
+                            <span className="text-xs text-gray-500 shrink-0">
+                              v{run.promptVersion.versionNumber}
+                            </span>
+                            <span className="text-sm text-gray-400 truncate">
+                              {run.responseText.slice(0, 80)}
+                            </span>
+                          </div>
+                          <EvalTrigger runId={run.id} promptId={id} />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </section>
+                <section className="space-y-2">
+                  <h3 className="text-sm font-semibold text-gray-300">Eval history</h3>
+                  <EvalHistory promptId={id} />
+                </section>
+              </div>
             )}
+            {activeTab === "leaderboard" && <Leaderboard promptId={id} />}
           </div>
         </div>
       </div>
