@@ -18,6 +18,7 @@ model User {
   usageSummaries UsageSummary[]
   rubrics        Rubric[]
   datasets       Dataset[]
+  experiments    Experiment[]
 }
 
 model Prompt {
@@ -184,6 +185,80 @@ model Evaluation {
   @@index([promptRunId])
   @@index([userId])
   @@index([rubricId])
+}
+
+model Experiment {
+  id                String             @id @default(cuid())
+  userId            String
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name              String
+  datasetId         String // dataset retention is enforced by each cell's DatasetRun (Restrict)
+  rubricId          String
+  variantVersionIds String[]
+  models            String[]
+  status            String // "pending" | "running" | "complete"
+  createdAt         DateTime           @default(now())
+  completedAt       DateTime?
+  results           ExperimentResult[]
+
+  @@index([userId])
+}
+
+model ExperimentResult {
+  id              String     @id @default(cuid())
+  experimentId    String
+  experiment      Experiment @relation(fields: [experimentId], references: [id], onDelete: Cascade)
+  promptVersionId String
+  model           String
+  datasetRunId    String // drill-down handle to the cell's DatasetRun
+  avgScore        Float? // null when the cell failed before producing any scores
+  scoreVariance   Float?
+  avgLatencyMs    Int?
+  passRate        Float?
+  totalCostUsd    Float
+  scoredRows      Int // basis for the insufficient-sample badge
+  cellStatus      String // "complete" | "failed"
+  createdAt       DateTime   @default(now())
+
+  @@unique([experimentId, promptVersionId, model])
+  @@index([experimentId])
+}
+
+model Baseline {
+  id               String          @id @default(cuid())
+  userId           String
+  promptId         String          @unique // one active baseline per prompt — re-POST replaces
+  promptVersionId  String
+  datasetId        String
+  rubricId         String
+  datasetRunId     String // the complete run that produced the numbers below
+  baselineScore    Float
+  baselinePassRate Float
+  setAt            DateTime        @default(now())
+  regressionRuns   RegressionRun[]
+
+  @@index([userId])
+}
+
+model RegressionRun {
+  id              String    @id @default(cuid())
+  baselineId      String
+  baseline        Baseline  @relation(fields: [baselineId], references: [id], onDelete: Cascade)
+  userId          String
+  newVersionId    String
+  datasetRunId    String    @unique // created pending at launch so finalize knows the threshold
+  status          String // "pending" | "complete" | "failed"
+  newScore        Float?
+  newPassRate     Float?
+  scoreDelta      Float? // newScore - baselineScore
+  threshold       Float // what "regressed" meant for this run
+  regressed       Boolean?
+  regressedRowIds String[] // DatasetRow ids
+  createdAt       DateTime  @default(now())
+  completedAt     DateTime?
+
+  @@index([baselineId])
+  @@index([userId])
 }
 
 model UsageSummary {

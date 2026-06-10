@@ -6,7 +6,7 @@ const navItems = [
   { label: "Prompts", href: "/prompts", enabled: true },
   { label: "Datasets", href: "/datasets", enabled: true },
   { label: "Rubrics", href: "/rubrics", enabled: true },
-  { label: "Experiments", href: "/experiments", enabled: false },
+  { label: "Experiments", href: "/experiments", enabled: true },
   { label: "Usage", href: "/usage", enabled: true },
 ]
 

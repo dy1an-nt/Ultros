@@ -1,4 +1,6 @@
 import { prisma } from "@/lib/prisma"
+import { finalizeExperimentCell } from "@/lib/experiments/aggregate"
+import { finalizeRegressionIfPending } from "@/lib/regression/finalize"
 
 // Finalization is a recompute from persisted rows, so calling it twice (or
 // from two racing jobs) is harmless — both arrive at the same numbers.
@@ -65,4 +67,10 @@ export async function finalizeIfDone(datasetRunId: string): Promise<void> {
       completedAt: new Date(),
     },
   })
+
+  // Sprint 5 hooks: a terminal DatasetRun may be an experiment cell or a
+  // regression run. Both downstream writers are idempotent (upsert / guarded
+  // updateMany), so racing finalizers are harmless here too.
+  if (run.experimentId) await finalizeExperimentCell(datasetRunId)
+  await finalizeRegressionIfPending(datasetRunId)
 }

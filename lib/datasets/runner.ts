@@ -14,13 +14,11 @@ export type LaunchParams = {
   maxTokens: number
   variableMapping: Record<string, string>
   totalRows: number
+  experimentId?: string | null // set when this run is one experiment cell
 }
 
-// QStash fan-out in production (one message per row, deduped, flow-controlled
-// per user so one batch can't starve the platform); sequential after() loop in
-// dev — QStash cannot reach localhost. The row job is identical in both paths.
-export async function launchDatasetRun(params: LaunchParams) {
-  const run = await prisma.datasetRun.create({
+export async function createDatasetRun(params: LaunchParams) {
+  return prisma.datasetRun.create({
     data: {
       userId: params.userId,
       datasetId: params.datasetId,
@@ -32,9 +30,17 @@ export async function launchDatasetRun(params: LaunchParams) {
       variableMapping: params.variableMapping as Prisma.InputJsonValue,
       status: "pending",
       totalRows: params.totalRows,
+      experimentId: params.experimentId ?? null,
     },
   })
+}
 
+// QStash fan-out in production (one message per row, deduped, flow-controlled
+// per user so one batch can't starve the platform); sequential after() loop in
+// dev — QStash cannot reach localhost. The row job is identical in both paths.
+// Exported separately from creation so callers that persist linked state (a
+// pending RegressionRun) can do so before the first job can possibly finish.
+export async function fanOutDatasetRun(run: { id: string; userId: string }, totalRows: number) {
   const token = process.env.UPSTASH_QSTASH_TOKEN
   const appUrl = process.env.NEXT_PUBLIC_APP_URL
 
@@ -42,18 +48,18 @@ export async function launchDatasetRun(params: LaunchParams) {
     const client = new Client({ token })
     const url = `${appUrl.replace(/\/$/, "")}/api/jobs/dataset-row`
     await Promise.all(
-      Array.from({ length: params.totalRows }, (_, rowIndex) =>
+      Array.from({ length: totalRows }, (_, rowIndex) =>
         client.publishJSON({
           url,
           body: { datasetRunId: run.id, rowIndex },
           deduplicationId: `${run.id}:${rowIndex}`,
-          flowControl: { key: params.userId, parallelism: 5 },
+          flowControl: { key: run.userId, parallelism: 5 },
         })
       )
     )
   } else {
     after(async () => {
-      for (let rowIndex = 0; rowIndex < params.totalRows; rowIndex++) {
+      for (let rowIndex = 0; rowIndex < totalRows; rowIndex++) {
         try {
           await runDatasetRowJob(run.id, rowIndex)
         } catch (err) {
@@ -62,6 +68,10 @@ export async function launchDatasetRun(params: LaunchParams) {
       }
     })
   }
+}
 
+export async function launchDatasetRun(params: LaunchParams) {
+  const run = await createDatasetRun(params)
+  await fanOutDatasetRun(run, params.totalRows)
   return run
 }

@@ -10,6 +10,7 @@ async function unwrap<T>(res: Response): Promise<T> {
 export function useDatasetRuns(datasetId: string) {
   return useQuery<DatasetRunDto[]>({
     queryKey: ["datasetRuns", datasetId],
+    enabled: datasetId !== "",
     queryFn: async () => unwrap<DatasetRunDto[]>(await fetch(`/api/datasets/${datasetId}/runs`)),
   })
 }

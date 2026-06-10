@@ -53,6 +53,7 @@ export type RunEstimate = {
 }
 
 export type DatasetRunRowItem = {
+  datasetRowId: string | null
   rowIndex: number
   input: Record<string, string>
   expectedOutput: string | null

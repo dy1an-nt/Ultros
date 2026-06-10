@@ -176,6 +176,12 @@ export default function PromptDetailPage() {
             Compare
           </Link>
           <Link
+            href={`/prompts/${id}/regression`}
+            className="text-sm text-gray-400 hover:text-white transition-colors"
+          >
+            Regression
+          </Link>
+          <Link
             href={`/prompts/${id}/versions`}
             className="text-sm text-gray-400 hover:text-white transition-colors"
           >
