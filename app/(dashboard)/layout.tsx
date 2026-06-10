@@ -4,7 +4,8 @@ import { UserButton } from "@clerk/nextjs"
 const navItems = [
   { label: "Dashboard", href: "/dashboard", enabled: true },
   { label: "Prompts", href: "/prompts", enabled: true },
-  { label: "Datasets", href: "/datasets", enabled: false },
+  { label: "Datasets", href: "/datasets", enabled: true },
+  { label: "Rubrics", href: "/rubrics", enabled: true },
   { label: "Experiments", href: "/experiments", enabled: false },
   { label: "Usage", href: "/usage", enabled: true },
 ]

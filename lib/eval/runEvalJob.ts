@@ -1,10 +1,11 @@
 import { prisma } from "@/lib/prisma"
 import type { CriteriaSnapshot, CriterionScore } from "@/types/eval"
+import { finalizeIfDone } from "@/lib/datasets/finalize"
 import { judgeCriteria } from "./judge"
 import { computeTotalScore } from "./matchers"
 
 // Provider error messages can echo request headers; never persist an API key.
-function sanitizeErrorMessage(message: string): string {
+export function sanitizeErrorMessage(message: string): string {
   let sanitized = message
   for (const envKey of [
     "ANTHROPIC_API_KEY",
@@ -32,9 +33,10 @@ export async function runEvalJob(evaluationId: string): Promise<void> {
   try {
     const evaluation = await prisma.evaluation.findUnique({
       where: { id: evaluationId },
-      include: { promptRun: { select: { responseText: true } } },
+      include: { promptRun: { select: { responseText: true, datasetRunId: true } } },
     })
     if (!evaluation) return
+    const datasetRunId = evaluation.promptRun.datasetRunId
 
     const snapshot = evaluation.criteriaSnapshot as unknown as CriteriaSnapshot
     const deterministicScores = (evaluation.criteriaScores as unknown as CriterionScore[] | null) ?? []
@@ -104,6 +106,10 @@ export async function runEvalJob(evaluationId: string): Promise<void> {
         ...judgeFields,
       },
     })
+
+    // Batch rows wait for their judge evals — this eval may be the last thing
+    // holding its DatasetRun open.
+    if (datasetRunId) await finalizeIfDone(datasetRunId)
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown eval job error"
     console.error(`Eval job ${evaluationId} failed:`, err)
@@ -112,6 +118,12 @@ export async function runEvalJob(evaluationId: string): Promise<void> {
         where: { id: evaluationId },
         data: { status: "failed", error: sanitizeErrorMessage(message) },
       })
+      // A failed eval no longer blocks finalization — let its batch close out.
+      const failed = await prisma.evaluation.findUnique({
+        where: { id: evaluationId },
+        select: { promptRun: { select: { datasetRunId: true } } },
+      })
+      if (failed?.promptRun.datasetRunId) await finalizeIfDone(failed.promptRun.datasetRunId)
     } catch (updateErr) {
       console.error(`Failed to mark evaluation ${evaluationId} as failed:`, updateErr)
     }

@@ -17,6 +17,7 @@ model User {
   runs           PromptRun[]
   usageSummaries UsageSummary[]
   rubrics        Rubric[]
+  datasets       Dataset[]
 }
 
 model Prompt {
@@ -58,6 +59,10 @@ model PromptRun {
   prompt          Prompt        @relation(fields: [promptId], references: [id])
   userId          String
   user            User          @relation(fields: [userId], references: [id])
+  datasetRowId    String? // rows only die with their dataset, which is blocked while runs exist
+  datasetRow      DatasetRow?   @relation(fields: [datasetRowId], references: [id], onDelete: Cascade)
+  datasetRunId    String?
+  datasetRun      DatasetRun?   @relation(fields: [datasetRunId], references: [id])
   model           String
   provider        String
   temperature     Float
@@ -71,8 +76,71 @@ model PromptRun {
   createdAt       DateTime      @default(now())
   evaluations     Evaluation[]
 
+  // Two NULLs never collide in Postgres unique indexes, so manual runs are
+  // unaffected; batch rows get exactly-once persistence.
+  @@unique([datasetRunId, datasetRowId])
   @@index([userId])
   @@index([promptId])
+  @@index([datasetRunId])
+}
+
+model Dataset {
+  id          String       @id @default(cuid())
+  userId      String
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  columns     String[]
+  rowCount    Int
+  createdAt   DateTime     @default(now())
+  rows        DatasetRow[]
+  runs        DatasetRun[]
+
+  @@index([userId])
+}
+
+model DatasetRow {
+  id             String      @id @default(cuid())
+  datasetId      String
+  dataset        Dataset     @relation(fields: [datasetId], references: [id], onDelete: Cascade)
+  rowIndex       Int
+  data           Json // column → string value
+  expectedOutput String?
+  runs           PromptRun[]
+
+  @@unique([datasetId, rowIndex])
+  @@index([datasetId])
+}
+
+model DatasetRun {
+  id              String      @id @default(cuid())
+  userId          String // denormalized for isolation queries
+  datasetId       String
+  dataset         Dataset     @relation(fields: [datasetId], references: [id], onDelete: Restrict)
+  promptVersionId String
+  rubricId        String? // snapshot lives on each Evaluation; id kept for filtering
+  model           String
+  temperature     Float
+  maxTokens       Int
+  variableMapping Json // { templateVar: columnName }
+  status          String // "pending" | "running" | "complete" | "failed"
+  totalRows       Int
+  completedRows   Int         @default(0)
+  failedRows      Int         @default(0)
+  avgScore        Float? // null until complete or when no rubric
+  scoreVariance   Float? // sample variance
+  passRate        Float?
+  avgLatencyMs    Int?
+  totalCostUsd    Float       @default(0) // model + judge cost
+  error           String?
+  experimentId    String? // wired in Sprint 5; nullable column added now
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  completedAt     DateTime?
+  promptRuns      PromptRun[]
+
+  @@index([userId])
+  @@index([datasetId])
 }
 
 model Rubric {

@@ -67,7 +67,12 @@ export default function PromptDetailPage() {
   // Runs for the Evals tab — same query key/shape as RunHistory so the cache is shared.
   const runsQuery = useQuery<{ data: RunRow[] }>({
     queryKey: ["runs", id],
-    queryFn: () => fetch(`/api/prompts/${id}/runs`).then((r) => r.json()),
+    queryFn: async () => {
+      const res = await fetch(`/api/prompts/${id}/runs`)
+      const json = await res.json()
+      if (!res.ok || json.error) throw new Error(json.error ?? `Request failed (${res.status})`)
+      return json
+    },
     enabled: activeTab === "evals",
   })
 
