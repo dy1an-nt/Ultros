@@ -14,7 +14,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   if (!user) return Response.json({ data: null, error: "User not found" }, { status: 404 })
 
   const prompt = await prisma.prompt.findUnique({ where: { id } })
-  if (!prompt) return Response.json({ data: null, error: "Not found" }, { status: 404 })
+  if (!prompt || prompt.deletedAt !== null) return Response.json({ data: null, error: "Not found" }, { status: 404 })
   if (prompt.userId !== user.id) return Response.json({ data: null, error: "Forbidden" }, { status: 403 })
 
   const limitParam = req.nextUrl.searchParams.get("limit")

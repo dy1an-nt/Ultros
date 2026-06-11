@@ -18,7 +18,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   if (!user) return Response.json({ data: null, error: "User not found" }, { status: 404 })
 
   const prompt = await prisma.prompt.findUnique({ where: { id } })
-  if (!prompt || prompt.userId !== user.id) {
+  if (!prompt || prompt.deletedAt !== null || prompt.userId !== user.id) {
     return Response.json({ data: null, error: "Not found" }, { status: 404 })
   }
 

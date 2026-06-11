@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query"
 import { useModels } from "@/hooks/useModels"
 import { useRubrics } from "@/hooks/useRubrics"
 import { useRunEstimate, useLaunchDatasetRun } from "@/hooks/useDatasetRun"
+import { useBudgetGate } from "@/hooks/useSettings"
 import type { DatasetDto, DatasetRunDto } from "@/types/dataset"
 
 type PromptListItem = { id: string; title: string }
@@ -34,6 +35,7 @@ export function RunConfigDialog({
   const rubrics = useRubrics()
   const estimate = useRunEstimate(dataset.id)
   const launch = useLaunchDatasetRun(dataset.id)
+  const budget = useBudgetGate()
 
   const prompts = useQuery<PromptListItem[]>({
     queryKey: ["prompts"],
@@ -198,7 +200,10 @@ export function RunConfigDialog({
 
       <div className="flex gap-2">
         <button
-          onClick={() => launch.mutate(config, { onSuccess: onLaunched })}
+          onClick={() => {
+            if (!budget.confirmIfOverBudget()) return
+            launch.mutate(config, { onSuccess: onLaunched })
+          }}
           disabled={!ready || !confirmed || !estimate.data || launch.isPending}
           className="px-4 py-1.5 text-sm rounded bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-medium transition-colors"
         >

@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import { ClerkProvider } from "@clerk/nextjs"
+import { Analytics } from "@vercel/analytics/next"
 import { QueryProvider } from "@/components/providers/QueryProvider"
 import "./globals.css"
 
@@ -17,6 +18,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <html lang="en">
         <body className={`${inter.className} bg-gray-950 text-gray-100 antialiased`}>
           <QueryProvider>{children}</QueryProvider>
+          <Analytics />
         </body>
       </html>
     </ClerkProvider>

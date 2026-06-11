@@ -1,6 +1,7 @@
 import { auth } from "@clerk/nextjs/server"
 import { NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit"
 import type { PrismaClient } from "@/app/generated/prisma/client"
 
 async function getDbUser(clerkId: string) {
@@ -15,7 +16,7 @@ export async function GET() {
   if (!user) return Response.json({ data: null, error: "User not found" }, { status: 404 })
 
   const prompts = await prisma.prompt.findMany({
-    where: { userId: user.id },
+    where: { userId: user.id, deletedAt: null },
     orderBy: { createdAt: "desc" },
     include: { _count: { select: { versions: true, runs: true } } },
   })
@@ -29,6 +30,9 @@ export async function POST(req: NextRequest) {
 
   const user = await getDbUser(clerkId)
   if (!user) return Response.json({ data: null, error: "User not found" }, { status: 404 })
+
+  const limited = await checkRateLimit("mutation", user.id)
+  if (!limited.ok) return rateLimitResponse(limited)
 
   const body = await req.json()
   const { title, description, tags, systemPrompt, userPrompt } = body

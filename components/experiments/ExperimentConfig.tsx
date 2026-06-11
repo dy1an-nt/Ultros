@@ -6,6 +6,7 @@ import { useModels } from "@/hooks/useModels"
 import { useRubrics } from "@/hooks/useRubrics"
 import { useDatasets } from "@/hooks/useDatasets"
 import { useCreateExperiment } from "@/hooks/useExperiments"
+import { useBudgetGate } from "@/hooks/useSettings"
 import type { RunEstimate } from "@/types/dataset"
 
 const MAX_VARIANTS = 4
@@ -26,6 +27,7 @@ export function ExperimentConfig() {
   const rubrics = useRubrics()
   const datasets = useDatasets()
   const create = useCreateExperiment()
+  const budget = useBudgetGate()
 
   const prompts = useQuery<PromptListItem[]>({
     queryKey: ["prompts"],
@@ -242,7 +244,8 @@ export function ExperimentConfig() {
 
       <div className="flex gap-2">
         <button
-          onClick={() =>
+          onClick={() => {
+            if (!budget.confirmIfOverBudget()) return
             create.mutate(
               {
                 name: name.trim(),
@@ -255,7 +258,7 @@ export function ExperimentConfig() {
               },
               { onSuccess: (experiment) => router.push(`/experiments/${experiment.id}`) }
             )
-          }
+          }}
           disabled={!ready || !confirmed || !estimate || create.isPending}
           className="px-4 py-1.5 text-sm rounded bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-medium transition-colors"
         >

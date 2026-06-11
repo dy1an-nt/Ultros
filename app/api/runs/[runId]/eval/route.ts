@@ -2,6 +2,7 @@ import { auth } from "@clerk/nextjs/server"
 import { NextRequest } from "next/server"
 import type { Prisma } from "@/app/generated/prisma/client"
 import { prisma } from "@/lib/prisma"
+import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit"
 import { runDeterministicCriterion, computeTotalScore } from "@/lib/eval/matchers"
 import { enqueueEvalJob } from "@/lib/eval/queue"
 import type { Criterion, CriteriaSnapshot, CriterionScore, EvalMethod } from "@/types/eval"
@@ -13,6 +14,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ run
 
   const user = await prisma.user.findUnique({ where: { clerkId } })
   if (!user) return Response.json({ data: null, error: "User not found" }, { status: 404 })
+
+  const limited = await checkRateLimit("eval", user.id)
+  if (!limited.ok) return rateLimitResponse(limited)
 
   let body: Record<string, unknown>
   try {

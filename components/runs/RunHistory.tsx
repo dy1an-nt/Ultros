@@ -1,6 +1,7 @@
 "use client"
 import { useQuery } from "@tanstack/react-query"
 import { useState } from "react"
+import { ShareButton } from "@/components/share/ShareButton"
 
 type RunData = {
   id: string
@@ -66,10 +67,13 @@ export function RunHistory({ promptId }: { promptId: string }) {
             </div>
           </button>
           {expanded === run.id && (
-            <div className="px-3 pb-3 border-t border-gray-800 pt-2">
+            <div className="px-3 pb-3 border-t border-gray-800 pt-2 flex flex-col gap-2">
               <p className="text-sm text-gray-300 font-mono whitespace-pre-wrap">
                 {run.responseText}
               </p>
+              <div>
+                <ShareButton resourceType="promptRun" resourceId={run.id} />
+              </div>
             </div>
           )}
         </div>

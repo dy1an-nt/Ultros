@@ -1,6 +1,7 @@
 "use client"
 import { useState } from "react"
 import { useModels } from "@/hooks/useModels"
+import { useBudgetGate } from "@/hooks/useSettings"
 
 const PROVIDER_LABELS: Record<string, string> = {
   anthropic: "Claude (Anthropic)",
@@ -23,6 +24,7 @@ export function RunControls({ onRun, onSaveVersion }: Props) {
   const [maxTokens, setMaxTokens] = useState(1024)
   const [running, setRunning] = useState(false)
   const [saving, setSaving] = useState(false)
+  const budget = useBudgetGate()
 
   // The catalog is filtered to configured providers, so the hardcoded default
   // may not exist — fall back to the first available model.
@@ -34,6 +36,7 @@ export function RunControls({ onRun, onSaveVersion }: Props) {
   }, {})
 
   async function handleRun() {
+    if (!budget.confirmIfOverBudget()) return
     setRunning(true)
     try {
       await onRun(effectiveModel, temperature, maxTokens)

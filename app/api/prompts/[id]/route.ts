@@ -1,6 +1,7 @@
 import { auth } from "@clerk/nextjs/server"
 import { NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit"
 
 async function getDbUser(clerkId: string) {
   return prisma.user.findUnique({ where: { clerkId } })
@@ -14,7 +15,7 @@ async function getPromptForUser(id: string, userId: string) {
       _count: { select: { runs: true } },
     },
   })
-  if (!prompt) return { prompt: null, error: "not_found" }
+  if (!prompt || prompt.deletedAt !== null) return { prompt: null, error: "not_found" }
   if (prompt.userId !== userId) return { prompt: null, error: "forbidden" }
   return { prompt, error: null }
 }
@@ -42,8 +43,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   const user = await getDbUser(clerkId)
   if (!user) return Response.json({ data: null, error: "User not found" }, { status: 404 })
 
+  const limited = await checkRateLimit("mutation", user.id)
+  if (!limited.ok) return rateLimitResponse(limited)
+
   const existing = await prisma.prompt.findUnique({ where: { id } })
-  if (!existing) return Response.json({ data: null, error: "Not found" }, { status: 404 })
+  if (!existing || existing.deletedAt !== null) {
+    return Response.json({ data: null, error: "Not found" }, { status: 404 })
+  }
   if (existing.userId !== user.id) return Response.json({ data: null, error: "Forbidden" }, { status: 403 })
 
   let body: Record<string, unknown>
@@ -84,11 +90,18 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   const user = await getDbUser(clerkId)
   if (!user) return Response.json({ data: null, error: "User not found" }, { status: 404 })
 
+  const limited = await checkRateLimit("mutation", user.id)
+  if (!limited.ok) return rateLimitResponse(limited)
+
   const existing = await prisma.prompt.findUnique({ where: { id } })
-  if (!existing) return Response.json({ data: null, error: "Not found" }, { status: 404 })
+  if (!existing || existing.deletedAt !== null) {
+    return Response.json({ data: null, error: "Not found" }, { status: 404 })
+  }
   if (existing.userId !== user.id) return Response.json({ data: null, error: "Forbidden" }, { status: 403 })
 
-  await prisma.prompt.delete({ where: { id } })
+  // Soft delete: runs/evals keep their history for usage accounting; the
+  // prompt just disappears from every list and lookup (deletedAt filters).
+  await prisma.prompt.update({ where: { id }, data: { deletedAt: new Date() } })
 
   return Response.json({ data: { id }, error: null })
 }

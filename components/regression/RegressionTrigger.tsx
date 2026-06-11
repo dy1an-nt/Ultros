@@ -3,6 +3,7 @@ import { useEffect, useState } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useDatasetRun } from "@/hooks/useDatasetRun"
 import { useRunRegression } from "@/hooks/useRegression"
+import { useBudgetGate } from "@/hooks/useSettings"
 import type { BaselineDto } from "@/types/experiment"
 
 type VersionListItem = { id: string; versionNumber: number; label: string | null }
@@ -18,6 +19,7 @@ async function unwrap<T>(res: Response): Promise<T> {
 export function RegressionTrigger({ promptId, baseline }: { promptId: string; baseline: BaselineDto }) {
   const queryClient = useQueryClient()
   const runRegression = useRunRegression(promptId)
+  const budget = useBudgetGate()
 
   const versions = useQuery<VersionListItem[]>({
     queryKey: ["versions", promptId],
@@ -69,12 +71,13 @@ export function RegressionTrigger({ promptId, baseline }: { promptId: string; ba
           vs v{baseline.versionNumber ?? "?"} on {baseline.model ?? "?"} (baseline {baseline.baselineScore.toFixed(3)})
         </span>
         <button
-          onClick={() =>
+          onClick={() => {
+            if (!budget.confirmIfOverBudget()) return
             runRegression.mutate(
               { newVersionId: versionId, threshold },
               { onSuccess: (result) => setActiveRunId(result.datasetRunId) }
             )
-          }
+          }}
           disabled={versionId === "" || runRegression.isPending || activeRunId !== null}
           className="px-4 py-1.5 text-sm rounded bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-medium transition-colors"
         >

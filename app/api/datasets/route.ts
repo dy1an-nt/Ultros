@@ -1,6 +1,7 @@
 import { auth } from "@clerk/nextjs/server"
 import { NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit"
 import type { Prisma } from "@/app/generated/prisma/client"
 import { parseCsv, parseJsonRows } from "@/lib/datasets/parse"
 
@@ -26,6 +27,9 @@ export async function POST(req: NextRequest) {
 
   const user = await prisma.user.findUnique({ where: { clerkId } })
   if (!user) return Response.json({ data: null, error: "User not found" }, { status: 404 })
+
+  const limited = await checkRateLimit("mutation", user.id)
+  if (!limited.ok) return rateLimitResponse(limited)
 
   const raw = await req.text()
   if (raw.length > MAX_PAYLOAD_BYTES) {

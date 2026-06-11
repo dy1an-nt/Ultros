@@ -1,6 +1,7 @@
 "use client"
 import { Fragment, useState } from "react"
 import { useDatasetRun, useDatasetRunRows } from "@/hooks/useDatasetRun"
+import { ShareButton } from "@/components/share/ShareButton"
 import type { DatasetRunRowItem } from "@/types/dataset"
 
 const ROWS_PAGE = 50
@@ -77,12 +78,15 @@ export function DatasetRunView({ runId }: { runId: string }) {
           {run.model} · {run.totalRows} rows{run.failedRows > 0 ? ` · ${run.failedRows} failed` : ""}
         </span>
         {terminal && (
-          <a
-            href={`/api/dataset-runs/${run.id}/export`}
-            className="ml-auto text-sm text-indigo-400 hover:text-indigo-300"
-          >
-            Export CSV
-          </a>
+          <span className="ml-auto flex items-center gap-3">
+            <ShareButton resourceType="datasetRun" resourceId={run.id} />
+            <a
+              href={`/api/dataset-runs/${run.id}/export`}
+              className="text-sm text-indigo-400 hover:text-indigo-300"
+            >
+              Export CSV
+            </a>
+          </span>
         )}
       </div>
 

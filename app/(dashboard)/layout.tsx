@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { UserButton } from "@clerk/nextjs"
+import { BudgetBanner } from "@/components/usage/BudgetBanner"
 
 const navItems = [
   { label: "Dashboard", href: "/dashboard", enabled: true },
@@ -8,6 +9,7 @@ const navItems = [
   { label: "Rubrics", href: "/rubrics", enabled: true },
   { label: "Experiments", href: "/experiments", enabled: true },
   { label: "Usage", href: "/usage", enabled: true },
+  { label: "Settings", href: "/settings", enabled: true },
 ]
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -41,7 +43,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <UserButton />
         </div>
       </aside>
-      <main className="flex-1 ml-56 overflow-auto">{children}</main>
+      <main className="flex-1 ml-56 overflow-auto">
+        <BudgetBanner />
+        {children}
+      </main>
     </div>
   )
 }

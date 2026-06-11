@@ -1,6 +1,7 @@
 import { auth } from "@clerk/nextjs/server"
 import { NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit"
 
 async function getDbUser(clerkId: string) {
   return prisma.user.findUnique({ where: { clerkId } })
@@ -15,7 +16,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   if (!user) return Response.json({ data: null, error: "User not found" }, { status: 404 })
 
   const prompt = await prisma.prompt.findUnique({ where: { id } })
-  if (!prompt) return Response.json({ data: null, error: "Not found" }, { status: 404 })
+  if (!prompt || prompt.deletedAt !== null) return Response.json({ data: null, error: "Not found" }, { status: 404 })
   if (prompt.userId !== user.id) return Response.json({ data: null, error: "Forbidden" }, { status: 403 })
 
   const versions = await prisma.promptVersion.findMany({
@@ -34,8 +35,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const user = await getDbUser(clerkId)
   if (!user) return Response.json({ data: null, error: "User not found" }, { status: 404 })
 
+  const limited = await checkRateLimit("mutation", user.id)
+  if (!limited.ok) return rateLimitResponse(limited)
+
   const prompt = await prisma.prompt.findUnique({ where: { id } })
-  if (!prompt) return Response.json({ data: null, error: "Not found" }, { status: 404 })
+  if (!prompt || prompt.deletedAt !== null) return Response.json({ data: null, error: "Not found" }, { status: 404 })
   if (prompt.userId !== user.id) return Response.json({ data: null, error: "Forbidden" }, { status: 403 })
 
   const body = await req.json()

@@ -7,6 +7,9 @@ const isPublicRoute = createRouteMatcher([
   "/api/webhooks/(.*)",
   "/share/(.*)",
   "/api/share/(.*)",
+  // QStash workers authenticate via signature verification, not Clerk —
+  // auth.protect() here would bounce every production job delivery.
+  "/api/jobs/(.*)",
 ])
 
 export default clerkMiddleware(async (auth, req) => {

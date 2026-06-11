@@ -1,6 +1,7 @@
 import { auth } from "@clerk/nextjs/server"
 import { NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit"
 
 const DEFAULT_LIMIT = 50
 const MAX_LIMIT = 200
@@ -57,6 +58,9 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
 
   const user = await prisma.user.findUnique({ where: { clerkId } })
   if (!user) return Response.json({ data: null, error: "User not found" }, { status: 404 })
+
+  const limited = await checkRateLimit("mutation", user.id)
+  if (!limited.ok) return rateLimitResponse(limited)
 
   const dataset = await prisma.dataset.findUnique({ where: { id } })
   if (!dataset) return Response.json({ data: null, error: "Not found" }, { status: 404 })

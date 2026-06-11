@@ -1,6 +1,7 @@
 import { auth } from "@clerk/nextjs/server"
 import { NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit"
 import { createDatasetRun, fanOutDatasetRun } from "@/lib/datasets/runner"
 import { extractTemplateVariables, validateMapping } from "@/lib/datasets/estimate"
 import { validateThreshold } from "@/lib/regression/compare"
@@ -17,8 +18,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const user = await prisma.user.findUnique({ where: { clerkId } })
   if (!user) return Response.json({ data: null, error: "User not found" }, { status: 404 })
 
+  const limited = await checkRateLimit("launch", user.id)
+  if (!limited.ok) return rateLimitResponse(limited)
+
   const prompt = await prisma.prompt.findUnique({ where: { id } })
-  if (!prompt || prompt.userId !== user.id) {
+  if (!prompt || prompt.deletedAt !== null || prompt.userId !== user.id) {
     return Response.json({ data: null, error: "Not found" }, { status: 404 })
   }
 

@@ -162,8 +162,9 @@ export function validatePassThreshold(input: unknown): { value: number; error: n
 }
 
 export function validateRubricName(input: unknown): { value: string; error: null } | { value: null; error: string } {
-  if (typeof input !== "string" || input.trim().length < 1 || input.length > 200) {
-    return { value: null, error: "name: must be a string of 1–200 characters" }
+  // 100 matches the client-side cap (Sprint 3 QA: stricter side wins).
+  if (typeof input !== "string" || input.trim().length < 1 || input.length > 100) {
+    return { value: null, error: "name: must be a string of 1–100 characters" }
   }
   return { value: input.trim(), error: null }
 }

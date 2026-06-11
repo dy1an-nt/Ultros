@@ -112,7 +112,8 @@ export async function runEvalJob(evaluationId: string): Promise<void> {
     if (datasetRunId) await finalizeIfDone(datasetRunId)
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown eval job error"
-    console.error(`Eval job ${evaluationId} failed:`, err)
+    // Sanitized only — raw provider errors can echo request fragments or keys.
+    console.error(`Eval job ${evaluationId} failed:`, sanitizeErrorMessage(message))
     try {
       await prisma.evaluation.update({
         where: { id: evaluationId },

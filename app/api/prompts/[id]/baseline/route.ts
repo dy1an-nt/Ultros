@@ -1,13 +1,14 @@
 import { auth } from "@clerk/nextjs/server"
 import { NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit"
 import { toBaselineDto } from "@/lib/regression/baseline"
 
 async function loadPrompt(clerkId: string, promptId: string) {
   const user = await prisma.user.findUnique({ where: { clerkId } })
   if (!user) return { user: null, prompt: null }
   const prompt = await prisma.prompt.findUnique({ where: { id: promptId } })
-  if (!prompt || prompt.userId !== user.id) return { user, prompt: null }
+  if (!prompt || prompt.deletedAt !== null || prompt.userId !== user.id) return { user, prompt: null }
   return { user, prompt }
 }
 
@@ -37,6 +38,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const { user, prompt } = await loadPrompt(clerkId, id)
   if (!user) return Response.json({ data: null, error: "User not found" }, { status: 404 })
+
+  const limited = await checkRateLimit("mutation", user.id)
+  if (!limited.ok) return rateLimitResponse(limited)
   if (!prompt) return Response.json({ data: null, error: "Not found" }, { status: 404 })
 
   let body: Record<string, unknown>
@@ -107,6 +111,9 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
 
   const { user, prompt } = await loadPrompt(clerkId, id)
   if (!user) return Response.json({ data: null, error: "User not found" }, { status: 404 })
+
+  const limited = await checkRateLimit("mutation", user.id)
+  if (!limited.ok) return rateLimitResponse(limited)
   if (!prompt) return Response.json({ data: null, error: "Not found" }, { status: 404 })
 
   const baseline = await prisma.baseline.findUnique({ where: { promptId: id } })

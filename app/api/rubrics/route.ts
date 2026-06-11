@@ -2,6 +2,7 @@ import { auth } from "@clerk/nextjs/server"
 import { NextRequest } from "next/server"
 import type { Prisma } from "@/app/generated/prisma/client"
 import { prisma } from "@/lib/prisma"
+import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit"
 import { validateCriteria, validatePassThreshold, validateRubricName } from "@/lib/eval/criteria"
 
 async function getDbUser(clerkId: string) {
@@ -29,6 +30,9 @@ export async function POST(req: NextRequest) {
 
   const user = await getDbUser(clerkId)
   if (!user) return Response.json({ data: null, error: "User not found" }, { status: 404 })
+
+  const limited = await checkRateLimit("mutation", user.id)
+  if (!limited.ok) return rateLimitResponse(limited)
 
   let body: Record<string, unknown>
   try {

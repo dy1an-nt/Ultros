@@ -19,6 +19,8 @@ model User {
   rubrics        Rubric[]
   datasets       Dataset[]
   experiments    Experiment[]
+  shares         Share[]
+  settings       UserSettings?
 }
 
 model Prompt {
@@ -28,6 +30,7 @@ model Prompt {
   title       String
   description String?
   tags        String[]
+  deletedAt   DateTime? // soft delete — runs/evals survive for usage accounting
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
   versions    PromptVersion[]
@@ -259,6 +262,27 @@ model RegressionRun {
 
   @@index([baselineId])
   @@index([userId])
+}
+
+model Share {
+  id           String    @id @default(cuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token        String    @unique // nanoid(32) — capability URL, stored plain by design
+  resourceType String // "promptRun" | "datasetRun" | "experiment"
+  resourceId   String
+  createdAt    DateTime  @default(now())
+  revokedAt    DateTime?
+
+  @@unique([userId, resourceType, resourceId]) // re-share returns the existing link
+  @@index([userId])
+}
+
+model UserSettings {
+  id               String @id @default(cuid())
+  userId           String @unique
+  user             User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  monthlyBudgetUsd Float? // null = no budget set
 }
 
 model UsageSummary {

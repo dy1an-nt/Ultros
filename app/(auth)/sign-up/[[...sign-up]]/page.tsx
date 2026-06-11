@@ -1,5 +1,6 @@
 import { SignUp } from "@clerk/nextjs"
+import { clerkAppearance } from "../../appearance"
 
 export default function SignUpPage() {
-  return <SignUp />
+  return <SignUp appearance={clerkAppearance} />
 }

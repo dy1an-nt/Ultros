@@ -1,6 +1,7 @@
 import { auth } from "@clerk/nextjs/server"
 import { NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit"
 import { validateCriteria, validatePassThreshold, validateRubricName } from "@/lib/eval/criteria"
 
 async function getDbUser(clerkId: string) {
@@ -36,6 +37,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const user = await getDbUser(clerkId)
   if (!user) return Response.json({ data: null, error: "User not found" }, { status: 404 })
+
+  const limited = await checkRateLimit("mutation", user.id)
+  if (!limited.ok) return rateLimitResponse(limited)
 
   const { error } = await getRubricForUser(id, user.id)
   if (error === "not_found") return Response.json({ data: null, error: "Not found" }, { status: 404 })
@@ -90,6 +94,9 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
 
   const user = await getDbUser(clerkId)
   if (!user) return Response.json({ data: null, error: "User not found" }, { status: 404 })
+
+  const limited = await checkRateLimit("mutation", user.id)
+  if (!limited.ok) return rateLimitResponse(limited)
 
   const { error } = await getRubricForUser(id, user.id)
   if (error === "not_found") return Response.json({ data: null, error: "Not found" }, { status: 404 })

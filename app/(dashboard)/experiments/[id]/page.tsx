@@ -6,6 +6,7 @@ import { CellGrid, versionLabel } from "@/components/experiments/CellGrid"
 import { WinMatrix } from "@/components/experiments/WinMatrix"
 import { CriterionBreakdown } from "@/components/experiments/CriterionBreakdown"
 import { ResultDrilldown } from "@/components/experiments/ResultDrilldown"
+import { ShareButton } from "@/components/share/ShareButton"
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -41,6 +42,11 @@ export default function ExperimentDetailPage({ params }: { params: Promise<{ id:
           ← Experiments
         </Link>
         <h1 className="text-2xl font-bold text-white">{experiment.name}</h1>
+        {complete && (
+          <span className="ml-auto">
+            <ShareButton resourceType="experiment" resourceId={experiment.id} />
+          </span>
+        )}
       </div>
       <p className="text-sm text-gray-500">
         {experiment.datasetName ?? "dataset"} · rubric {experiment.rubricName ?? "—"} ·{" "}
