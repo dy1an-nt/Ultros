@@ -74,6 +74,9 @@ export default async function HomePage() {
           <a href="#product" className="text-[15px] font-medium text-[#9FAFA4] hover:text-[#ECF1ED] transition-colors whitespace-nowrap">
             Product
           </a>
+          <Link href="/docs" className="text-[15px] font-medium text-[#9FAFA4] hover:text-[#ECF1ED] transition-colors whitespace-nowrap">
+            Docs
+          </Link>
           <Link href="/sign-in" className="text-[15px] font-medium text-[#9FAFA4] hover:text-[#ECF1ED] transition-colors whitespace-nowrap">
             Sign in
           </Link>
