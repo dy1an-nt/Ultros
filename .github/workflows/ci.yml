@@ -1,0 +1,88 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Least privilege: CI only needs to read the repo. No write scopes are granted,
+# so a compromised step cannot push code, open releases, or mint tokens.
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Lint, typecheck & test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      # Prisma client is git-ignored and generated; tests import its types.
+      - run: npx prisma generate
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+
+  migrations:
+    name: Validate migrations
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: ultros_test
+        ports:
+          - 5432:5432
+        # Wait until Postgres accepts connections before the job's steps run.
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      # prisma.config.ts builds the connection URL from DATABASE_URL + DB_PASSWORD.
+      DATABASE_URL: postgresql://postgres@localhost:5432/ultros_test
+      DIRECT_URL: postgresql://postgres@localhost:5432/ultros_test
+      DB_PASSWORD: postgres
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      # Applies every migration in order against a clean database — fails the
+      # build if any migration SQL is invalid or drifts from the schema.
+      - run: npx prisma migrate deploy
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    env:
+      # Placeholder secrets: the production build only needs these present and
+      # well-formed to compile; no real provider calls happen at build time.
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_test_ZXhhbXBsZS5jbGVyay5hY2NvdW50cy5kZXYk
+      CLERK_SECRET_KEY: sk_test_placeholder
+      DATABASE_URL: postgresql://postgres@localhost:5432/ultros_test
+      DIRECT_URL: postgresql://postgres@localhost:5432/ultros_test
+      DB_PASSWORD: postgres
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - run: npm run build

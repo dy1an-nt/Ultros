@@ -3,32 +3,46 @@ import type { CriteriaSnapshot, CriterionScore } from "@/types/eval"
 import { finalizeIfDone } from "@/lib/datasets/finalize"
 import { judgeCriteria } from "./judge"
 import { computeTotalScore } from "./matchers"
+import { sanitizeErrorMessage } from "./sanitize"
+import { logger } from "@/lib/logger"
 
-// Provider error messages can echo request headers; never persist an API key.
-export function sanitizeErrorMessage(message: string): string {
-  let sanitized = message
-  for (const envKey of [
-    "ANTHROPIC_API_KEY",
-    "OPENAI_API_KEY",
-    "GOOGLE_GENERATIVE_AI_API_KEY",
-    "OPENROUTER_API_KEY",
-    "UPSTASH_QSTASH_TOKEN",
-  ]) {
-    const value = process.env[envKey]
-    if (value) sanitized = sanitized.split(value).join("[redacted]")
-  }
-  return sanitized.slice(0, 2000)
-}
+// Re-exported for existing importers (e.g. lib/datasets/rowJob.ts). The
+// implementation lives in ./sanitize so it stays unit-testable without Prisma.
+export { sanitizeErrorMessage }
+
+// How long a claimed-but-unfinished job is presumed alive before another
+// delivery may reclaim it. Must exceed worst-case job latency (a judge LLM
+// call is seconds); too short risks two workers running a slow job at once,
+// too long delays recovery of a genuinely crashed worker.
+export const EVAL_LEASE_MS = 5 * 60 * 1000
 
 // Async eval job body: claim → judge → merge → complete (or fail).
-// Idempotent under QStash retries via the claim transition: `complete` is the
-// only terminal state; a claim that matches 0 rows means the work is done.
+//
+// Idempotent under QStash at-least-once delivery. `complete` is the only
+// terminal-success state and is never re-claimable. The claim is a *leased*
+// transition: it matches a job only if it is pending/failed, or running with
+// an expired (or never-set) lease. A row that another worker just stamped
+// `running` is therefore NOT re-claimed — this closes the race where, under
+// Postgres READ COMMITTED, two concurrent deliveries that both saw `running`
+// in the claimable set would each proceed (double judge call, double usage
+// increment, double completion write).
 export async function runEvalJob(evaluationId: string): Promise<void> {
+  const now = new Date()
+  const leaseExpiry = new Date(now.getTime() - EVAL_LEASE_MS)
   const claimed = await prisma.evaluation.updateMany({
-    where: { id: evaluationId, status: { in: ["pending", "running", "failed"] } },
-    data: { status: "running", error: null },
+    where: {
+      id: evaluationId,
+      OR: [
+        { status: { in: ["pending", "failed"] } },
+        // Reclaim only a stalled run: the previous worker crashed and its
+        // lease lapsed, or it predates the lease column (startedAt null).
+        { status: "running", startedAt: { lt: leaseExpiry } },
+        { status: "running", startedAt: null },
+      ],
+    },
+    data: { status: "running", startedAt: now, error: null },
   })
-  if (claimed.count === 0) return // already complete (or nonexistent) — no-op
+  if (claimed.count === 0) return // complete, freshly-claimed, or nonexistent — no-op
 
   try {
     const evaluation = await prisma.evaluation.findUnique({
@@ -113,11 +127,12 @@ export async function runEvalJob(evaluationId: string): Promise<void> {
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown eval job error"
     // Sanitized only — raw provider errors can echo request fragments or keys.
-    console.error(`Eval job ${evaluationId} failed:`, sanitizeErrorMessage(message))
+    const safe = sanitizeErrorMessage(message)
+    logger.error("eval job failed", { evaluationId, error: safe })
     try {
       await prisma.evaluation.update({
         where: { id: evaluationId },
-        data: { status: "failed", error: sanitizeErrorMessage(message) },
+        data: { status: "failed", error: safe },
       })
       // A failed eval no longer blocks finalization — let its batch close out.
       const failed = await prisma.evaluation.findUnique({
@@ -126,7 +141,7 @@ export async function runEvalJob(evaluationId: string): Promise<void> {
       })
       if (failed?.promptRun.datasetRunId) await finalizeIfDone(failed.promptRun.datasetRunId)
     } catch (updateErr) {
-      console.error(`Failed to mark evaluation ${evaluationId} as failed:`, updateErr)
+      logger.exception("failed to mark evaluation as failed", updateErr, { evaluationId })
     }
   }
 }

@@ -1,26 +1,32 @@
 import { NextRequest } from "next/server"
 import { verifyQstashSignature } from "@/lib/jobs/verifySignature"
 import { runEvalJob } from "@/lib/eval/runEvalJob"
+import { errorResponse, jsonOk } from "@/lib/api/errors"
+import { logger } from "@/lib/logger"
 
 // QStash webhook — not authed by Clerk; signature-verified, fail-closed.
 export async function POST(req: NextRequest) {
   const sig = await verifyQstashSignature(req, "/api/jobs/eval")
-  if (!sig.ok) return Response.json({ data: null, error: sig.error }, { status: sig.status })
+  if (!sig.ok) {
+    logger.warn("eval job signature rejected", { status: sig.status })
+    return errorResponse(sig.status === 503 ? "SERVICE_UNAVAILABLE" : "UNAUTHORIZED", sig.error)
+  }
 
   let evaluationId: unknown
   try {
     evaluationId = (JSON.parse(sig.body) as { evaluationId?: unknown }).evaluationId
   } catch {
-    return Response.json({ data: null, error: "Invalid JSON body" }, { status: 400 })
+    return errorResponse("INVALID_JSON")
   }
   if (!evaluationId || typeof evaluationId !== "string") {
-    return Response.json({ data: null, error: "evaluationId is required" }, { status: 400 })
+    return errorResponse("VALIDATION_ERROR", "evaluationId is required")
   }
 
   // runEvalJob never throws on eval failure — it records status "failed" on
   // the row. A 200 here tells QStash not to retry; retries are handled by the
   // idempotent claim transition inside the job.
+  logger.info("eval job received", { evaluationId })
   await runEvalJob(evaluationId)
 
-  return Response.json({ data: { evaluationId }, error: null })
+  return jsonOk({ evaluationId })
 }
