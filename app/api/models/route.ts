@@ -1,5 +1,6 @@
 import { getAvailableModels } from "@/lib/ai/models"
+import { jsonOk } from "@/lib/api/errors"
 
 export function GET() {
-  return Response.json({ data: getAvailableModels(), error: null })
+  return jsonOk(getAvailableModels())
 }

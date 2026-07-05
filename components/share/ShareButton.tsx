@@ -25,7 +25,7 @@ export function ShareButton({
         body: JSON.stringify({ resourceType, resourceId }),
       })
       const json = await res.json()
-      if (!res.ok || json.error) throw new Error(json.error ?? `Request failed (${res.status})`)
+      if (!res.ok || json.error) throw new Error(json.error?.message ?? `Request failed (${res.status})`)
       const data = json.data as ShareResult
       setUrl(data.url)
       try {

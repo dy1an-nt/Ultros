@@ -1,6 +1,7 @@
 import { auth } from "@clerk/nextjs/server"
 import { NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { errorResponse, jsonOk } from "@/lib/api/errors"
 
 const DEFAULT_LIMIT = 50
 const MAX_LIMIT = 200
@@ -8,21 +9,21 @@ const MAX_LIMIT = 200
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const { userId: clerkId } = await auth()
-  if (!clerkId) return Response.json({ data: null, error: "Unauthorized" }, { status: 401 })
+  if (!clerkId) return errorResponse("UNAUTHORIZED")
 
   const user = await prisma.user.findUnique({ where: { clerkId } })
-  if (!user) return Response.json({ data: null, error: "User not found" }, { status: 404 })
+  if (!user) return errorResponse("NOT_FOUND", "User not found")
 
   const prompt = await prisma.prompt.findUnique({ where: { id } })
-  if (!prompt || prompt.deletedAt !== null) return Response.json({ data: null, error: "Not found" }, { status: 404 })
-  if (prompt.userId !== user.id) return Response.json({ data: null, error: "Forbidden" }, { status: 403 })
+  if (!prompt || prompt.deletedAt !== null) return errorResponse("NOT_FOUND")
+  if (prompt.userId !== user.id) return errorResponse("FORBIDDEN")
 
   const limitParam = req.nextUrl.searchParams.get("limit")
   let limit = DEFAULT_LIMIT
   if (limitParam !== null) {
     const parsed = parseInt(limitParam, 10)
     if (Number.isNaN(parsed) || parsed < 1) {
-      return Response.json({ data: null, error: "limit must be a positive integer" }, { status: 400 })
+      return errorResponse("VALIDATION_ERROR", "limit must be a positive integer")
     }
     limit = Math.min(parsed, MAX_LIMIT)
   }
@@ -55,5 +56,5 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     },
   }))
 
-  return Response.json({ data, error: null })
+  return jsonOk(data)
 }

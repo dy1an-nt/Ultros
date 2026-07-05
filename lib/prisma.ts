@@ -30,7 +30,10 @@ function createPrismaClient() {
 
   const { user, host, port, database } = parseUrlComponents(connectionString)
 
-  const pool = new Pool({ user, password, host, port, database, ssl: { rejectUnauthorized: false } })
+  // Local and CI Postgres don't speak SSL; PGSSLMODE=disable (libpq's own
+  // convention) opts out. Production (Supabase) never sets it.
+  const ssl = process.env.PGSSLMODE === "disable" ? undefined : { rejectUnauthorized: false }
+  const pool = new Pool({ user, password, host, port, database, ssl })
   const adapter = new PrismaPg(pool)
   return new PrismaClient({ adapter })
 }

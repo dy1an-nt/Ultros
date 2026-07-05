@@ -3,6 +3,7 @@ import { NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { checkRateLimit, clientIp, rateLimitResponse } from "@/lib/rateLimit"
 import { resolveShareByToken } from "@/lib/share/resolve"
+import { errorResponse, jsonOk } from "@/lib/api/errors"
 
 // Public resolve — no auth, limited per IP. Unknown and revoked tokens return
 // byte-identical 404s; capability URLs must not leak which guesses were close.
@@ -14,7 +15,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ toke
 
   const share = await resolveShareByToken(token)
   if (!share) {
-    return Response.json({ data: null, error: "Not found" }, { status: 404 })
+    return errorResponse("NOT_FOUND")
   }
   return Response.json(
     { data: share, error: null },
@@ -27,18 +28,18 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ toke
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ token: string }> }) {
   const { token } = await params
   const { userId: clerkId } = await auth()
-  if (!clerkId) return Response.json({ data: null, error: "Unauthorized" }, { status: 401 })
+  if (!clerkId) return errorResponse("UNAUTHORIZED")
 
   const user = await prisma.user.findUnique({ where: { clerkId } })
-  if (!user) return Response.json({ data: null, error: "User not found" }, { status: 404 })
+  if (!user) return errorResponse("NOT_FOUND", "User not found")
 
   const limited = await checkRateLimit("mutation", user.id)
   if (!limited.ok) return rateLimitResponse(limited)
 
   const share = await prisma.share.findUnique({ where: { token } })
   if (!share || share.userId !== user.id || share.revokedAt !== null) {
-    return Response.json({ data: null, error: "Not found" }, { status: 404 })
+    return errorResponse("NOT_FOUND")
   }
   await prisma.share.update({ where: { id: share.id }, data: { revokedAt: new Date() } })
-  return Response.json({ data: { token }, error: null })
+  return jsonOk({ token })
 }

@@ -3,19 +3,20 @@ import { NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
 import type { DatasetRunStatus } from "@/types/dataset"
 import type { ExperimentDetailDto } from "@/types/experiment"
+import { errorResponse, jsonOk } from "@/lib/api/errors"
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const { userId: clerkId } = await auth()
-  if (!clerkId) return Response.json({ data: null, error: "Unauthorized" }, { status: 401 })
+  if (!clerkId) return errorResponse("UNAUTHORIZED")
 
   const user = await prisma.user.findUnique({ where: { clerkId } })
-  if (!user) return Response.json({ data: null, error: "User not found" }, { status: 404 })
+  if (!user) return errorResponse("NOT_FOUND", "User not found")
 
   const experiment = await prisma.experiment.findUnique({ where: { id } })
-  if (!experiment) return Response.json({ data: null, error: "Not found" }, { status: 404 })
+  if (!experiment) return errorResponse("NOT_FOUND")
   if (experiment.userId !== user.id) {
-    return Response.json({ data: null, error: "Forbidden" }, { status: 403 })
+    return errorResponse("FORBIDDEN")
   }
 
   const [cellRuns, dataset, rubric, versions] = await Promise.all([
@@ -57,5 +58,5 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     rubricName: rubric?.name ?? null,
     versions,
   }
-  return Response.json({ data, error: null })
+  return jsonOk(data)
 }

@@ -1,6 +1,7 @@
 import { auth } from "@clerk/nextjs/server"
 import { NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { errorResponse } from "@/lib/api/errors"
 
 // Spreadsheet formula-injection guard, same rule as the dataset-run export.
 function guardCell(value: string): string {
@@ -18,15 +19,15 @@ function parseDay(value: string | null): Date | null | undefined {
 
 export async function GET(req: NextRequest) {
   const { userId: clerkId } = await auth()
-  if (!clerkId) return Response.json({ data: null, error: "Unauthorized" }, { status: 401 })
+  if (!clerkId) return errorResponse("UNAUTHORIZED")
 
   const user = await prisma.user.findUnique({ where: { clerkId } })
-  if (!user) return Response.json({ data: null, error: "User not found" }, { status: 404 })
+  if (!user) return errorResponse("NOT_FOUND", "User not found")
 
   const from = parseDay(req.nextUrl.searchParams.get("from"))
   const to = parseDay(req.nextUrl.searchParams.get("to"))
   if (from === null || to === null) {
-    return Response.json({ data: null, error: "from/to must be YYYY-MM-DD" }, { status: 400 })
+    return errorResponse("VALIDATION_ERROR", "from/to must be YYYY-MM-DD")
   }
 
   const rows = await prisma.usageSummary.findMany({

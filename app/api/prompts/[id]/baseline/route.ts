@@ -3,6 +3,7 @@ import { NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit"
 import { toBaselineDto } from "@/lib/regression/baseline"
+import { errorResponse, jsonOk } from "@/lib/api/errors"
 
 async function loadPrompt(clerkId: string, promptId: string) {
   const user = await prisma.user.findUnique({ where: { clerkId } })
@@ -15,17 +16,17 @@ async function loadPrompt(clerkId: string, promptId: string) {
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const { userId: clerkId } = await auth()
-  if (!clerkId) return Response.json({ data: null, error: "Unauthorized" }, { status: 401 })
+  if (!clerkId) return errorResponse("UNAUTHORIZED")
 
   const { user, prompt } = await loadPrompt(clerkId, id)
-  if (!user) return Response.json({ data: null, error: "User not found" }, { status: 404 })
-  if (!prompt) return Response.json({ data: null, error: "Not found" }, { status: 404 })
+  if (!user) return errorResponse("NOT_FOUND", "User not found")
+  if (!prompt) return errorResponse("NOT_FOUND")
 
   const baseline = await prisma.baseline.findUnique({ where: { promptId: id } })
   if (!baseline) {
-    return Response.json({ data: null, error: "no baseline set for this prompt" }, { status: 404 })
+    return errorResponse("NOT_FOUND", "no baseline set for this prompt")
   }
-  return Response.json({ data: await toBaselineDto(baseline), error: null })
+  return jsonOk(await toBaselineDto(baseline))
 }
 
 // A baseline is set by pointing at an existing complete DatasetRun of the
@@ -34,53 +35,47 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const { userId: clerkId } = await auth()
-  if (!clerkId) return Response.json({ data: null, error: "Unauthorized" }, { status: 401 })
+  if (!clerkId) return errorResponse("UNAUTHORIZED")
 
   const { user, prompt } = await loadPrompt(clerkId, id)
-  if (!user) return Response.json({ data: null, error: "User not found" }, { status: 404 })
+  if (!user) return errorResponse("NOT_FOUND", "User not found")
 
   const limited = await checkRateLimit("mutation", user.id)
   if (!limited.ok) return rateLimitResponse(limited)
-  if (!prompt) return Response.json({ data: null, error: "Not found" }, { status: 404 })
+  if (!prompt) return errorResponse("NOT_FOUND")
 
   let body: Record<string, unknown>
   try {
     body = await req.json()
   } catch {
-    return Response.json({ data: null, error: "Invalid JSON body" }, { status: 400 })
+    return errorResponse("INVALID_JSON")
   }
 
   const { promptVersionId, datasetRunId } = body
   if (typeof promptVersionId !== "string" || !promptVersionId) {
-    return Response.json({ data: null, error: "promptVersionId is required" }, { status: 400 })
+    return errorResponse("VALIDATION_ERROR", "promptVersionId is required")
   }
   if (typeof datasetRunId !== "string" || !datasetRunId) {
-    return Response.json({ data: null, error: "datasetRunId is required" }, { status: 400 })
+    return errorResponse("VALIDATION_ERROR", "datasetRunId is required")
   }
 
   const version = await prisma.promptVersion.findUnique({ where: { id: promptVersionId } })
   if (!version || version.promptId !== prompt.id) {
-    return Response.json({ data: null, error: "invalid promptVersionId" }, { status: 400 })
+    return errorResponse("VALIDATION_ERROR", "invalid promptVersionId")
   }
 
   const run = await prisma.datasetRun.findUnique({ where: { id: datasetRunId } })
   if (!run || run.userId !== user.id) {
-    return Response.json({ data: null, error: "invalid datasetRunId" }, { status: 400 })
+    return errorResponse("VALIDATION_ERROR", "invalid datasetRunId")
   }
   if (run.promptVersionId !== version.id) {
-    return Response.json(
-      { data: null, error: "datasetRunId does not belong to the given promptVersionId" },
-      { status: 400 }
-    )
+    return errorResponse("VALIDATION_ERROR", "datasetRunId does not belong to the given promptVersionId")
   }
   if (run.status !== "complete") {
-    return Response.json({ data: null, error: "baseline run must be complete" }, { status: 400 })
+    return errorResponse("VALIDATION_ERROR", "baseline run must be complete")
   }
   if (run.rubricId === null || run.avgScore === null || run.passRate === null) {
-    return Response.json(
-      { data: null, error: "baseline run must be scored against a rubric" },
-      { status: 400 }
-    )
+    return errorResponse("VALIDATION_ERROR", "baseline run must be scored against a rubric")
   }
 
   const data = {
@@ -101,26 +96,26 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     update: data,
   })
 
-  return Response.json({ data: await toBaselineDto(baseline), error: null }, { status: 201 })
+  return jsonOk(await toBaselineDto(baseline), 201)
 }
 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const { userId: clerkId } = await auth()
-  if (!clerkId) return Response.json({ data: null, error: "Unauthorized" }, { status: 401 })
+  if (!clerkId) return errorResponse("UNAUTHORIZED")
 
   const { user, prompt } = await loadPrompt(clerkId, id)
-  if (!user) return Response.json({ data: null, error: "User not found" }, { status: 404 })
+  if (!user) return errorResponse("NOT_FOUND", "User not found")
 
   const limited = await checkRateLimit("mutation", user.id)
   if (!limited.ok) return rateLimitResponse(limited)
-  if (!prompt) return Response.json({ data: null, error: "Not found" }, { status: 404 })
+  if (!prompt) return errorResponse("NOT_FOUND")
 
   const baseline = await prisma.baseline.findUnique({ where: { promptId: id } })
   if (!baseline) {
-    return Response.json({ data: null, error: "no baseline set for this prompt" }, { status: 404 })
+    return errorResponse("NOT_FOUND", "no baseline set for this prompt")
   }
   // Cascade removes the regression history — it is meaningless without its anchor.
   await prisma.baseline.delete({ where: { id: baseline.id } })
-  return Response.json({ data: { id: baseline.id }, error: null })
+  return jsonOk({ id: baseline.id })
 }

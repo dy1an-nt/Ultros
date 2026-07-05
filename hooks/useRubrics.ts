@@ -10,7 +10,7 @@ export type RubricInput = {
 
 async function unwrap<T>(res: Response): Promise<T> {
   const json = await res.json()
-  if (!res.ok || json.error) throw new Error(json.error ?? `Request failed (${res.status})`)
+  if (!res.ok || json.error) throw new Error(json.error?.message ?? `Request failed (${res.status})`)
   return json.data as T
 }
 

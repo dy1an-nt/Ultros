@@ -3,25 +3,26 @@ import { NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { estimateDatasetRun } from "@/lib/datasets/estimate"
 import { loadRunRequest } from "@/lib/datasets/runRequest"
+import { errorResponse, jsonOk } from "@/lib/api/errors"
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const { userId: clerkId } = await auth()
-  if (!clerkId) return Response.json({ data: null, error: "Unauthorized" }, { status: 401 })
+  if (!clerkId) return errorResponse("UNAUTHORIZED")
 
   const user = await prisma.user.findUnique({ where: { clerkId } })
-  if (!user) return Response.json({ data: null, error: "User not found" }, { status: 404 })
+  if (!user) return errorResponse("NOT_FOUND", "User not found")
 
   let body: Record<string, unknown>
   try {
     body = await req.json()
   } catch {
-    return Response.json({ data: null, error: "Invalid JSON body" }, { status: 400 })
+    return errorResponse("INVALID_JSON")
   }
 
   const loaded = await loadRunRequest(user.id, id, body)
   if (loaded.value === null) {
-    return Response.json({ data: null, error: loaded.error }, { status: loaded.status })
+    return errorResponse(loaded.status === 404 ? "NOT_FOUND" : "VALIDATION_ERROR", loaded.error)
   }
   const { dataset, version, params: runParams, variableMapping } = loaded.value
 
@@ -40,5 +41,5 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     rows: rows.map((r) => ({ data: r.data as Record<string, string> })),
   })
 
-  return Response.json({ data: estimate, error: null })
+  return jsonOk(estimate)
 }

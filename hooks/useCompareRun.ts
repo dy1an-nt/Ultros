@@ -30,7 +30,7 @@ export function useCompareRun() {
         let message = "Request failed"
         try {
           const json = await res.json()
-          if (json?.error) message = json.error
+          if (json?.error?.message) message = json.error.message
         } catch {
           // non-JSON error response — keep generic message
         }

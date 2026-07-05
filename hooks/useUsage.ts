@@ -24,7 +24,7 @@ export function useUsage(days = 30) {
     queryFn: async () => {
       const res = await fetch(`/api/usage?days=${days}`)
       const json = await res.json()
-      if (json.error) throw new Error(json.error)
+      if (json.error) throw new Error(json.error.message)
       return json.data
     },
   })

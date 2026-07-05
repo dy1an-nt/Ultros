@@ -4,6 +4,7 @@ import { nanoid } from "nanoid"
 import { prisma } from "@/lib/prisma"
 import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit"
 import { resourceBelongsToUser } from "@/lib/share/resolve"
+import { errorResponse, jsonOk } from "@/lib/api/errors"
 
 const RESOURCE_TYPES = ["promptRun", "datasetRun", "experiment"] as const
 
@@ -14,36 +15,35 @@ function shareUrl(token: string): string {
 
 export async function GET() {
   const { userId: clerkId } = await auth()
-  if (!clerkId) return Response.json({ data: null, error: "Unauthorized" }, { status: 401 })
+  if (!clerkId) return errorResponse("UNAUTHORIZED")
 
   const user = await prisma.user.findUnique({ where: { clerkId } })
-  if (!user) return Response.json({ data: null, error: "User not found" }, { status: 404 })
+  if (!user) return errorResponse("NOT_FOUND", "User not found")
 
   const shares = await prisma.share.findMany({
     where: { userId: user.id, revokedAt: null },
     orderBy: { createdAt: "desc" },
   })
-  return Response.json({
-    data: shares.map((s) => ({
+  return jsonOk(
+    shares.map((s) => ({
       id: s.id,
       token: s.token,
       url: shareUrl(s.token),
       resourceType: s.resourceType,
       resourceId: s.resourceId,
       createdAt: s.createdAt.toISOString(),
-    })),
-    error: null,
-  })
+    }))
+  )
 }
 
 // Idempotent per (user, resource): re-POST returns the existing live link.
 // A revoked share gets a NEW token — the old URL must stay dead forever.
 export async function POST(req: NextRequest) {
   const { userId: clerkId } = await auth()
-  if (!clerkId) return Response.json({ data: null, error: "Unauthorized" }, { status: 401 })
+  if (!clerkId) return errorResponse("UNAUTHORIZED")
 
   const user = await prisma.user.findUnique({ where: { clerkId } })
-  if (!user) return Response.json({ data: null, error: "User not found" }, { status: 404 })
+  if (!user) return errorResponse("NOT_FOUND", "User not found")
 
   const limited = await checkRateLimit("mutation", user.id)
   if (!limited.ok) return rateLimitResponse(limited)
@@ -52,22 +52,19 @@ export async function POST(req: NextRequest) {
   try {
     body = await req.json()
   } catch {
-    return Response.json({ data: null, error: "Invalid JSON body" }, { status: 400 })
+    return errorResponse("INVALID_JSON")
   }
 
   const { resourceType, resourceId } = body
   if (typeof resourceType !== "string" || !(RESOURCE_TYPES as readonly string[]).includes(resourceType)) {
-    return Response.json(
-      { data: null, error: `resourceType must be one of: ${RESOURCE_TYPES.join(", ")}` },
-      { status: 400 }
-    )
+    return errorResponse("VALIDATION_ERROR", `resourceType must be one of: ${RESOURCE_TYPES.join(", ")}`)
   }
   if (typeof resourceId !== "string" || !resourceId) {
-    return Response.json({ data: null, error: "resourceId is required" }, { status: 400 })
+    return errorResponse("VALIDATION_ERROR", "resourceId is required")
   }
 
   if (!(await resourceBelongsToUser(resourceType, resourceId, user.id))) {
-    return Response.json({ data: null, error: "Not found" }, { status: 404 })
+    return errorResponse("NOT_FOUND")
   }
 
   const existing = await prisma.share.findUnique({
@@ -77,10 +74,7 @@ export async function POST(req: NextRequest) {
   })
 
   if (existing && existing.revokedAt === null) {
-    return Response.json({
-      data: { token: existing.token, url: shareUrl(existing.token), createdAt: existing.createdAt.toISOString() },
-      error: null,
-    })
+    return jsonOk({ token: existing.token, url: shareUrl(existing.token), createdAt: existing.createdAt.toISOString() })
   }
 
   const token = nanoid(32)
@@ -93,8 +87,5 @@ export async function POST(req: NextRequest) {
         data: { userId: user.id, token, resourceType, resourceId },
       })
 
-  return Response.json(
-    { data: { token: share.token, url: shareUrl(share.token), createdAt: share.createdAt.toISOString() }, error: null },
-    { status: 201 }
-  )
+  return jsonOk({ token: share.token, url: shareUrl(share.token), createdAt: share.createdAt.toISOString() }, 201)
 }
