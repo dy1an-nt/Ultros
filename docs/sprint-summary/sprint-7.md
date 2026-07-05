@@ -230,7 +230,8 @@ module with no IO imports.**
   Clerk's `auth()` is the only mock; user lookup, isolation checks, and Prisma
   run for real. The harness refuses any non-localhost database host because it
   truncates every table between tests. Suites so far: prompts CRUD, prompt
-  detail, versions, settings.
+  detail, versions, settings, datasets (CSV/JSON upload, pagination,
+  run-blocked delete), rubrics (validation, wholesale criteria replace).
 
 ## What you should be able to explain in an interview
 
