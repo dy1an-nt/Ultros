@@ -57,6 +57,65 @@ export async function createDatasetRun(userId: string, datasetId: string) {
   })
 }
 
+// Prompt + version + one saved run, the unit a promptRun share points at.
+export async function createPromptRun(userId: string) {
+  const prompt = await createPrompt(userId)
+  const version = prompt.versions[0]
+  const run = await prisma.promptRun.create({
+    data: {
+      promptVersionId: version.id,
+      promptId: prompt.id,
+      userId,
+      model: "claude-sonnet-5",
+      provider: "anthropic",
+      temperature: 0.7,
+      maxTokens: 1024,
+      inputTokens: 12,
+      outputTokens: 34,
+      latencyMs: 850,
+      costUsd: 0.00123,
+      responseText: "Hello, Ada!",
+      finishReason: "stop",
+    },
+  })
+  return { prompt, version, run }
+}
+
+export async function createEvaluation(userId: string, promptRunId: string) {
+  return prisma.evaluation.create({
+    data: {
+      promptRunId,
+      userId,
+      status: "complete",
+      totalScore: 0.9,
+      passed: true,
+      criteriaScores: [{ name: "Exact match", score: 0.9, passed: true, detail: "internal-only" }],
+      criteriaSnapshot: { criteria: validCriteria, passThreshold: 0.7, rubricName: "Test rubric" },
+      aiEvalReasoning: "Matched expectations.",
+      evalMethod: "deterministic",
+      completedAt: new Date(),
+    },
+  })
+}
+
+export async function createShare(
+  userId: string,
+  resourceType: string,
+  resourceId: string,
+  overrides: { revokedAt?: Date } = {}
+) {
+  seq += 1
+  return prisma.share.create({
+    data: {
+      userId,
+      token: `test_token_${seq}_${"x".repeat(20)}`,
+      resourceType,
+      resourceId,
+      revokedAt: overrides.revokedAt ?? null,
+    },
+  })
+}
+
 export const validCriteria = [
   { name: "Exact match", type: "exact", weight: 60, config: { expected: "42" } },
   { name: "Mentions source", type: "contains", weight: 40, config: { substring: "source" } },
