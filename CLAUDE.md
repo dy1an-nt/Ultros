@@ -150,6 +150,7 @@ GET  /api/usage/export                    — CSV export
 /usage                     → Usage dashboard
 /settings                  → Account, API keys, budget preferences
 /share/:token              → Read-only public view (no auth)
+/docs                      → Public product docs (no auth)
 ```
 
 ## Folder Structure
@@ -180,11 +181,15 @@ ultros/
 │   └── ui/                     # shadcn/ui base components
 ├── lib/
 │   ├── ai/                     # Vercel AI SDK wrappers — direct providers + OpenRouter
+│   │   └── pricing.ts          # Token cost constants per model (verified date in comment)
+│   ├── api/                    # Error envelope helpers (ApiError, errorResponse, jsonOk)
 │   ├── eval/                   # Scoring engine: AI-judge + exact/regex/json/contains
 │   ├── experiments/            # Experiment runner, aggregation, statistics
+│   ├── jobs/                   # QStash job publishers/consumers
+│   ├── regression/             # Baseline comparison, regression detection
 │   ├── prisma.ts               # Prisma client singleton
-│   ├── redis.ts                # Upstash Redis client
-│   ├── pricing.ts              # Token cost constants per model (verified date in comment)
+│   ├── logger.ts               # Structured JSON logger (secret-scrubbed) — use instead of console
+│   ├── rateLimit.ts            # Upstash Redis rate limiting
 │   └── auth.ts                 # Clerk helpers
 ├── prisma/
 │   ├── schema.prisma
@@ -247,6 +252,14 @@ Done when: live in production.
 - Sentry + Vercel Analytics; rate limiting via Upstash Redis
 - Budget alerts + CSV export; README + demo video
 
+**Sprint 7 — Testing & Reliability**
+Done when: CI gates every push; routes are covered by integration tests; errors follow one envelope.
+- Vitest unit suite over the pure core (`lib/eval`, `lib/experiments`, `lib/regression`) — done
+- GitHub Actions CI: lint + typecheck + test, migration check vs fresh Postgres, build — done
+- QStash idempotency fix (leased claim on `Evaluation.startedAt`) — done
+- Route-level integration suites against local Postgres (`npm run test:integration`) — in progress
+- Remaining: usage + run/eval integration suites; structured error-envelope rollout to all routes in lockstep with frontend `json.error?.message` reads
+
 ## Environment Variables
 
 ```env
@@ -278,7 +291,7 @@ NEXT_PUBLIC_APP_URL=
 
 ## Agent Team System
 
-Six specialized agents per sprint. Each owns a clear vertical slice.
+Six specialized agents per sprint. Each owns a clear vertical slice. The subagent roles are defined in `.claude/agents/` (backend-agent, frontend-agent, security-agent, qa-agent, teaching-agent) — launch them by those names; each definition pins the role's tools and brief.
 
 ### Agent Roles
 
@@ -291,19 +304,20 @@ Six specialized agents per sprint. Each owns a clear vertical slice.
 **Backend Agent** (`backend-agent`)
 - Goal format: "Build [endpoint/service] per the architect contract. Accept [inputs], return [outputs]."
 - Owns: Next.js API routes, Prisma queries, Clerk middleware, AI provider wrappers (`lib/ai/`), QStash jobs
-- Coordination: posts full API contract (files changed, endpoints, request/response examples, error cases) when done — frontend must never inspect backend code to understand the API
-- Mandatory output: files changed, DB changes, API endpoints with request + response examples, error cases
+- Coordination: the architect contract IS the API contract. Backend posts only *deviations* from it (files changed, any request/response shape that differs, new error cases) — frontend must never inspect backend code to understand the API
+- Mandatory output: files changed, DB changes, deviations from the architect contract (or "built to contract, no deviations")
 
 **Frontend Agent** (`frontend-agent`)
 - Goal format: "Build [feature/component] that does [behavior]. User should be able to [interaction]."
 - Owns: Next.js pages, React components, Tailwind + shadcn/ui, Recharts visualizations, Zustand stores, TanStack Query hooks
-- Coordination: waits for backend's API contract before wiring fetch calls
+- Coordination: builds against the architect contract from the start; reconciles with any deviations backend posts
 - Must handle: loading state, error state, empty state for every data-fetching component
 
-**Security Agent** (`qa-agent` with security brief)
+**Security Agent** (`security-agent`)
 - Goal format: "Security review the [feature] backend routes. Check auth, user isolation, input validation, secrets handling, and common attacks."
 - Owns: adversarial review — not "does it work" but "how could it be abused"
-- Runs after backend + frontend finish, before functional QA
+- Runs after backend + frontend finish, before functional QA — and BEFORE the sprint commit lands
+- Mandatory output: `docs/sprint-summary/sprint-N-security.md` — what was checked, findings (severity + file:line), what was waived and why. Read-only: reports findings, never applies fixes itself
 - Checklist:
   - Clerk JWT verification on every protected route
   - Every DB query scoped to `userId` (no cross-user data leakage)
@@ -315,12 +329,14 @@ Six specialized agents per sprint. Each owns a clear vertical slice.
 **QA Agent** (`qa-agent`)
 - Goal format: "Verify [feature] end to end. Test happy path, invalid input, unauthorized user, wrong user's data, empty dataset, large dataset."
 - Owns: functional correctness, integration, schema mismatches, error + empty states
-- Runs after Security Agent clears
+- Runs after Security Agent clears — and BEFORE the sprint commit lands
 - Test cases required: happy path, invalid input, unauthorized user, wrong user's data, empty data, edge-case data (large dataset, 0-score rubric, 100% pass rate)
+- Mandatory output: `docs/sprint-summary/sprint-N-qa.md` — cases exercised, pass/fail per case, defects found (with repro). Read-only: reports defects, never applies fixes itself
 
 **Teaching Agent** (`teaching-agent`)
 - Goal format: "After all agents finish, summarize the sprint. Explain it like I'm a CS student who wants to understand it deeply."
 - Owns: `docs/sprint-summary/sprint-N.md` — one file per sprint
+- Also owns: updating any CLAUDE.md section (conventions, folder structure, sprint list) the sprint changed — the doc must not drift from the code
 - Waits for: QA Agent sign-off before writing
 - Produces, for each sprint:
   - What each file does and why it exists
@@ -336,29 +352,35 @@ Six specialized agents per sprint. Each owns a clear vertical slice.
    → produces: requirements, DB changes, API contract, risks, success criteria
 
 2. Backend Agent + Frontend Agent (parallel)
-   ├── backend-agent  → builds to contract → posts: files, endpoints, request/response, errors
-   └── frontend-agent → builds UI shell   → wires fetch calls after backend contract lands
+   ├── backend-agent  → builds to the architect contract → posts deviations only
+   └── frontend-agent → builds against the architect contract → reconciles deviations
 
-3. Security Agent
+3. Security Agent  (before the sprint commit)
    → adversarial review (auth, user isolation, secrets, attacks)
-   → blocks QA if issues found
+   → writes sprint-N-security.md; blocks QA if issues found
 
-4. QA Agent
+4. QA Agent  (before the sprint commit)
    → functional end-to-end: happy path, invalid input, wrong user, empty/large data
+   → writes sprint-N-qa.md
 
-5. Teaching Agent
+5. Fix + commit
+   → lead applies security/QA findings, then lands the sprint as
+     multiple scoped commits (feat/fix/test per slice), never one monolith
+
+6. Teaching Agent
    → writes docs/sprint-summary/sprint-N.md
+   → updates CLAUDE.md sections the sprint changed
 ```
 
 ## Code Conventions
 
 - All costs stored and computed in USD (float) — `costUsd` — not cents, since AI pricing is sub-cent
 - Token counts are integers; latency is milliseconds (integer)
-- API responses: `{ data: ..., error: null }` or `{ data: null, error: "message" }`
+- API responses: `{ data: ..., error: null }` or `{ data: null, error: { code, message } }` — build with `jsonOk` / `errorResponse` / `toErrorResponse` from `lib/api/errors.ts`, never hand-rolled. Legacy routes still return `error` as a bare string until the envelope migration (sprint 7) completes; new routes must use the structured form.
 - `userId` (from Clerk) always required on protected routes — no cross-user data leakage
 - Tailwind + shadcn/ui only — no custom CSS files
 - Recharts for all data visualizations
-- No `console.log` in committed code
+- No `console.log` in committed code — use `lib/logger.ts` (structured, secret-scrubbed; `logger.exception` in catch blocks)
 - Model pricing constants live in `lib/ai/pricing.ts` with a `// verified as of YYYY-MM-DD` comment — update when models change
 - Direct providers (Anthropic, OpenAI, Gemini) for default/high-volume paths where prompt caching and batch API matter; OpenRouter only for long-tail models not available direct
 - Streaming responses via Vercel AI SDK `streamText` — never buffer a full response before sending
