@@ -256,13 +256,43 @@ export const validCriteria = [
   { name: "Mentions source", type: "contains", weight: 40, config: { substring: "source" } },
 ]
 
-export async function createRubric(userId: string, overrides: { name?: string } = {}) {
+export async function createRubric(
+  userId: string,
+  overrides: { name?: string; criteria?: unknown[]; passThreshold?: number } = {}
+) {
   return prisma.rubric.create({
     data: {
       userId,
       name: overrides.name ?? "Test rubric",
-      criteria: validCriteria,
-      passThreshold: 0.7,
+      criteria: (overrides.criteria ?? validCriteria) as object[],
+      passThreshold: overrides.passThreshold ?? 0.7,
+    },
+  })
+}
+
+// UsageSummary row pinned daysAgo before today's UTC midnight — mirrors how
+// the usage routes window on @db.Date values.
+export async function createUsage(
+  userId: string,
+  daysAgo: number,
+  overrides: Partial<{
+    totalRuns: number
+    totalInputTokens: number
+    totalOutputTokens: number
+    totalCostUsd: number
+  }> = {}
+) {
+  const date = new Date()
+  date.setUTCDate(date.getUTCDate() - daysAgo)
+  date.setUTCHours(0, 0, 0, 0)
+  return prisma.usageSummary.create({
+    data: {
+      userId,
+      date,
+      totalRuns: overrides.totalRuns ?? 1,
+      totalInputTokens: overrides.totalInputTokens ?? 100,
+      totalOutputTokens: overrides.totalOutputTokens ?? 200,
+      totalCostUsd: overrides.totalCostUsd ?? 0.01,
     },
   })
 }
