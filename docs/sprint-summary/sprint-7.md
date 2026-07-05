@@ -271,10 +271,22 @@ sprint.
 
 ## Future testing recommendations
 
+All five closed in follow-up work:
+
 1. ~~Route-level integration suite~~ — done, see above.
 2. ~~Error-envelope rollout~~ — done, see above.
-3. Add a coverage threshold to `vitest.config.ts` now that integration tests
-   exist, so coverage can't silently regress.
-4. Consider a concurrency/property test that fires two `runEvalJob` calls at the
-   same evaluation against a real DB and asserts exactly one judge call.
-5. Add `@upstash/qstash` DLQ handling for jobs that exhaust retries.
+3. ~~Coverage threshold~~ — done: `vitest.config.ts` pins a ratchet floor over
+   `lib/**` and CI's quality job runs `test:coverage`, so unit coverage can
+   only rise. The floor is low by design — lib's IO modules are exercised by
+   the (uninstrumented) integration suite.
+4. ~~Concurrency test~~ — done: `tests/integration/lib/runEvalJob-concurrency.test.ts`
+   fires two simultaneous deliveries at one evaluation against real Postgres
+   and asserts exactly one judge call, plus lease-reclaim and
+   complete-is-terminal behavior.
+5. ~~DLQ handling~~ — done: both QStash publishers set
+   `failureCallback: /api/jobs/failed`; when a message exhausts every delivery
+   retry, the callback marks a still-open eval `failed` (or records the lost
+   dataset row as a failed `PromptRun`) and finalizes any waiting batch —
+   previously either case wedged a `DatasetRun` forever. Execution routes
+   (`/api/run`, `/api/compare`) also gained integration suites with `lib/ai`
+   stubbed at the `runStream` seam.
