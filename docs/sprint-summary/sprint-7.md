@@ -231,8 +231,11 @@ module with no IO imports.**
   run for real. The harness refuses any non-localhost database host because it
   truncates every table between tests. Suites so far: prompts CRUD, prompt
   detail, versions, settings, datasets (CSV/JSON upload, pagination,
-  run-blocked delete), rubrics (validation, wholesale criteria replace), and
-  share links (allowlist payload, capability-hiding 404s, revoke semantics).
+  run-blocked delete), rubrics (validation, wholesale criteria replace),
+  share links (allowlist payloads for all three resource types,
+  capability-hiding 404s, revoke semantics), and experiments (launch
+  validation chain, cell fan-out with next/server after() stubbed, results
+  win matrix, per-row drill-down).
 
 ## What you should be able to explain in an interview
 

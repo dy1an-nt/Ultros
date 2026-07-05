@@ -17,6 +17,15 @@ vi.mock("@sentry/nextjs", () => ({
   captureException: () => undefined,
 }))
 
+// Dev-mode dataset-run fan-out defers row jobs via after(), which throws
+// outside a real Next request scope — and the jobs would call AI providers.
+// Stubbing it keeps launches observable (DatasetRuns persist as "pending")
+// while the work itself never runs. Everything else in next/server is real.
+vi.mock("next/server", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("next/server")>()
+  return { ...actual, after: () => undefined }
+})
+
 beforeEach(async () => {
   await resetDb()
   signOut()
