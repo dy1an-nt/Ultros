@@ -233,9 +233,12 @@ module with no IO imports.**
   detail, versions, settings, datasets (CSV/JSON upload, pagination,
   run-blocked delete), rubrics (validation, wholesale criteria replace),
   share links (allowlist payloads for all three resource types,
-  capability-hiding 404s, revoke semantics), and experiments (launch
-  validation chain, cell fan-out with next/server after() stubbed, results
-  win matrix, per-row drill-down).
+  capability-hiding 404s, revoke semantics), experiments (launch validation
+  chain, cell fan-out with next/server after() stubbed, results win matrix,
+  per-row drill-down), and baseline/regression (blessed-run pinning,
+  replace-in-place, cascade on delete, launch pinning the baseline's model,
+  and the history route's lazy finalize — the lost-hook safety net —
+  producing real verdicts).
 
 ## What you should be able to explain in an interview
 

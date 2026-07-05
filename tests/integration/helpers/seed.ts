@@ -104,11 +104,13 @@ export async function createScoredDatasetRun(userId: string) {
   const prompt = await createPrompt(userId, { title: "Batch prompt" })
   const version = prompt.versions[0]
   const dataset = await createDataset(userId, { name: "QA pairs" })
+  const rubric = await createRubric(userId)
   const datasetRun = await prisma.datasetRun.create({
     data: {
       userId,
       datasetId: dataset.id,
       promptVersionId: version.id,
+      rubricId: rubric.id,
       model: "claude-sonnet-5",
       temperature: 0,
       maxTokens: 256,
@@ -158,7 +160,7 @@ export async function createScoredDatasetRun(userId: string) {
       evalMethod: "deterministic",
     },
   })
-  return { prompt, version, dataset, datasetRun, runs }
+  return { prompt, version, dataset, datasetRun, runs, rubric }
 }
 
 // Complete two-variant experiment. On model-a both cells scored (variant 2
