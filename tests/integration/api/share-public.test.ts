@@ -2,7 +2,14 @@ import { describe, it, expect } from "vitest"
 import { GET, DELETE } from "@/app/api/share/[token]/route"
 import { signInAs } from "../helpers/clerk"
 import { prisma } from "../helpers/db"
-import { createUser, createPromptRun, createEvaluation, createShare } from "../helpers/seed"
+import {
+  createUser,
+  createPromptRun,
+  createEvaluation,
+  createShare,
+  createScoredDatasetRun,
+  createExperiment,
+} from "../helpers/seed"
 import { jsonRequest, routeParams } from "../helpers/request"
 
 function get(token: string) {
@@ -55,6 +62,114 @@ describe("GET /api/share/:token (public)", () => {
       aiEvalReasoning: "Matched expectations.",
       criteria: [{ name: "Exact match", score: 0.9 }],
     })
+  })
+
+  it("exposes exactly the allowlisted datasetRun fields, rows in order, pending evals unscored", async () => {
+    const user = await createUser()
+    const { datasetRun } = await createScoredDatasetRun(user.id)
+    const share = await createShare(user.id, "datasetRun", datasetRun.id)
+
+    const { data } = await (await get(share.token)).json()
+    expect(data.resourceType).toBe("datasetRun")
+    expect(Object.keys(data.resource).sort()).toEqual([
+      "avgLatencyMs",
+      "avgScore",
+      "completedRows",
+      "createdAt",
+      "datasetName",
+      "failedRows",
+      "model",
+      "passRate",
+      "promptTitle",
+      "rows",
+      "scoreVariance",
+      "totalCostUsd",
+      "totalRows",
+      "versionNumber",
+    ])
+    expect(data.resource.promptTitle).toBe("Batch prompt")
+    expect(data.resource.datasetName).toBe("QA pairs")
+
+    expect(data.resource.rows).toHaveLength(2)
+    expect(Object.keys(data.resource.rows[0]).sort()).toEqual([
+      "expectedOutput",
+      "input",
+      "passed",
+      "responseText",
+      "rowIndex",
+      "score",
+    ])
+    // rowIndex order, with the dataset row's input/expected carried through
+    expect(data.resource.rows.map((r: { rowIndex: number }) => r.rowIndex)).toEqual([0, 1])
+    expect(data.resource.rows[0].input).toEqual({ question: "What is 2+2?" })
+    expect(data.resource.rows[0].score).toBe(0.9)
+    // second row's eval is pending — only complete evals surface a score
+    expect(data.resource.rows[1].score).toBeNull()
+    expect(data.resource.rows[1].passed).toBeNull()
+  })
+
+  it("returns 404 for a datasetRun share once the prompt is soft-deleted", async () => {
+    const user = await createUser()
+    const { prompt, datasetRun } = await createScoredDatasetRun(user.id)
+    const share = await createShare(user.id, "datasetRun", datasetRun.id)
+
+    expect((await get(share.token)).status).toBe(200)
+    await prisma.prompt.update({ where: { id: prompt.id }, data: { deletedAt: new Date() } })
+    expect((await get(share.token)).status).toBe(404)
+  })
+
+  it("exposes exactly the allowlisted experiment fields with version numbers, not ids", async () => {
+    const user = await createUser()
+    const { experiment } = await createExperiment(user.id)
+    const share = await createShare(user.id, "experiment", experiment.id)
+
+    const { data } = await (await get(share.token)).json()
+    expect(data.resourceType).toBe("experiment")
+    expect(Object.keys(data.resource).sort()).toEqual([
+      "completedAt",
+      "createdAt",
+      "models",
+      "name",
+      "promptTitle",
+      "results",
+      "winMatrix",
+    ])
+    expect(data.resource.name).toBe("A/B test")
+    expect(data.resource.promptTitle).toBe("Variant prompt")
+
+    expect(data.resource.results).toHaveLength(4)
+    expect(Object.keys(data.resource.results[0]).sort()).toEqual([
+      "avgLatencyMs",
+      "avgScore",
+      "cellStatus",
+      "label",
+      "model",
+      "passRate",
+      "scoreVariance",
+      "scoredRows",
+      "totalCostUsd",
+      "versionNumber",
+    ])
+    const variantB = data.resource.results.find(
+      (r: { versionNumber: number; model: string }) => r.versionNumber === 2 && r.model === "model-a"
+    )
+    expect(variantB.label).toBe("variant-b")
+  })
+
+  it("builds the win matrix only from scored pairs, flagging small samples", async () => {
+    const user = await createUser()
+    const { experiment } = await createExperiment(user.id)
+    const share = await createShare(user.id, "experiment", experiment.id)
+
+    const { data } = await (await get(share.token)).json()
+    // model-b's variant-1 cell has a null avgScore, so only model-a pairs up.
+    expect(data.resource.winMatrix).toHaveLength(1)
+    const entry = data.resource.winMatrix[0]
+    expect(entry.a).toBe(1)
+    expect(entry.b).toBe(2)
+    expect(entry.model).toBe("model-a")
+    expect(entry.meanDiff).toBeCloseTo(0.2)
+    expect(entry.insufficientSample).toBe(true) // variant 2 scored only 5 rows
   })
 
   it("returns byte-identical 404s for unknown and revoked tokens", async () => {

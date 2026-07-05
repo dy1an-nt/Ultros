@@ -98,6 +98,139 @@ export async function createEvaluation(userId: string, promptRunId: string) {
   })
 }
 
+// Complete dataset run with one scored row and one unscored row (its eval is
+// still pending) — the fixture a datasetRun share resolves against.
+export async function createScoredDatasetRun(userId: string) {
+  const prompt = await createPrompt(userId, { title: "Batch prompt" })
+  const version = prompt.versions[0]
+  const dataset = await createDataset(userId, { name: "QA pairs" })
+  const datasetRun = await prisma.datasetRun.create({
+    data: {
+      userId,
+      datasetId: dataset.id,
+      promptVersionId: version.id,
+      model: "claude-sonnet-5",
+      temperature: 0,
+      maxTokens: 256,
+      variableMapping: { question: "question" },
+      status: "complete",
+      totalRows: 2,
+      completedRows: 2,
+      failedRows: 0,
+      avgScore: 0.75,
+      scoreVariance: 0.02,
+      passRate: 0.5,
+      avgLatencyMs: 400,
+      totalCostUsd: 0.01,
+      completedAt: new Date(),
+    },
+  })
+  const runs = []
+  for (const [i, row] of dataset.rows.entries()) {
+    runs.push(
+      await prisma.promptRun.create({
+        data: {
+          promptVersionId: version.id,
+          promptId: prompt.id,
+          userId,
+          datasetRowId: row.id,
+          datasetRunId: datasetRun.id,
+          model: "claude-sonnet-5",
+          provider: "anthropic",
+          temperature: 0,
+          maxTokens: 256,
+          inputTokens: 10,
+          outputTokens: 20,
+          latencyMs: 400,
+          costUsd: 0.005,
+          responseText: `answer ${i}`,
+        },
+      })
+    )
+  }
+  await createEvaluation(userId, runs[0].id)
+  await prisma.evaluation.create({
+    data: {
+      promptRunId: runs[1].id,
+      userId,
+      status: "pending",
+      criteriaSnapshot: { criteria: validCriteria, passThreshold: 0.7, rubricName: "Test rubric" },
+      evalMethod: "deterministic",
+    },
+  })
+  return { prompt, version, dataset, datasetRun, runs }
+}
+
+// Complete two-variant experiment. On model-a both cells scored (variant 2
+// under the 10-row sample floor); on model-b variant 1 never scored, so that
+// pair must not appear in the public win matrix.
+export async function createExperiment(userId: string) {
+  const prompt = await createPrompt(userId, { title: "Variant prompt" })
+  const v1 = prompt.versions[0]
+  const v2 = await prisma.promptVersion.create({
+    data: { promptId: prompt.id, versionNumber: 2, userPrompt: "variant b", label: "variant-b" },
+  })
+  const experiment = await prisma.experiment.create({
+    data: {
+      userId,
+      name: "A/B test",
+      datasetId: "seed_dataset",
+      rubricId: "seed_rubric",
+      variantVersionIds: [v1.id, v2.id],
+      models: ["model-a", "model-b"],
+      status: "complete",
+      completedAt: new Date(),
+      results: {
+        create: [
+          {
+            promptVersionId: v1.id,
+            model: "model-a",
+            datasetRunId: "seed_dsr_1",
+            avgScore: 0.9,
+            scoreVariance: 0.01,
+            passRate: 1,
+            avgLatencyMs: 300,
+            totalCostUsd: 0.02,
+            scoredRows: 12,
+            cellStatus: "complete",
+          },
+          {
+            promptVersionId: v2.id,
+            model: "model-a",
+            datasetRunId: "seed_dsr_2",
+            avgScore: 0.7,
+            scoreVariance: 0.03,
+            passRate: 0.6,
+            avgLatencyMs: 350,
+            totalCostUsd: 0.02,
+            scoredRows: 5,
+            cellStatus: "complete",
+          },
+          {
+            promptVersionId: v1.id,
+            model: "model-b",
+            datasetRunId: "seed_dsr_3",
+            avgScore: null,
+            totalCostUsd: 0,
+            scoredRows: 0,
+            cellStatus: "failed",
+          },
+          {
+            promptVersionId: v2.id,
+            model: "model-b",
+            datasetRunId: "seed_dsr_4",
+            avgScore: 0.8,
+            totalCostUsd: 0.02,
+            scoredRows: 12,
+            cellStatus: "complete",
+          },
+        ],
+      },
+    },
+  })
+  return { prompt, v1, v2, experiment }
+}
+
 export async function createShare(
   userId: string,
   resourceType: string,
