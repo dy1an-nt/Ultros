@@ -10,14 +10,14 @@ describe("GET /api/prompts", () => {
     const res = await GET()
     expect(res.status).toBe(401)
     const json = await res.json()
-    expect(json).toEqual({ data: null, error: "Unauthorized" })
+    expect(json).toEqual({ data: null, error: { code: "UNAUTHORIZED", message: "Authentication required" } })
   })
 
   it("returns 404 when the Clerk user has no DB row (webhook not yet synced)", async () => {
     signInAs("clerk_never_synced")
     const res = await GET()
     expect(res.status).toBe(404)
-    expect((await res.json()).error).toBe("User not found")
+    expect((await res.json()).error.message).toBe("User not found")
   })
 
   it("returns an empty list for a user with no prompts", async () => {
@@ -56,7 +56,7 @@ describe("POST /api/prompts", () => {
     signInAs(user.clerkId)
     const res = await POST(jsonRequest("POST", "/api/prompts", { userPrompt: "y" }))
     expect(res.status).toBe(400)
-    expect((await res.json()).error).toBe("title is required")
+    expect((await res.json()).error.message).toBe("title is required")
   })
 
   it("rejects a whitespace-only userPrompt with 400", async () => {
@@ -64,7 +64,7 @@ describe("POST /api/prompts", () => {
     signInAs(user.clerkId)
     const res = await POST(jsonRequest("POST", "/api/prompts", { title: "x", userPrompt: "   " }))
     expect(res.status).toBe(400)
-    expect((await res.json()).error).toBe("userPrompt is required")
+    expect((await res.json()).error.message).toBe("userPrompt is required")
   })
 
   it("rejects a malformed JSON body with 400", async () => {
@@ -72,7 +72,7 @@ describe("POST /api/prompts", () => {
     signInAs(user.clerkId)
     const res = await POST(rawRequest("POST", "/api/prompts", "{not json"))
     expect(res.status).toBe(400)
-    expect((await res.json()).error).toBe("Invalid JSON body")
+    expect((await res.json()).error.message).toBe("Request body is not valid JSON")
   })
 
   it("creates the prompt with an initial version 1", async () => {

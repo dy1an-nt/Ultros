@@ -1,6 +1,7 @@
 import { Webhook } from "svix"
 import { headers } from "next/headers"
 import { prisma } from "@/lib/prisma"
+import { errorResponse, jsonOk } from "@/lib/api/errors"
 
 type ClerkUserEvent = {
   type: string
@@ -10,7 +11,7 @@ type ClerkUserEvent = {
 export async function POST(req: Request) {
   const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET
   if (!WEBHOOK_SECRET) {
-    return Response.json({ data: null, error: "Webhook secret not configured" }, { status: 500 })
+    return errorResponse("INTERNAL", "Webhook secret not configured")
   }
 
   const headerPayload = await headers()
@@ -19,7 +20,7 @@ export async function POST(req: Request) {
   const svix_signature = headerPayload.get("svix-signature")
 
   if (!svix_id || !svix_timestamp || !svix_signature) {
-    return Response.json({ data: null, error: "Missing svix headers" }, { status: 400 })
+    return errorResponse("VALIDATION_ERROR", "Missing svix headers")
   }
 
   const body = await req.text()
@@ -33,7 +34,7 @@ export async function POST(req: Request) {
       "svix-signature": svix_signature,
     }) as ClerkUserEvent
   } catch {
-    return Response.json({ data: null, error: "Invalid signature" }, { status: 400 })
+    return errorResponse("VALIDATION_ERROR", "Invalid signature")
   }
 
   if (evt.type === "user.created") {
@@ -51,5 +52,5 @@ export async function POST(req: Request) {
     })
   }
 
-  return Response.json({ data: "ok", error: null })
+  return jsonOk("ok")
 }

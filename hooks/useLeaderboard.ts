@@ -9,7 +9,7 @@ export function useLeaderboard(promptId: string, rubricId?: string) {
       const qs = rubricId ? `?rubricId=${encodeURIComponent(rubricId)}` : ""
       const res = await fetch(`/api/prompts/${promptId}/leaderboard${qs}`)
       const json = await res.json()
-      if (!res.ok || json.error) throw new Error(json.error ?? `Request failed (${res.status})`)
+      if (!res.ok || json.error) throw new Error(json.error?.message ?? `Request failed (${res.status})`)
       return json.data as LeaderboardRow[]
     },
   })

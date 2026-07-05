@@ -1,6 +1,7 @@
 import { Ratelimit } from "@upstash/ratelimit"
 import { Redis } from "@upstash/redis"
 import * as Sentry from "@sentry/nextjs"
+import { errorBody } from "@/lib/api/errors"
 
 // One limiter, five route classes (architect pin #4). Applied as an explicit
 // helper call at the top of each limited route — no middleware magic that
@@ -59,7 +60,7 @@ export async function checkRateLimit(cls: LimitClass, key: string): Promise<Rate
 
 export function rateLimitResponse(result: { retryAfterSec: number }): Response {
   return Response.json(
-    { data: null, error: "Rate limit exceeded — slow down and retry shortly" },
+    errorBody("RATE_LIMITED", "Rate limit exceeded — slow down and retry shortly"),
     { status: 429, headers: { "Retry-After": String(result.retryAfterSec) } }
   )
 }

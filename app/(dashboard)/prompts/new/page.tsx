@@ -34,7 +34,7 @@ export default function NewPromptPage() {
       })
       const json = await res.json()
       if (json.error) {
-        setError(json.error)
+        setError(json.error.message)
         return
       }
       router.push(`/prompts/${json.data.id}`)

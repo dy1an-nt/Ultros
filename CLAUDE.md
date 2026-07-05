@@ -257,8 +257,8 @@ Done when: CI gates every push; routes are covered by integration tests; errors 
 - Vitest unit suite over the pure core (`lib/eval`, `lib/experiments`, `lib/regression`) — done
 - GitHub Actions CI: lint + typecheck + test, migration check vs fresh Postgres, build — done
 - QStash idempotency fix (leased claim on `Evaluation.startedAt`) — done
-- Route-level integration suites against local Postgres (`npm run test:integration`) — in progress
-- Remaining: usage + run/eval integration suites; structured error-envelope rollout to all routes in lockstep with frontend `json.error?.message` reads
+- Route-level integration suites against local Postgres (`npm run test:integration`) — done, all user-facing routes covered
+- Structured error envelope `{ code, message }` across every route, in lockstep with frontend `json.error?.message` reads — done
 
 ## Environment Variables
 
@@ -376,7 +376,7 @@ Six specialized agents per sprint. Each owns a clear vertical slice. The subagen
 
 - All costs stored and computed in USD (float) — `costUsd` — not cents, since AI pricing is sub-cent
 - Token counts are integers; latency is milliseconds (integer)
-- API responses: `{ data: ..., error: null }` or `{ data: null, error: { code, message } }` — build with `jsonOk` / `errorResponse` / `toErrorResponse` from `lib/api/errors.ts`, never hand-rolled. Legacy routes still return `error` as a bare string until the envelope migration (sprint 7) completes; new routes must use the structured form.
+- API responses: `{ data: ..., error: null }` or `{ data: null, error: { code, message } }` — build with `jsonOk` / `errorResponse` / `toErrorResponse` from `lib/api/errors.ts`, never hand-rolled. Frontend reads `json.error?.message` for display and can branch on `json.error?.code`.
 - `userId` (from Clerk) always required on protected routes — no cross-user data leakage
 - Tailwind + shadcn/ui only — no custom CSS files
 - Recharts for all data visualizations

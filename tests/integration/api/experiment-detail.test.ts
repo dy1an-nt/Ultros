@@ -101,7 +101,7 @@ describe("GET /api/experiments/:id/rows", () => {
 
     const res = await rows(experiment.id, "")
     expect(res.status).toBe(400)
-    expect((await res.json()).error).toBe("cell query param is required")
+    expect((await res.json()).error.message).toBe("cell query param is required")
   })
 
   it("rejects a cell that belongs to a different (or no) experiment", async () => {
@@ -112,7 +112,7 @@ describe("GET /api/experiments/:id/rows", () => {
 
     const res = await rows(experiment.id, `?cell=${datasetRun.id}`)
     expect(res.status).toBe(400)
-    expect((await res.json()).error).toBe("invalid cell")
+    expect((await res.json()).error.message).toBe("invalid cell")
   })
 
   it("rejects bad pagination with 400", async () => {

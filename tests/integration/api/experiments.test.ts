@@ -72,7 +72,7 @@ describe("POST /api/experiments", () => {
 
     const res = await post({ ...validBody(f), confirm: undefined })
     expect(res.status).toBe(400)
-    expect((await res.json()).error).toContain("confirm")
+    expect((await res.json()).error.message).toContain("confirm")
     expect(await prisma.experiment.count()).toBe(0)
   })
 
@@ -92,10 +92,10 @@ describe("POST /api/experiments", () => {
     signInAs(intruder.clerkId)
     const res = await post({ ...validBody(f), datasetId: theirs.id })
     expect(res.status).toBe(400)
-    expect((await res.json()).error).toBe("invalid datasetId")
+    expect((await res.json()).error.message).toBe("invalid datasetId")
 
     const missing = await post({ ...validBody(f), datasetId: "ghost" })
-    expect((await missing.json()).error).toBe("invalid datasetId")
+    expect((await missing.json()).error.message).toBe("invalid datasetId")
   })
 
   it("rejects another user's rubric with 400", async () => {
@@ -107,7 +107,7 @@ describe("POST /api/experiments", () => {
     signInAs(intruder.clerkId)
     const res = await post({ ...validBody(f), rubricId: theirs.id })
     expect(res.status).toBe(400)
-    expect((await res.json()).error).toBe("invalid rubricId")
+    expect((await res.json()).error.message).toBe("invalid rubricId")
   })
 
   it("rejects duplicate variant version ids with 400", async () => {
@@ -116,7 +116,7 @@ describe("POST /api/experiments", () => {
     signInAs(user.clerkId)
     const res = await post({ ...validBody(f), variantVersionIds: [f.version.id, f.version.id] })
     expect(res.status).toBe(400)
-    expect((await res.json()).error).toBe("variantVersionIds contains duplicates")
+    expect((await res.json()).error.message).toBe("variantVersionIds contains duplicates")
   })
 
   it("rejects another user's version as 'invalid variantVersionIds'", async () => {
@@ -128,7 +128,7 @@ describe("POST /api/experiments", () => {
     signInAs(intruder.clerkId)
     const res = await post({ ...validBody(f), variantVersionIds: [theirPrompt.versions[0].id] })
     expect(res.status).toBe(400)
-    expect((await res.json()).error).toBe("invalid variantVersionIds")
+    expect((await res.json()).error.message).toBe("invalid variantVersionIds")
   })
 
   it("rejects variants drawn from two different prompts", async () => {
@@ -142,7 +142,7 @@ describe("POST /api/experiments", () => {
       variantVersionIds: [f.version.id, otherPrompt.versions[0].id],
     })
     expect(res.status).toBe(400)
-    expect((await res.json()).error).toBe("all variant versions must belong to the same prompt")
+    expect((await res.json()).error.message).toBe("all variant versions must belong to the same prompt")
   })
 
   it("rejects an unknown model with 400", async () => {
@@ -151,7 +151,7 @@ describe("POST /api/experiments", () => {
     signInAs(user.clerkId)
     const res = await post({ ...validBody(f), models: ["gpt-99-ultra"] })
     expect(res.status).toBe(400)
-    expect((await res.json()).error).toBe("Unknown model: gpt-99-ultra")
+    expect((await res.json()).error.message).toBe("Unknown model: gpt-99-ultra")
   })
 
   it("caps maxTokens at the dataset-run limit, below the single-run limit", async () => {
@@ -161,7 +161,7 @@ describe("POST /api/experiments", () => {
     // 8192 passes general run validation; the batch cap is 4096
     const res = await post({ ...validBody(f), maxTokens: 8192 })
     expect(res.status).toBe(400)
-    expect((await res.json()).error).toBe("maxTokens must be at most 4096 for dataset runs")
+    expect((await res.json()).error.message).toBe("maxTokens must be at most 4096 for dataset runs")
   })
 
   it("rejects a variant whose template variable has no dataset column", async () => {
@@ -173,7 +173,7 @@ describe("POST /api/experiments", () => {
     signInAs(user.clerkId)
     const res = await post({ ...validBody(f), variantVersionIds: [mismatched.versions[0].id] })
     expect(res.status).toBe(400)
-    expect((await res.json()).error).toBe("version 1: unmapped template variables: name")
+    expect((await res.json()).error.message).toBe("version 1: unmapped template variables: name")
   })
 
   it("launches with 202: one pending DatasetRun cell per variant × model", async () => {

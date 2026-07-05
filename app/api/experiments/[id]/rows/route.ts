@@ -2,6 +2,7 @@ import { auth } from "@clerk/nextjs/server"
 import { NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { fetchDatasetRunRows, parsePagination } from "@/lib/datasets/rowsQuery"
+import { errorResponse, jsonOk } from "@/lib/api/errors"
 
 // Per-row drill-down for one experiment cell: ?cell=<datasetRunId>&offset&limit.
 // Proxies the cell's DatasetRun rows after verifying the cell belongs to this
@@ -9,31 +10,31 @@ import { fetchDatasetRunRows, parsePagination } from "@/lib/datasets/rowsQuery"
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const { userId: clerkId } = await auth()
-  if (!clerkId) return Response.json({ data: null, error: "Unauthorized" }, { status: 401 })
+  if (!clerkId) return errorResponse("UNAUTHORIZED")
 
   const user = await prisma.user.findUnique({ where: { clerkId } })
-  if (!user) return Response.json({ data: null, error: "User not found" }, { status: 404 })
+  if (!user) return errorResponse("NOT_FOUND", "User not found")
 
   const experiment = await prisma.experiment.findUnique({ where: { id } })
-  if (!experiment) return Response.json({ data: null, error: "Not found" }, { status: 404 })
+  if (!experiment) return errorResponse("NOT_FOUND")
   if (experiment.userId !== user.id) {
-    return Response.json({ data: null, error: "Forbidden" }, { status: 403 })
+    return errorResponse("FORBIDDEN")
   }
 
   const cellId = req.nextUrl.searchParams.get("cell")
   if (!cellId) {
-    return Response.json({ data: null, error: "cell query param is required" }, { status: 400 })
+    return errorResponse("VALIDATION_ERROR", "cell query param is required")
   }
   const cell = await prisma.datasetRun.findUnique({ where: { id: cellId } })
   if (!cell || cell.experimentId !== id) {
-    return Response.json({ data: null, error: "invalid cell" }, { status: 400 })
+    return errorResponse("VALIDATION_ERROR", "invalid cell")
   }
 
   const pagination = parsePagination(req.nextUrl.searchParams)
   if ("error" in pagination) {
-    return Response.json({ data: null, error: pagination.error }, { status: 400 })
+    return errorResponse("VALIDATION_ERROR", pagination.error)
   }
 
   const data = await fetchDatasetRunRows(cellId, pagination.offset, pagination.limit)
-  return Response.json({ data, error: null })
+  return jsonOk(data)
 }

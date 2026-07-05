@@ -45,7 +45,7 @@ describe("POST /api/prompts/:id/regression", () => {
 
     const res = await launch(prompt.id, { newVersionId: version.id })
     expect(res.status).toBe(404)
-    expect((await res.json()).error).toContain("set a baseline first")
+    expect((await res.json()).error.message).toContain("set a baseline first")
   })
 
   it("rejects a version from a different prompt", async () => {
@@ -55,7 +55,7 @@ describe("POST /api/prompts/:id/regression", () => {
 
     const res = await launch(f.prompt.id, { newVersionId: other.version.id })
     expect(res.status).toBe(400)
-    expect((await res.json()).error).toBe("invalid newVersionId")
+    expect((await res.json()).error.message).toBe("invalid newVersionId")
   })
 
   it.each([
@@ -67,7 +67,7 @@ describe("POST /api/prompts/:id/regression", () => {
     const f = await baselineFixtures(user.id)
     const res = await launch(f.prompt.id, { newVersionId: f.v2.id, threshold })
     expect(res.status).toBe(400)
-    expect((await res.json()).error).toContain("threshold")
+    expect((await res.json()).error.message).toContain("threshold")
   })
 
   it("refuses to launch when the baseline's rubric was deleted", async () => {
@@ -77,7 +77,7 @@ describe("POST /api/prompts/:id/regression", () => {
 
     const res = await launch(f.prompt.id, { newVersionId: f.v2.id })
     expect(res.status).toBe(400)
-    expect((await res.json()).error).toContain("rubric no longer exists")
+    expect((await res.json()).error.message).toContain("rubric no longer exists")
   })
 
   it("rejects a new version whose template vars no longer map onto the dataset", async () => {
@@ -89,7 +89,7 @@ describe("POST /api/prompts/:id/regression", () => {
 
     const res = await launch(f.prompt.id, { newVersionId: v3.id })
     expect(res.status).toBe(400)
-    expect((await res.json()).error).toBe("unmapped template variables: other_var")
+    expect((await res.json()).error.message).toBe("unmapped template variables: other_var")
   })
 
   it("launches with 202: pending run pinned to the baseline's model/params, pending verdict row", async () => {

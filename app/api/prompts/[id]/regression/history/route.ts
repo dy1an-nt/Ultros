@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { finalizeRegressionIfPending } from "@/lib/regression/finalize"
 import { toBaselineDto } from "@/lib/regression/baseline"
 import type { RegressionHistoryDto, RegressionRunDto } from "@/types/experiment"
+import { errorResponse, jsonOk } from "@/lib/api/errors"
 
 // Score-over-time feed: the current baseline plus its RegressionRuns,
 // newest-first. Pending rows whose DatasetRun already went terminal are
@@ -12,20 +13,20 @@ import type { RegressionHistoryDto, RegressionRunDto } from "@/types/experiment"
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const { userId: clerkId } = await auth()
-  if (!clerkId) return Response.json({ data: null, error: "Unauthorized" }, { status: 401 })
+  if (!clerkId) return errorResponse("UNAUTHORIZED")
 
   const user = await prisma.user.findUnique({ where: { clerkId } })
-  if (!user) return Response.json({ data: null, error: "User not found" }, { status: 404 })
+  if (!user) return errorResponse("NOT_FOUND", "User not found")
 
   const prompt = await prisma.prompt.findUnique({ where: { id } })
   if (!prompt || prompt.deletedAt !== null || prompt.userId !== user.id) {
-    return Response.json({ data: null, error: "Not found" }, { status: 404 })
+    return errorResponse("NOT_FOUND")
   }
 
   const baseline = await prisma.baseline.findUnique({ where: { promptId: id } })
   if (!baseline) {
     const empty: RegressionHistoryDto = { baseline: null, runs: [] }
-    return Response.json({ data: empty, error: null })
+    return jsonOk(empty)
   }
 
   let runs = await prisma.regressionRun.findMany({
@@ -67,5 +68,5 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
       })
     ),
   }
-  return Response.json({ data, error: null })
+  return jsonOk(data)
 }

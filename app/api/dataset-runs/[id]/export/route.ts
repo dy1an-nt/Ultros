@@ -2,6 +2,7 @@ import { auth } from "@clerk/nextjs/server"
 import { NextRequest } from "next/server"
 import Papa from "papaparse"
 import { prisma } from "@/lib/prisma"
+import { errorResponse } from "@/lib/api/errors"
 
 // Cells starting with = + - @ execute as formulas when the CSV is opened in a
 // spreadsheet — prefix them with ' so they render as text.
@@ -12,17 +13,17 @@ function guardCell(value: string): string {
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const { userId: clerkId } = await auth()
-  if (!clerkId) return Response.json({ data: null, error: "Unauthorized" }, { status: 401 })
+  if (!clerkId) return errorResponse("UNAUTHORIZED")
 
   const user = await prisma.user.findUnique({ where: { clerkId } })
-  if (!user) return Response.json({ data: null, error: "User not found" }, { status: 404 })
+  if (!user) return errorResponse("NOT_FOUND", "User not found")
 
   const run = await prisma.datasetRun.findUnique({
     where: { id },
     include: { dataset: { select: { columns: true } } },
   })
-  if (!run) return Response.json({ data: null, error: "Not found" }, { status: 404 })
-  if (run.userId !== user.id) return Response.json({ data: null, error: "Forbidden" }, { status: 403 })
+  if (!run) return errorResponse("NOT_FOUND")
+  if (run.userId !== user.id) return errorResponse("FORBIDDEN")
 
   const promptRuns = await prisma.promptRun.findMany({
     where: { datasetRunId: id },

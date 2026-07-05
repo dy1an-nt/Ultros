@@ -38,7 +38,7 @@ describe("GET /api/prompts/:id", () => {
     signInAs(intruder.clerkId)
     const res = await get(prompt.id)
     expect(res.status).toBe(403)
-    expect(await res.json()).toEqual({ data: null, error: "Forbidden" })
+    expect(await res.json()).toEqual({ data: null, error: { code: "FORBIDDEN", message: "You do not have access to this resource" } })
   })
 
   it("returns the prompt with versions newest-first", async () => {

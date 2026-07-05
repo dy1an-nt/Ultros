@@ -68,7 +68,7 @@ describe("PATCH /api/rubrics/:id", () => {
 
     const res = await patch(rubric.id, { criteria: [] })
     expect(res.status).toBe(400)
-    expect((await res.json()).error).toContain("criteria")
+    expect((await res.json()).error.message).toContain("criteria")
 
     const stored = await prisma.rubric.findUnique({ where: { id: rubric.id } })
     expect(stored?.criteria).toEqual(validCriteria)

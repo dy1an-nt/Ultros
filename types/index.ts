@@ -1,4 +1,8 @@
-export type ApiResponse<T> = { data: T; error: null } | { data: null; error: string }
+import type { ErrorCode } from "@/lib/api/errors"
+
+export type ApiResponse<T> =
+  | { data: T; error: null }
+  | { data: null; error: { code: ErrorCode; message: string } }
 
 export type PromptSummary = {
   id: string

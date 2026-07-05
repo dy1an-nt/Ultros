@@ -218,27 +218,42 @@ module with no IO imports.**
 
 ## What's deliberately deferred
 
-- **Broad error-envelope rollout.** Every frontend hook currently reads
-  `json.error` as a *string* (`throw new Error(json.error ?? ...)`). Nesting it
-  to `{ code, message }` across all ~30 routes without updating those reads
-  would render `[object Object]` — a regression. The infrastructure and the
-  pattern shipped; the coordinated route + frontend migration is the next
-  increment.
+Nothing remains deferred — both items below shipped as follow-ups within the
+sprint.
+
+- ~~**Broad error-envelope rollout.**~~ Shipped. All ~35 route files now build
+  responses exclusively through `jsonOk` / `errorResponse` (253 hand-rolled
+  error sites and ~60 success sites replaced, largely via a one-shot codemod
+  keyed on `status → code`: 401→`UNAUTHORIZED`, 403→`FORBIDDEN`,
+  404→`NOT_FOUND`, 400→`VALIDATION_ERROR`/`INVALID_JSON`, 409→`CONFLICT`,
+  429→`RATE_LIMITED`, 500→`INTERNAL`). Route-specific validation prose is
+  preserved as the `message`; generic prose collapsed to the code's default.
+  The frontend moved in lockstep: every hook/component that read `json.error`
+  as a string now reads `json.error?.message` (and can branch on
+  `json.error?.code`), and `ApiResponse<T>` in `types/index.ts` types the
+  structured form. The `/api/run` streaming path was never envelope-coupled
+  and is unchanged.
 - ~~**Route-level integration suites.**~~ Shipped as a follow-up:
   `tests/integration/` imports route handlers directly and runs them against a
   disposable localhost Postgres (`npm run test:integration`, own CI job).
   Clerk's `auth()` is the only mock; user lookup, isolation checks, and Prisma
   run for real. The harness refuses any non-localhost database host because it
-  truncates every table between tests. Suites so far: prompts CRUD, prompt
+  truncates every table between tests. Suites: prompts CRUD, prompt
   detail, versions, settings, datasets (CSV/JSON upload, pagination,
   run-blocked delete), rubrics (validation, wholesale criteria replace),
   share links (allowlist payloads for all three resource types,
   capability-hiding 404s, revoke semantics), experiments (launch validation
   chain, cell fan-out with next/server after() stubbed, results win matrix,
-  per-row drill-down), and baseline/regression (blessed-run pinning,
+  per-row drill-down), baseline/regression (blessed-run pinning,
   replace-in-place, cascade on delete, launch pinning the baseline's model,
   and the history route's lazy finalize — the lost-hook safety net —
-  producing real verdicts).
+  producing real verdicts), usage (windowed aggregation, per-user isolation,
+  CSV export bounds), and run/eval (manual eval trigger: deterministic
+  synchronous path with weighted totals and rubric snapshot, queued
+  mixed/judge path observable as `pending` because `after()` is stubbed,
+  capability-hiding 400 for foreign rubrics; eval detail, eval history with
+  flattened run summary, and the version leaderboard's complete-only
+  aggregation).
 
 ## What you should be able to explain in an interview
 
@@ -256,13 +271,10 @@ module with no IO imports.**
 
 ## Future testing recommendations
 
-1. Write the route-level integration suite against the CI Postgres service
-   (auth, eval CRUD, experiment execution, regression compare), mocking Clerk
-   `auth()` and real provider calls.
-2. Roll the `{ data, error: { code, message } }` envelope across all routes in
-   lockstep with a frontend change to `json.error?.message`.
-3. Add a coverage threshold to `vitest.config.ts` once integration tests exist,
-   so coverage can't silently regress.
+1. ~~Route-level integration suite~~ — done, see above.
+2. ~~Error-envelope rollout~~ — done, see above.
+3. Add a coverage threshold to `vitest.config.ts` now that integration tests
+   exist, so coverage can't silently regress.
 4. Consider a concurrency/property test that fires two `runEvalJob` calls at the
    same evaluation against a real DB and asserts exactly one judge call.
 5. Add `@upstash/qstash` DLQ handling for jobs that exhaust retries.

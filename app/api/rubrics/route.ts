@@ -4,6 +4,7 @@ import type { Prisma } from "@/app/generated/prisma/client"
 import { prisma } from "@/lib/prisma"
 import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit"
 import { validateCriteria, validatePassThreshold, validateRubricName } from "@/lib/eval/criteria"
+import { errorResponse, jsonOk } from "@/lib/api/errors"
 
 async function getDbUser(clerkId: string) {
   return prisma.user.findUnique({ where: { clerkId } })
@@ -11,25 +12,25 @@ async function getDbUser(clerkId: string) {
 
 export async function GET() {
   const { userId: clerkId } = await auth()
-  if (!clerkId) return Response.json({ data: null, error: "Unauthorized" }, { status: 401 })
+  if (!clerkId) return errorResponse("UNAUTHORIZED")
 
   const user = await getDbUser(clerkId)
-  if (!user) return Response.json({ data: null, error: "User not found" }, { status: 404 })
+  if (!user) return errorResponse("NOT_FOUND", "User not found")
 
   const rubrics = await prisma.rubric.findMany({
     where: { userId: user.id },
     orderBy: { createdAt: "desc" },
   })
 
-  return Response.json({ data: rubrics, error: null })
+  return jsonOk(rubrics)
 }
 
 export async function POST(req: NextRequest) {
   const { userId: clerkId } = await auth()
-  if (!clerkId) return Response.json({ data: null, error: "Unauthorized" }, { status: 401 })
+  if (!clerkId) return errorResponse("UNAUTHORIZED")
 
   const user = await getDbUser(clerkId)
-  if (!user) return Response.json({ data: null, error: "User not found" }, { status: 404 })
+  if (!user) return errorResponse("NOT_FOUND", "User not found")
 
   const limited = await checkRateLimit("mutation", user.id)
   if (!limited.ok) return rateLimitResponse(limited)
@@ -38,21 +39,21 @@ export async function POST(req: NextRequest) {
   try {
     body = await req.json()
   } catch {
-    return Response.json({ data: null, error: "Invalid JSON body" }, { status: 400 })
+    return errorResponse("INVALID_JSON")
   }
 
   const { value: name, error: nameError } = validateRubricName(body.name)
-  if (name === null) return Response.json({ data: null, error: nameError }, { status: 400 })
+  if (name === null) return errorResponse("VALIDATION_ERROR", nameError)
 
   if (body.description !== undefined && body.description !== null && typeof body.description !== "string") {
-    return Response.json({ data: null, error: "description: must be a string" }, { status: 400 })
+    return errorResponse("VALIDATION_ERROR", "description: must be a string")
   }
 
   const { value: passThreshold, error: thresholdError } = validatePassThreshold(body.passThreshold)
-  if (passThreshold === null) return Response.json({ data: null, error: thresholdError }, { status: 400 })
+  if (passThreshold === null) return errorResponse("VALIDATION_ERROR", thresholdError)
 
   const { criteria, error: criteriaError } = validateCriteria(body.criteria)
-  if (criteria === null) return Response.json({ data: null, error: criteriaError }, { status: 400 })
+  if (criteria === null) return errorResponse("VALIDATION_ERROR", criteriaError)
 
   const rubric = await prisma.rubric.create({
     data: {
@@ -66,5 +67,5 @@ export async function POST(req: NextRequest) {
     },
   })
 
-  return Response.json({ data: rubric, error: null }, { status: 201 })
+  return jsonOk(rubric, 201)
 }

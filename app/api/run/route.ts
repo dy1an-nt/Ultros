@@ -6,13 +6,14 @@ import { runStream, interpolateVariables } from "@/lib/ai"
 import { getModelInfo } from "@/lib/ai/models"
 import { validateRunParams, validateVariables } from "@/lib/ai/validate"
 import { calculateCost } from "@/lib/ai/pricing"
+import { errorResponse } from "@/lib/api/errors"
 
 export async function POST(req: NextRequest) {
   const { userId: clerkId } = await auth()
-  if (!clerkId) return Response.json({ data: null, error: "Unauthorized" }, { status: 401 })
+  if (!clerkId) return errorResponse("UNAUTHORIZED")
 
   const user = await prisma.user.findUnique({ where: { clerkId } })
-  if (!user) return Response.json({ data: null, error: "User not found" }, { status: 404 })
+  if (!user) return errorResponse("NOT_FOUND", "User not found")
 
   const limited = await checkRateLimit("run", user.id)
   if (!limited.ok) return rateLimitResponse(limited)
@@ -21,28 +22,22 @@ export async function POST(req: NextRequest) {
   try {
     body = await req.json()
   } catch {
-    return Response.json({ data: null, error: "Invalid JSON body" }, { status: 400 })
+    return errorResponse("INVALID_JSON")
   }
   const { promptVersionId, model, temperature, maxTokens, topP, variables } = body
 
   if (!promptVersionId || typeof promptVersionId !== "string") {
-    return Response.json(
-      { data: null, error: "promptVersionId and model are required" },
-      { status: 400 }
-    )
+    return errorResponse("VALIDATION_ERROR", "promptVersionId and model are required")
   }
 
   const { params, error: paramError } = validateRunParams({ model, temperature, maxTokens, topP })
   if (!params) {
-    return Response.json({ data: null, error: paramError }, { status: 400 })
+    return errorResponse("VALIDATION_ERROR", paramError)
   }
 
   const vars = validateVariables(variables)
   if (vars === null) {
-    return Response.json(
-      { data: null, error: "variables must be an object of string values" },
-      { status: 400 }
-    )
+    return errorResponse("VALIDATION_ERROR", "variables must be an object of string values")
   }
 
   const version = await prisma.promptVersion.findUnique({
@@ -50,9 +45,9 @@ export async function POST(req: NextRequest) {
     include: { prompt: true },
   })
 
-  if (!version) return Response.json({ data: null, error: "Not found" }, { status: 404 })
+  if (!version) return errorResponse("NOT_FOUND")
   if (version.prompt.userId !== user.id) {
-    return Response.json({ data: null, error: "Forbidden" }, { status: 403 })
+    return errorResponse("FORBIDDEN")
   }
 
   const resolvedSystem = interpolateVariables(version.systemPrompt, vars)

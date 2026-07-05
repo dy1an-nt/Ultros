@@ -2,6 +2,7 @@ import { auth } from "@clerk/nextjs/server"
 import { NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit"
+import { errorResponse, jsonOk } from "@/lib/api/errors"
 
 async function getDbUser(clerkId: string) {
   return prisma.user.findUnique({ where: { clerkId } })
@@ -23,51 +24,51 @@ async function getPromptForUser(id: string, userId: string) {
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const { userId: clerkId } = await auth()
-  if (!clerkId) return Response.json({ data: null, error: "Unauthorized" }, { status: 401 })
+  if (!clerkId) return errorResponse("UNAUTHORIZED")
 
   const user = await getDbUser(clerkId)
-  if (!user) return Response.json({ data: null, error: "User not found" }, { status: 404 })
+  if (!user) return errorResponse("NOT_FOUND", "User not found")
 
   const { prompt, error } = await getPromptForUser(id, user.id)
-  if (error === "not_found") return Response.json({ data: null, error: "Not found" }, { status: 404 })
-  if (error === "forbidden") return Response.json({ data: null, error: "Forbidden" }, { status: 403 })
+  if (error === "not_found") return errorResponse("NOT_FOUND")
+  if (error === "forbidden") return errorResponse("FORBIDDEN")
 
-  return Response.json({ data: prompt, error: null })
+  return jsonOk(prompt)
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const { userId: clerkId } = await auth()
-  if (!clerkId) return Response.json({ data: null, error: "Unauthorized" }, { status: 401 })
+  if (!clerkId) return errorResponse("UNAUTHORIZED")
 
   const user = await getDbUser(clerkId)
-  if (!user) return Response.json({ data: null, error: "User not found" }, { status: 404 })
+  if (!user) return errorResponse("NOT_FOUND", "User not found")
 
   const limited = await checkRateLimit("mutation", user.id)
   if (!limited.ok) return rateLimitResponse(limited)
 
   const existing = await prisma.prompt.findUnique({ where: { id } })
   if (!existing || existing.deletedAt !== null) {
-    return Response.json({ data: null, error: "Not found" }, { status: 404 })
+    return errorResponse("NOT_FOUND")
   }
-  if (existing.userId !== user.id) return Response.json({ data: null, error: "Forbidden" }, { status: 403 })
+  if (existing.userId !== user.id) return errorResponse("FORBIDDEN")
 
   let body: Record<string, unknown>
   try {
     body = await req.json()
   } catch {
-    return Response.json({ data: null, error: "Invalid JSON body" }, { status: 400 })
+    return errorResponse("INVALID_JSON")
   }
   const { title, description, tags } = body
 
   if (title !== undefined && (typeof title !== "string" || !title.trim())) {
-    return Response.json({ data: null, error: "title must be a non-empty string" }, { status: 400 })
+    return errorResponse("VALIDATION_ERROR", "title must be a non-empty string")
   }
   if (description !== undefined && description !== null && typeof description !== "string") {
-    return Response.json({ data: null, error: "description must be a string" }, { status: 400 })
+    return errorResponse("VALIDATION_ERROR", "description must be a string")
   }
   if (tags !== undefined && (!Array.isArray(tags) || tags.some((t) => typeof t !== "string"))) {
-    return Response.json({ data: null, error: "tags must be an array of strings" }, { status: 400 })
+    return errorResponse("VALIDATION_ERROR", "tags must be an array of strings")
   }
 
   const updated = await prisma.prompt.update({
@@ -79,29 +80,29 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     },
   })
 
-  return Response.json({ data: updated, error: null })
+  return jsonOk(updated)
 }
 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const { userId: clerkId } = await auth()
-  if (!clerkId) return Response.json({ data: null, error: "Unauthorized" }, { status: 401 })
+  if (!clerkId) return errorResponse("UNAUTHORIZED")
 
   const user = await getDbUser(clerkId)
-  if (!user) return Response.json({ data: null, error: "User not found" }, { status: 404 })
+  if (!user) return errorResponse("NOT_FOUND", "User not found")
 
   const limited = await checkRateLimit("mutation", user.id)
   if (!limited.ok) return rateLimitResponse(limited)
 
   const existing = await prisma.prompt.findUnique({ where: { id } })
   if (!existing || existing.deletedAt !== null) {
-    return Response.json({ data: null, error: "Not found" }, { status: 404 })
+    return errorResponse("NOT_FOUND")
   }
-  if (existing.userId !== user.id) return Response.json({ data: null, error: "Forbidden" }, { status: 403 })
+  if (existing.userId !== user.id) return errorResponse("FORBIDDEN")
 
   // Soft delete: runs/evals keep their history for usage accounting; the
   // prompt just disappears from every list and lookup (deletedAt filters).
   await prisma.prompt.update({ where: { id }, data: { deletedAt: new Date() } })
 
-  return Response.json({ data: { id }, error: null })
+  return jsonOk({ id })
 }

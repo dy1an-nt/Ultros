@@ -3,6 +3,7 @@ import { NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit"
 import type { PrismaClient } from "@/app/generated/prisma/client"
+import { errorResponse, jsonOk } from "@/lib/api/errors"
 
 async function getDbUser(clerkId: string) {
   return prisma.user.findUnique({ where: { clerkId } })
@@ -10,10 +11,10 @@ async function getDbUser(clerkId: string) {
 
 export async function GET() {
   const { userId: clerkId } = await auth()
-  if (!clerkId) return Response.json({ data: null, error: "Unauthorized" }, { status: 401 })
+  if (!clerkId) return errorResponse("UNAUTHORIZED")
 
   const user = await getDbUser(clerkId)
-  if (!user) return Response.json({ data: null, error: "User not found" }, { status: 404 })
+  if (!user) return errorResponse("NOT_FOUND", "User not found")
 
   const prompts = await prisma.prompt.findMany({
     where: { userId: user.id, deletedAt: null },
@@ -21,15 +22,15 @@ export async function GET() {
     include: { _count: { select: { versions: true, runs: true } } },
   })
 
-  return Response.json({ data: prompts, error: null })
+  return jsonOk(prompts)
 }
 
 export async function POST(req: NextRequest) {
   const { userId: clerkId } = await auth()
-  if (!clerkId) return Response.json({ data: null, error: "Unauthorized" }, { status: 401 })
+  if (!clerkId) return errorResponse("UNAUTHORIZED")
 
   const user = await getDbUser(clerkId)
-  if (!user) return Response.json({ data: null, error: "User not found" }, { status: 404 })
+  if (!user) return errorResponse("NOT_FOUND", "User not found")
 
   const limited = await checkRateLimit("mutation", user.id)
   if (!limited.ok) return rateLimitResponse(limited)
@@ -38,7 +39,7 @@ export async function POST(req: NextRequest) {
   try {
     body = await req.json()
   } catch {
-    return Response.json({ data: null, error: "Invalid JSON body" }, { status: 400 })
+    return errorResponse("INVALID_JSON")
   }
   const { title, description, tags, systemPrompt, userPrompt } = body as {
     title?: string
@@ -48,8 +49,8 @@ export async function POST(req: NextRequest) {
     userPrompt?: string
   }
 
-  if (!title?.trim()) return Response.json({ data: null, error: "title is required" }, { status: 400 })
-  if (!userPrompt?.trim()) return Response.json({ data: null, error: "userPrompt is required" }, { status: 400 })
+  if (!title?.trim()) return errorResponse("VALIDATION_ERROR", "title is required")
+  if (!userPrompt?.trim()) return errorResponse("VALIDATION_ERROR", "userPrompt is required")
 
   const prompt = await prisma.$transaction(async (tx: Omit<PrismaClient, "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends">) => {
     const p = await tx.prompt.create({
@@ -74,5 +75,5 @@ export async function POST(req: NextRequest) {
     })
   })
 
-  return Response.json({ data: prompt, error: null }, { status: 201 })
+  return jsonOk(prompt, 201)
 }

@@ -38,7 +38,7 @@ describe("GET /api/prompts/:id/baseline", () => {
 
     const res = await get(prompt.id)
     expect(res.status).toBe(404)
-    expect((await res.json()).error).toBe("no baseline set for this prompt")
+    expect((await res.json()).error.message).toBe("no baseline set for this prompt")
   })
 })
 
@@ -58,7 +58,7 @@ describe("POST /api/prompts/:id/baseline", () => {
       datasetRunId: mine.datasetRun.id,
     })
     expect(res.status).toBe(400)
-    expect((await res.json()).error).toBe("invalid promptVersionId")
+    expect((await res.json()).error.message).toBe("invalid promptVersionId")
   })
 
   it("rejects another user's dataset run as 'invalid datasetRunId'", async () => {
@@ -73,7 +73,7 @@ describe("POST /api/prompts/:id/baseline", () => {
       datasetRunId: theirs.datasetRun.id,
     })
     expect(res.status).toBe(400)
-    expect((await res.json()).error).toBe("invalid datasetRunId")
+    expect((await res.json()).error.message).toBe("invalid datasetRunId")
   })
 
   it("rejects a run of a different version of the prompt", async () => {
@@ -86,7 +86,7 @@ describe("POST /api/prompts/:id/baseline", () => {
     signInAs(user.clerkId)
     const res = await post(f.prompt.id, { promptVersionId: v2.id, datasetRunId: f.datasetRun.id })
     expect(res.status).toBe(400)
-    expect((await res.json()).error).toBe("datasetRunId does not belong to the given promptVersionId")
+    expect((await res.json()).error.message).toBe("datasetRunId does not belong to the given promptVersionId")
   })
 
   it("rejects a run that is still in flight", async () => {
@@ -97,7 +97,7 @@ describe("POST /api/prompts/:id/baseline", () => {
     signInAs(user.clerkId)
     const res = await post(f.prompt.id, { promptVersionId: f.version.id, datasetRunId: f.datasetRun.id })
     expect(res.status).toBe(400)
-    expect((await res.json()).error).toBe("baseline run must be complete")
+    expect((await res.json()).error.message).toBe("baseline run must be complete")
   })
 
   it("rejects an unscored run", async () => {
@@ -108,7 +108,7 @@ describe("POST /api/prompts/:id/baseline", () => {
     signInAs(user.clerkId)
     const res = await post(f.prompt.id, { promptVersionId: f.version.id, datasetRunId: f.datasetRun.id })
     expect(res.status).toBe(400)
-    expect((await res.json()).error).toBe("baseline run must be scored against a rubric")
+    expect((await res.json()).error.message).toBe("baseline run must be scored against a rubric")
   })
 
   it("pins the baseline to the run's blessed numbers, resolvable via GET", async () => {

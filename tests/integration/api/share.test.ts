@@ -42,7 +42,7 @@ describe("POST /api/share", () => {
     signInAs(user.clerkId)
     const res = await post({ resourceType: "rubric", resourceId: "x" })
     expect(res.status).toBe(400)
-    expect((await res.json()).error).toContain("resourceType")
+    expect((await res.json()).error.message).toContain("resourceType")
   })
 
   it("rejects a missing resourceId with 400", async () => {
@@ -65,7 +65,7 @@ describe("POST /api/share", () => {
     signInAs(intruder.clerkId)
     const res = await post({ resourceType: "promptRun", resourceId: run.id })
     expect(res.status).toBe(404)
-    expect((await res.json()).error).toBe("Not found")
+    expect((await res.json()).error.message).toBe("Resource not found")
     expect(await prisma.share.count()).toBe(0)
   })
 

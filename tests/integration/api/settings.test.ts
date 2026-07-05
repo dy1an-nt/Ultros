@@ -71,7 +71,7 @@ describe("PATCH /api/settings", () => {
     signInAs(user.clerkId)
     const res = await patch({ monthlyBudgetUsd: value })
     expect(res.status).toBe(400)
-    expect((await res.json()).error).toContain("monthlyBudgetUsd")
+    expect((await res.json()).error.message).toContain("monthlyBudgetUsd")
   })
 
   it("sets, updates, and clears the budget", async () => {

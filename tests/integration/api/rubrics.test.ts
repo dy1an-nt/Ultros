@@ -42,7 +42,7 @@ describe("POST /api/rubrics", () => {
     signInAs(user.clerkId)
     const res = await POST(jsonRequest("POST", "/api/rubrics", { ...valid, name: "   " }))
     expect(res.status).toBe(400)
-    expect((await res.json()).error).toContain("name")
+    expect((await res.json()).error.message).toContain("name")
   })
 
   it.each([
@@ -54,7 +54,7 @@ describe("POST /api/rubrics", () => {
     signInAs(user.clerkId)
     const res = await POST(jsonRequest("POST", "/api/rubrics", { ...valid, passThreshold }))
     expect(res.status).toBe(400)
-    expect((await res.json()).error).toContain("passThreshold")
+    expect((await res.json()).error.message).toContain("passThreshold")
   })
 
   it("rejects invalid criteria with a field-specific 400 and persists nothing", async () => {
@@ -67,7 +67,7 @@ describe("POST /api/rubrics", () => {
       })
     )
     expect(res.status).toBe(400)
-    expect((await res.json()).error).toBe("criteria[0].config.pattern: invalid regex")
+    expect((await res.json()).error.message).toBe("criteria[0].config.pattern: invalid regex")
     expect(await prisma.rubric.count()).toBe(0)
   })
 

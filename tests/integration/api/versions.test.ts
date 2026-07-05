@@ -81,7 +81,7 @@ describe("POST /api/prompts/:id/versions", () => {
       routeParams({ id: prompt.id })
     )
     expect(res.status).toBe(400)
-    expect((await res.json()).error).toBe("Invalid JSON body")
+    expect((await res.json()).error.message).toBe("Request body is not valid JSON")
   })
 
   it("rejects a missing userPrompt with 400", async () => {
@@ -93,7 +93,7 @@ describe("POST /api/prompts/:id/versions", () => {
       routeParams({ id: prompt.id })
     )
     expect(res.status).toBe(400)
-    expect((await res.json()).error).toBe("userPrompt is required")
+    expect((await res.json()).error.message).toBe("userPrompt is required")
   })
 
   it("increments versionNumber and applies defaults", async () => {

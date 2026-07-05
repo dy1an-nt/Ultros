@@ -1,18 +1,19 @@
 import { auth } from "@clerk/nextjs/server"
 import { NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { errorResponse, jsonOk } from "@/lib/api/errors"
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const { userId: clerkId } = await auth()
-  if (!clerkId) return Response.json({ data: null, error: "Unauthorized" }, { status: 401 })
+  if (!clerkId) return errorResponse("UNAUTHORIZED")
 
   const user = await prisma.user.findUnique({ where: { clerkId } })
-  if (!user) return Response.json({ data: null, error: "User not found" }, { status: 404 })
+  if (!user) return errorResponse("NOT_FOUND", "User not found")
 
   const run = await prisma.datasetRun.findUnique({ where: { id } })
-  if (!run) return Response.json({ data: null, error: "Not found" }, { status: 404 })
-  if (run.userId !== user.id) return Response.json({ data: null, error: "Forbidden" }, { status: 403 })
+  if (!run) return errorResponse("NOT_FOUND")
+  if (run.userId !== user.id) return errorResponse("FORBIDDEN")
 
-  return Response.json({ data: run, error: null })
+  return jsonOk(run)
 }

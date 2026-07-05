@@ -8,7 +8,7 @@ export function useEvalHistory(promptId: string, limit = 50) {
     queryFn: async () => {
       const res = await fetch(`/api/prompts/${promptId}/evals?limit=${limit}`)
       const json = await res.json()
-      if (!res.ok || json.error) throw new Error(json.error ?? `Request failed (${res.status})`)
+      if (!res.ok || json.error) throw new Error(json.error?.message ?? `Request failed (${res.status})`)
       return json.data as EvalHistoryItem[]
     },
   })

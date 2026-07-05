@@ -4,14 +4,15 @@ import { prisma } from "@/lib/prisma"
 import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit"
 import { loadRunRequest } from "@/lib/datasets/runRequest"
 import { launchDatasetRun } from "@/lib/datasets/runner"
+import { errorResponse, jsonOk } from "@/lib/api/errors"
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const { userId: clerkId } = await auth()
-  if (!clerkId) return Response.json({ data: null, error: "Unauthorized" }, { status: 401 })
+  if (!clerkId) return errorResponse("UNAUTHORIZED")
 
   const user = await prisma.user.findUnique({ where: { clerkId } })
-  if (!user) return Response.json({ data: null, error: "User not found" }, { status: 404 })
+  if (!user) return errorResponse("NOT_FOUND", "User not found")
 
   const limited = await checkRateLimit("launch", user.id)
   if (!limited.ok) return rateLimitResponse(limited)
@@ -20,32 +21,29 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   try {
     body = await req.json()
   } catch {
-    return Response.json({ data: null, error: "Invalid JSON body" }, { status: 400 })
+    return errorResponse("INVALID_JSON")
   }
 
   // The cost gate: launches must be deliberate, never a default.
   if (body.confirm !== true) {
-    return Response.json(
-      { data: null, error: "confirm: true is required — review the cost estimate first" },
-      { status: 400 }
-    )
+    return errorResponse("VALIDATION_ERROR", "confirm: true is required — review the cost estimate first")
   }
 
   const loaded = await loadRunRequest(user.id, id, body)
   if (loaded.value === null) {
-    return Response.json({ data: null, error: loaded.error }, { status: loaded.status })
+    return errorResponse(loaded.status === 404 ? "NOT_FOUND" : "VALIDATION_ERROR", loaded.error)
   }
   const { dataset, version, params: runParams, variableMapping } = loaded.value
 
   let rubricId: string | null = null
   if (body.rubricId !== undefined && body.rubricId !== null) {
     if (typeof body.rubricId !== "string") {
-      return Response.json({ data: null, error: "invalid rubricId" }, { status: 400 })
+      return errorResponse("VALIDATION_ERROR", "invalid rubricId")
     }
     // 400 not 404/403 — does not leak whether another user's rubric id exists.
     const rubric = await prisma.rubric.findUnique({ where: { id: body.rubricId } })
     if (!rubric || rubric.userId !== user.id) {
-      return Response.json({ data: null, error: "invalid rubricId" }, { status: 400 })
+      return errorResponse("VALIDATION_ERROR", "invalid rubricId")
     }
     rubricId = rubric.id
   }
@@ -62,5 +60,5 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     totalRows: dataset.rowCount,
   })
 
-  return Response.json({ data: run, error: null }, { status: 202 })
+  return jsonOk(run, 202)
 }

@@ -71,7 +71,7 @@ export default function PromptDetailPage() {
     queryFn: async () => {
       const res = await fetch(`/api/prompts/${id}/runs`)
       const json = await res.json()
-      if (!res.ok || json.error) throw new Error(json.error ?? `Request failed (${res.status})`)
+      if (!res.ok || json.error) throw new Error(json.error?.message ?? `Request failed (${res.status})`)
       return json
     },
     enabled: activeTab === "evals",
@@ -138,7 +138,7 @@ export default function PromptDetailPage() {
       })
       const json = await res.json()
       if (json.error) {
-        setSaveError(json.error)
+        setSaveError(json.error.message)
       } else {
         setActiveVersionId(json.data.id)
         queryClient.invalidateQueries({ queryKey: ["prompt", id] })

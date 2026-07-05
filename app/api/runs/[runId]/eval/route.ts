@@ -6,14 +6,15 @@ import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit"
 import { runDeterministicCriterion, computeTotalScore } from "@/lib/eval/matchers"
 import { enqueueEvalJob } from "@/lib/eval/queue"
 import type { Criterion, CriteriaSnapshot, CriterionScore, EvalMethod } from "@/types/eval"
+import { errorResponse, jsonOk } from "@/lib/api/errors"
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ runId: string }> }) {
   const { runId } = await params
   const { userId: clerkId } = await auth()
-  if (!clerkId) return Response.json({ data: null, error: "Unauthorized" }, { status: 401 })
+  if (!clerkId) return errorResponse("UNAUTHORIZED")
 
   const user = await prisma.user.findUnique({ where: { clerkId } })
-  if (!user) return Response.json({ data: null, error: "User not found" }, { status: 404 })
+  if (!user) return errorResponse("NOT_FOUND", "User not found")
 
   const limited = await checkRateLimit("eval", user.id)
   if (!limited.ok) return rateLimitResponse(limited)
@@ -22,22 +23,22 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ run
   try {
     body = await req.json()
   } catch {
-    return Response.json({ data: null, error: "Invalid JSON body" }, { status: 400 })
+    return errorResponse("INVALID_JSON")
   }
   const { rubricId } = body
   if (!rubricId || typeof rubricId !== "string") {
-    return Response.json({ data: null, error: "rubricId is required" }, { status: 400 })
+    return errorResponse("VALIDATION_ERROR", "rubricId is required")
   }
 
   const run = await prisma.promptRun.findUnique({ where: { id: runId } })
-  if (!run) return Response.json({ data: null, error: "Not found" }, { status: 404 })
-  if (run.userId !== user.id) return Response.json({ data: null, error: "Forbidden" }, { status: 403 })
+  if (!run) return errorResponse("NOT_FOUND")
+  if (run.userId !== user.id) return errorResponse("FORBIDDEN")
 
   // 400 (not 404/403) for missing or foreign rubrics — does not leak whether
   // another user's rubric id exists.
   const rubric = await prisma.rubric.findUnique({ where: { id: rubricId } })
   if (!rubric || rubric.userId !== user.id) {
-    return Response.json({ data: null, error: "invalid rubricId" }, { status: 400 })
+    return errorResponse("VALIDATION_ERROR", "invalid rubricId")
   }
 
   const criteria = rubric.criteria as unknown as Criterion[]
@@ -76,7 +77,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ run
         completedAt: new Date(),
       },
     })
-    return Response.json({ data: evaluation, error: null }, { status: 200 })
+    return jsonOk(evaluation)
   }
 
   const evaluation = await prisma.evaluation.create({
@@ -93,5 +94,5 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ run
 
   await enqueueEvalJob(evaluation.id)
 
-  return Response.json({ data: evaluation, error: null }, { status: 202 })
+  return jsonOk(evaluation, 202)
 }
