@@ -25,6 +25,12 @@ export default defineConfig({
       reporter: ["text", "html"],
       include: ["lib/**/*.ts"],
       exclude: ["lib/**/*.test.ts", "lib/**/index.ts"],
+      // Ratchet, not target: pinned just under the current unit-suite numbers
+      // so a change can only raise them. The unit suite owns lib's pure core;
+      // IO modules are exercised (uninstrumented) by the integration suite,
+      // which is why the statement floor looks low. Raise when coverage
+      // grows; never lower.
+      thresholds: { statements: 22, branches: 72, functions: 49, lines: 22 },
     },
   },
 })

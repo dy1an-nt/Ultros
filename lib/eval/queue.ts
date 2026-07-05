@@ -10,10 +10,14 @@ export async function enqueueEvalJob(evaluationId: string): Promise<void> {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL
 
   if (process.env.NODE_ENV === "production" && token && appUrl) {
+    const base = appUrl.replace(/\/$/, "")
     const client = new Client({ token })
     await client.publishJSON({
-      url: `${appUrl.replace(/\/$/, "")}/api/jobs/eval`,
+      url: `${base}/api/jobs/eval`,
       body: { evaluationId },
+      // Exhausted retries strand the eval in pending forever without this —
+      // the callback marks it failed and lets any waiting batch finalize.
+      failureCallback: `${base}/api/jobs/failed`,
     })
     return
   }
