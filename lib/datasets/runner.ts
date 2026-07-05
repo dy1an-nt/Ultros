@@ -45,8 +45,9 @@ export async function fanOutDatasetRun(run: { id: string; userId: string }, tota
   const appUrl = process.env.NEXT_PUBLIC_APP_URL
 
   if (process.env.NODE_ENV === "production" && token && appUrl) {
+    const base = appUrl.replace(/\/$/, "")
     const client = new Client({ token })
-    const url = `${appUrl.replace(/\/$/, "")}/api/jobs/dataset-row`
+    const url = `${base}/api/jobs/dataset-row`
     await Promise.all(
       Array.from({ length: totalRows }, (_, rowIndex) =>
         client.publishJSON({
@@ -54,6 +55,9 @@ export async function fanOutDatasetRun(run: { id: string; userId: string }, tota
           body: { datasetRunId: run.id, rowIndex },
           deduplicationId: `${run.id}:${rowIndex}`,
           flowControl: { key: run.userId, parallelism: 5 },
+          // A row whose deliveries all fail would wedge the batch one row
+          // short of finalizing — the callback records it as a failed row.
+          failureCallback: `${base}/api/jobs/failed`,
         })
       )
     )

@@ -186,3 +186,58 @@ export async function runDatasetRowJob(datasetRunId: string, rowIndex: number): 
 
   await finalizeIfDone(datasetRunId)
 }
+
+// DLQ path: QStash exhausted every delivery retry for this row's job, so the
+// work above never ran. Persist the same failed-row shape the in-job catch
+// writes (finishReason "error", message as the text) so the drill-down stays
+// uniform and the batch can finalize instead of wedging at totalRows-1.
+export async function markRowFailed(datasetRunId: string, rowIndex: number, message: string): Promise<void> {
+  const run = await prisma.datasetRun.findUnique({ where: { id: datasetRunId } })
+  if (!run || run.status === "complete" || run.status === "failed") return
+
+  const row = await prisma.datasetRow.findUnique({
+    where: { datasetId_rowIndex: { datasetId: run.datasetId, rowIndex } },
+  })
+  if (!row) return
+
+  const existing = await prisma.promptRun.findFirst({
+    where: { datasetRunId, datasetRowId: row.id },
+    select: { id: true },
+  })
+  if (existing) return // some delivery did land — nothing is stranded
+
+  const version = await prisma.promptVersion.findUnique({ where: { id: run.promptVersionId } })
+  if (!version) return
+
+  try {
+    await prisma.promptRun.create({
+      data: {
+        promptVersionId: version.id,
+        promptId: version.promptId,
+        userId: run.userId,
+        datasetRowId: row.id,
+        datasetRunId,
+        model: run.model,
+        provider: getModelInfo(run.model)?.provider ?? "unknown",
+        temperature: run.temperature,
+        maxTokens: run.maxTokens,
+        inputTokens: 0,
+        outputTokens: 0,
+        latencyMs: 0,
+        costUsd: 0,
+        responseText: sanitizeErrorMessage(message),
+        finishReason: "error",
+      },
+    })
+  } catch (err) {
+    // Unique violation on (datasetRunId, datasetRowId): a racing delivery
+    // persisted the row after our existence check — not stranded, no-op.
+    if ((err as { code?: string }).code === "P2002") return
+    throw err
+  }
+  await prisma.datasetRun.update({
+    where: { id: datasetRunId },
+    data: { failedRows: { increment: 1 } },
+  })
+  await finalizeIfDone(datasetRunId)
+}
