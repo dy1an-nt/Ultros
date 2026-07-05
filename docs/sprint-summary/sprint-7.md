@@ -224,8 +224,13 @@ module with no IO imports.**
   would render `[object Object]` — a regression. The infrastructure and the
   pattern shipped; the coordinated route + frontend migration is the next
   increment.
-- **Route-level integration suites.** The Postgres CI service and migration
-  harness are in place; the handler tests are the follow-up.
+- ~~**Route-level integration suites.**~~ Shipped as a follow-up:
+  `tests/integration/` imports route handlers directly and runs them against a
+  disposable localhost Postgres (`npm run test:integration`, own CI job).
+  Clerk's `auth()` is the only mock; user lookup, isolation checks, and Prisma
+  run for real. The harness refuses any non-localhost database host because it
+  truncates every table between tests. Suites so far: prompts CRUD, prompt
+  detail, versions, settings.
 
 ## What you should be able to explain in an interview
 

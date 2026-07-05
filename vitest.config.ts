@@ -1,4 +1,4 @@
-import { defineConfig } from "vitest/config"
+import { configDefaults, defineConfig } from "vitest/config"
 import { fileURLToPath } from "node:url"
 
 // Vitest resolves the `@/` alias the same way tsconfig's paths do, so test
@@ -17,6 +17,9 @@ export default defineConfig({
     // App route/component files are excluded — they pull in Next runtime and
     // are exercised through the integration suite, not as bare imports.
     include: ["lib/**/*.test.ts", "tests/**/*.test.ts"],
+    // Integration suites need a real Postgres; they run via
+    // vitest.integration.config.ts (`npm run test:integration`).
+    exclude: [...configDefaults.exclude, "tests/integration/**"],
     coverage: {
       provider: "v8",
       reporter: ["text", "html"],
