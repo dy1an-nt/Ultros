@@ -42,8 +42,18 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!prompt || prompt.deletedAt !== null) return Response.json({ data: null, error: "Not found" }, { status: 404 })
   if (prompt.userId !== user.id) return Response.json({ data: null, error: "Forbidden" }, { status: 403 })
 
-  const body = await req.json()
-  const { systemPrompt, userPrompt, variables, label } = body
+  let body: Record<string, unknown>
+  try {
+    body = await req.json()
+  } catch {
+    return Response.json({ data: null, error: "Invalid JSON body" }, { status: 400 })
+  }
+  const { systemPrompt, userPrompt, variables, label } = body as {
+    systemPrompt?: string
+    userPrompt?: string
+    variables?: Record<string, string>
+    label?: string | null
+  }
 
   if (!userPrompt?.trim()) {
     return Response.json({ data: null, error: "userPrompt is required" }, { status: 400 })

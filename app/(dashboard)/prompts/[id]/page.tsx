@@ -63,6 +63,7 @@ export default function PromptDetailPage() {
     "output"
   )
   const [runOutput, setRunOutput] = useState<{ text: string; done: boolean } | null>(null)
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   // Runs for the Evals tab — same query key/shape as RunHistory so the cache is shared.
   const runsQuery = useQuery<{ data: RunRow[] }>({
@@ -96,43 +97,54 @@ export default function PromptDetailPage() {
     setRunOutput({ text: "", done: false })
     setActiveTab("output")
 
-    const res = await fetch("/api/run", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ promptVersionId: activeVersionId, model, temperature, maxTokens }),
-    })
+    try {
+      const res = await fetch("/api/run", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ promptVersionId: activeVersionId, model, temperature, maxTokens }),
+      })
 
-    if (!res.ok || !res.body) {
-      setRunOutput({ text: "Run failed. Check your API key and try again.", done: true })
-      return
+      if (!res.ok || !res.body) {
+        setRunOutput({ text: "Run failed. Check your API key and try again.", done: true })
+        return
+      }
+
+      const reader = res.body.getReader()
+      const decoder = new TextDecoder()
+      let fullText = ""
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        const chunk = decoder.decode(value, { stream: true })
+        fullText += chunk
+        setRunOutput({ text: fullText, done: false })
+      }
+
+      setRunOutput({ text: fullText, done: true })
+      queryClient.invalidateQueries({ queryKey: ["runs", id] })
+    } catch {
+      setRunOutput({ text: "Run failed due to a network error.", done: true })
     }
-
-    const reader = res.body.getReader()
-    const decoder = new TextDecoder()
-    let fullText = ""
-
-    while (true) {
-      const { done, value } = await reader.read()
-      if (done) break
-      const chunk = decoder.decode(value, { stream: true })
-      fullText += chunk
-      setRunOutput({ text: fullText, done: false })
-    }
-
-    setRunOutput({ text: fullText, done: true })
-    queryClient.invalidateQueries({ queryKey: ["runs", id] })
   }
 
   async function handleSaveVersion() {
-    const res = await fetch(`/api/prompts/${id}/versions`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ systemPrompt, userPrompt }),
-    })
-    const json = await res.json()
-    if (!json.error) {
-      setActiveVersionId(json.data.id)
-      queryClient.invalidateQueries({ queryKey: ["prompt", id] })
+    setSaveError(null)
+    try {
+      const res = await fetch(`/api/prompts/${id}/versions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ systemPrompt, userPrompt }),
+      })
+      const json = await res.json()
+      if (json.error) {
+        setSaveError(json.error)
+      } else {
+        setActiveVersionId(json.data.id)
+        queryClient.invalidateQueries({ queryKey: ["prompt", id] })
+      }
+    } catch {
+      setSaveError("Failed to save — check your connection and try again.")
     }
   }
 
@@ -199,6 +211,9 @@ export default function PromptDetailPage() {
             <PromptEditor value={userPrompt} onChange={setUserPrompt} />
           </div>
           <div className="border-t border-gray-800 shrink-0">
+            {saveError && (
+              <p className="px-4 pt-2 text-xs text-red-400">{saveError}</p>
+            )}
             <RunControls onRun={handleRun} onSaveVersion={handleSaveVersion} />
           </div>
         </div>

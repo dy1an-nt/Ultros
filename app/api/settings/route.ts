@@ -63,7 +63,7 @@ export async function PATCH(req: NextRequest) {
       monthlyBudgetUsd > MAX_BUDGET_USD
     ) {
       return Response.json(
-        { data: null, error: `monthlyBudgetUsd must be null or a number between 0 and ${MAX_BUDGET_USD}` },
+        { data: null, error: `monthlyBudgetUsd must be null or a positive number up to ${MAX_BUDGET_USD}` },
         { status: 400 }
       )
     }
