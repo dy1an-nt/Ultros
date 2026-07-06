@@ -280,6 +280,15 @@ GOOGLE_GENERATIVE_AI_API_KEY=
 # AI Aggregator
 OPENROUTER_API_KEY=
 
+# Local inference (dev only — leave unset in production; Vercel cannot reach localhost)
+# Setting this makes Ollama-hosted models (qwen3:8b) appear in the catalog.
+OLLAMA_BASE_URL=
+
+# Eval judge model (optional; defaults to claude-haiku-4-5).
+# JUDGE_MODEL=qwen3:8b runs ai_judge evals free on local Ollama — weaker/noisier
+# scoring than Haiku, so keep the default when judge consistency matters.
+JUDGE_MODEL=
+
 # Upstash
 UPSTASH_REDIS_REST_URL=
 UPSTASH_REDIS_REST_TOKEN=
