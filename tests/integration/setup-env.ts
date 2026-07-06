@@ -16,6 +16,9 @@ delete process.env.UPSTASH_REDIS_REST_URL
 delete process.env.UPSTASH_REDIS_REST_TOKEN
 delete process.env.SENTRY_DSN
 delete process.env.NEXT_PUBLIC_SENTRY_DSN
+// A dev machine running Ollama must not change model-availability semantics
+// mid-suite — local models stay unavailable in tests.
+delete process.env.OLLAMA_BASE_URL
 
 // Placeholder provider key so isModelAvailable() accepts claude-* fixtures.
 // Never used: launch fan-out is deferred through next/server's after(), which

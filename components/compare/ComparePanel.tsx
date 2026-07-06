@@ -13,6 +13,7 @@ const PROVIDER_LABELS: Record<string, string> = {
   openai: "GPT (OpenAI)",
   google: "Gemini (Google)",
   openrouter: "OpenRouter",
+  ollama: "Ollama (local)",
 }
 
 export function ComparePanel({ slotIndex, availableModels, slot, onModelChange }: Props) {

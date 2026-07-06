@@ -1,6 +1,6 @@
 // verified as of 2026-06-09
-export type ModelCategory = "direct" | "openrouter"
-export type ProviderName = "anthropic" | "openai" | "google" | "openrouter"
+export type ModelCategory = "direct" | "openrouter" | "local"
+export type ProviderName = "anthropic" | "openai" | "google" | "openrouter" | "ollama"
 
 export type ModelInfo = {
   id: string
@@ -33,6 +33,8 @@ export const MODEL_CATALOG: ModelInfo[] = [
   { id: "qwen/qwen-2.5-72b-instruct", displayName: "Qwen 2.5 72B", provider: "openrouter", category: "openrouter", contextWindow: 32000, inputPerMillion: 0.35, outputPerMillion: 0.40 },
   { id: "cohere/command-r-plus", displayName: "Cohere Command R+", provider: "openrouter", category: "openrouter", contextWindow: 128000, inputPerMillion: 2.50, outputPerMillion: 10.00 },
   { id: "nousresearch/hermes-3-llama-3.1-70b", displayName: "Hermes 3 70B", provider: "openrouter", category: "openrouter", contextWindow: 128000, inputPerMillion: 0.40, outputPerMillion: 0.40 },
+  // Ollama (local inference — $0, dev only; hidden unless OLLAMA_BASE_URL is set)
+  { id: "qwen3:8b", displayName: "Qwen 3 8B (local)", provider: "ollama", category: "local", contextWindow: 40960, inputPerMillion: 0, outputPerMillion: 0 },
 ]
 
 const PROVIDER_ENV_KEYS: Record<ProviderName, string> = {
@@ -40,6 +42,9 @@ const PROVIDER_ENV_KEYS: Record<ProviderName, string> = {
   openai: "OPENAI_API_KEY",
   google: "GOOGLE_GENERATIVE_AI_API_KEY",
   openrouter: "OPENROUTER_API_KEY",
+  // Not a key — presence of the base URL is what marks local inference as
+  // available, so local models never surface in production deployments.
+  ollama: "OLLAMA_BASE_URL",
 }
 
 function isProviderConfigured(provider: ProviderName): boolean {

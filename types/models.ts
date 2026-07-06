@@ -1,5 +1,5 @@
-export type ProviderName = "anthropic" | "openai" | "google" | "openrouter"
-export type ModelCategory = "direct" | "openrouter"
+export type ProviderName = "anthropic" | "openai" | "google" | "openrouter" | "ollama"
+export type ModelCategory = "direct" | "openrouter" | "local"
 
 export type ModelInfo = {
   id: string

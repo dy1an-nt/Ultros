@@ -8,6 +8,7 @@ const PROVIDER_LABELS: Record<string, string> = {
   openai: "GPT (OpenAI)",
   google: "Gemini (Google)",
   openrouter: "OpenRouter",
+  ollama: "Ollama (local)",
 }
 
 const FALLBACK_DEFAULT_MODEL = "claude-haiku-4-5"
