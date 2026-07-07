@@ -1,8 +1,13 @@
 # Ultros
 
+[![CI](https://github.com/dy1an-nt/Ultros/actions/workflows/ci.yml/badge.svg)](https://github.com/dy1an-nt/Ultros/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 **AI evaluation and prompt experimentation platform.** Test prompts against multiple models, run them across datasets, score every output automatically (AI-as-judge + deterministic rubrics), and catch performance regressions between prompt versions — before your users do.
 
 Positioned alongside LangSmith / HumanLoop / PromptLayer: every run is a first-class, scored, tracked experiment.
+
+![Prompt workspace](docs/screenshots/prompt-workspace.png)
 
 ## What it does
 
@@ -14,26 +19,91 @@ Positioned alongside LangSmith / HumanLoop / PromptLayer: every run is a first-c
 - **Regression testing** — pin a baseline run; any new version re-runs the same dataset/rubric/model and reports the score delta, a regressed verdict against a threshold, and *exactly which rows* flipped or dropped. Score-over-time chart.
 - **Launch hardening** — share-via-link (read-only, revocable, never indexed), per-route-class rate limiting, monthly budget banner + confirm, usage CSV export, Sentry + Vercel Analytics.
 
+## Screenshots
+
+| | |
+|---|---|
+| ![Experiment results](docs/screenshots/experiment-results.png) *Experiments: per-cell results + win matrix* | ![Regression testing](docs/screenshots/regression.png) *Regression testing: baseline, catch, score over time* |
+
 ## Architecture
 
-```
-Browser (Next.js App Router, React 19)
-  ├─ TanStack Query (server state, self-terminating polls)
-  ├─ Zustand (client state) · CodeMirror 6 · Recharts
-  │
-Next.js API routes (Vercel) ── Clerk JWT on every protected route
-  ├─ lib/ai        → Vercel AI SDK: Anthropic / OpenAI / Google direct + OpenRouter
-  ├─ lib/eval      → deterministic matchers + AI-judge jobs
-  ├─ lib/datasets  → batch runner: per-row jobs, idempotent finalize
-  ├─ lib/experiments, lib/regression → built ON the batch runner (a cell IS a DatasetRun)
-  ├─ lib/rateLimit → Upstash Redis sliding windows per route class
-  │
-  ├─ Upstash QStash → signed webhooks fan out row/judge jobs (dev: in-process after())
-  ├─ Supabase Postgres (Prisma 7) — every query scoped by userId
-  └─ Sentry (server + client, env-gated)
+```mermaid
+flowchart TB
+    subgraph browser ["Browser — Next.js App Router · React 19"]
+        UI["CodeMirror 6 · Recharts · shadcn/ui"]
+        STATE["TanStack Query (server state, self-terminating polls) · Zustand"]
+    end
+
+    subgraph api ["Next.js API routes (Vercel) — Clerk JWT on every protected route"]
+        AI["lib/ai — Vercel AI SDK wrappers"]
+        EVAL["lib/eval — deterministic matchers + AI judge"]
+        BATCH["lib/datasets — batch runner (per-row jobs, idempotent finalize)"]
+        EXP["lib/experiments · lib/regression — built ON the batch runner (a cell IS a DatasetRun)"]
+        RL["lib/rateLimit — sliding windows per route class"]
+    end
+
+    PROVIDERS["Anthropic · OpenAI · Google (direct) + OpenRouter (long-tail)"]
+    QSTASH["Upstash QStash — signed webhooks (dev: in-process after())"]
+    REDIS[("Upstash Redis")]
+    DB[("Supabase Postgres — Prisma 7, every query scoped by userId")]
+    SENTRY["Sentry (env-gated)"]
+
+    browser -->|streamed runs · polling| api
+    AI --> PROVIDERS
+    BATCH -->|fan out row + judge jobs| QSTASH
+    QSTASH -->|signed callbacks| api
+    RL --> REDIS
+    api --> DB
+    api -.-> SENTRY
 ```
 
-Key design decisions are documented per sprint in [`docs/sprint-summary/`](docs/sprint-summary/) — each sprint has an architect contract and a teaching write-up.
+### Async evaluation pipeline
+
+Every dataset run, experiment cell, and regression check flows through the same batch runner:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant B as Browser
+    participant API as POST /api/datasets/:id/run
+    participant Q as QStash
+    participant Row as /api/jobs/dataset-row
+    participant M as Model provider
+    participant E as /api/jobs/eval
+    participant DB as Postgres
+
+    B->>API: launch (cost estimate + confirm: true)
+    API->>DB: create DatasetRun (pending)
+    API->>Q: publish one job per row (flow-controlled per user)
+    Q->>Row: signed webhook
+    Row->>M: run prompt with row variables
+    Row->>DB: save PromptRun (tokens, latency, cost)
+    Row->>Q: publish eval job
+    Q->>E: signed webhook
+    E->>DB: score vs rubric (matchers + AI judge, leased claim)
+    E->>DB: idempotent finalize → aggregates when the last row lands
+    B->>API: poll status (self-terminating)
+```
+
+### Data model (core)
+
+```mermaid
+erDiagram
+    User ||--o{ Prompt : owns
+    Prompt ||--o{ PromptVersion : "versioned as"
+    PromptVersion ||--o{ PromptRun : "executed as"
+    PromptRun ||--o{ Evaluation : "scored by"
+    Rubric ||--o{ Evaluation : grades
+    Dataset ||--o{ DatasetRow : contains
+    Dataset ||--o{ DatasetRun : "batch-run as"
+    DatasetRun ||--o{ PromptRun : "one per row"
+    Experiment ||--o{ ExperimentResult : "variant × model cells"
+    ExperimentResult ||--|| DatasetRun : "backed by"
+    Baseline ||--o{ RegressionRun : "checked by"
+    RegressionRun ||--|| DatasetRun : "backed by"
+```
+
+Key design decisions are documented per sprint in [`docs/sprint-summary/`](docs/sprint-summary/) — each sprint has an architect contract and a teaching write-up. A cross-cutting adversarial pass lives in [`docs/security-audit-2026-07-06.md`](docs/security-audit-2026-07-06.md).
 
 ## Local setup
 
@@ -67,6 +137,16 @@ In development, batch jobs run in-process (sequential `after()` loop) — QStash
 | `SENTRY_DSN` / `NEXT_PUBLIC_SENTRY_DSN` | Error monitoring (no-op if absent) | prod |
 | `NEXT_PUBLIC_APP_URL` | Absolute URL for QStash callbacks + share links | prod |
 
+## Testing
+
+CI gates every push: lint, typecheck, unit tests, integration tests against a fresh Postgres (migration check included), and a production build.
+
+```bash
+npm test                  # ~90 unit tests over the pure core (lib/eval, lib/experiments, lib/regression)
+npm run test:integration  # 222 route-level integration tests against local Postgres
+npm run typecheck
+```
+
 ## Conventions
 
 - API responses are always `{ data, error }`; costs in USD floats (`costUsd`), tokens as integers, latency in ms.
@@ -78,3 +158,7 @@ In development, batch jobs run in-process (sequential `after()` loop) — QStash
 ## Demo
 
 See [`docs/demo-script.md`](docs/demo-script.md) for the < 4-minute walkthrough: prompt → rubric → dataset run → experiment → regression catch.
+
+## License
+
+[MIT](LICENSE)
