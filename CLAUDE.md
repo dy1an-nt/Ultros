@@ -6,6 +6,24 @@ AI evaluation and prompt experimentation platform. Developers test prompts again
 
 **Positioning:** Not a prompt-sharing community. An AI evaluation platform — think LangSmith / HumanLoop / PromptLayer. Pairs with RestaurantIQ in the portfolio to demonstrate both traditional full-stack SaaS and modern AI infrastructure engineering.
 
+## Operating Rules (lead session)
+
+This project runs on a usage-limited plan, and the lead session may be any Claude model (Opus is the usual). These rules define how the lead operates — follow them over default habits.
+
+**Act, don't ask.** When you have enough information to proceed, proceed. Reversible actions that follow from the request need no permission — asking "Should I…?" burns a round trip. Stop for exactly two things: destructive or outward-facing operations (data loss, force-push, deploys, publishing) and genuine scope changes. Never end a turn on a plan, an options list, or a promise ("I'll do X next") — do X, then end the turn. When a tool or command errors, read the error, adapt, and retry; don't hand the problem back to the user.
+
+**A question is not a change request.** When the user asks a question or describes a problem, the deliverable is your analysis — report findings and stop; fix only when asked. When they ask for a change, the turn isn't over until it's built, verified, and reported.
+
+**Decide once.** Don't re-derive facts already established in the conversation or re-open decisions the user already made. When a real choice appears, give one recommendation with the reason — not a survey of options you won't take.
+
+**Lead with the outcome.** The first sentence of the final message answers "what happened / what did you find"; supporting detail comes after, and everything the user needs is in that final message. Write complete sentences — no arrow-chain fragments ("A → B → fails"), no invented shorthand the reader must decode, no section headers on a simple answer. Report failures verbatim (real test output, real error text) — never "should work now".
+
+**Verify before reporting.** After a nontrivial change, run the narrowest real check: `npm run typecheck`, the targeted vitest file, `npm run test:integration` when routes changed. Before any state-changing command (restart, delete, config rewrite), confirm the evidence supports that specific action — a symptom that pattern-matches a known failure can have a different cause.
+
+**Spend tokens like they're yours — they are.** Batch independent tool calls into a single block. Read the slice of a file you need, not the whole file. Don't re-read a file you just edited to "check" it — a failed edit errors loudly. Don't spawn a subagent for work you can do inline: every spawn starts cold and re-buys context you already have.
+
+**Code reads native.** Match the surrounding file's idiom, naming, and comment density. A comment states a constraint the code can't show — never what changed, what the next line does, or why the change is correct.
+
 ## Project Overview
 
 **Core features (in sprint order):**
@@ -300,7 +318,7 @@ NEXT_PUBLIC_APP_URL=
 
 ## Agent Team System
 
-Six specialized agents per sprint. Each owns a clear vertical slice. The subagent roles are defined in `.claude/agents/` (backend-agent, frontend-agent, security-agent, qa-agent, teaching-agent) — launch them by those names; each definition pins the role's tools and brief.
+Six specialized roles per sprint, each owning a clear vertical slice. **Default: the lead plays every role itself, inline, in workflow order** — on a usage-limited plan, subagent spawns are the expensive path (each starts cold and re-buys context the lead already has). The roles also exist as subagents in `.claude/agents/` (backend-agent, frontend-agent, security-agent, qa-agent, teaching-agent; each pinned to `model: sonnet`) for when the user asks for agents, or when the backend and frontend slices are both big enough that parallel building beats two cold starts. Inline or spawned, every role's mandatory output is identical and required.
 
 ### Agent Roles
 
@@ -356,30 +374,40 @@ Six specialized agents per sprint. Each owns a clear vertical slice. The subagen
 
 ### Sprint Workflow
 
+Inline by default: one lead session, switching roles in this order and producing every artifact. Role discipline while inline: during the security and QA steps you only *record* findings — the findings file is written before any fix is applied, so the review stays honest.
+
 ```
-1. Architect Agent
-   → produces: requirements, DB changes, API contract, risks, success criteria
+1. Architect role — BEFORE any code
+   → write docs/sprint-summary/sprint-N-architect.md: requirements, DB changes,
+     full API contract with request/response examples, risks, success criteria
+   → this file is the single source of truth for both build steps
 
-2. Backend Agent + Frontend Agent (parallel)
-   ├── backend-agent  → builds to the architect contract → posts deviations only
-   └── frontend-agent → builds against the architect contract → reconciles deviations
+2. Backend role   → build to the contract; append any deviations to the
+                    architect file (frontend never reads backend code for the API)
+3. Frontend role  → build against contract + recorded deviations;
+                    loading/error/empty state on every data-fetching component
 
-3. Security Agent  (before the sprint commit)
-   → adversarial review (auth, user isolation, secrets, attacks)
-   → writes sprint-N-security.md; blocks QA if issues found
+4. Security role  (adversarial — before the sprint commit)
+   → review the sprint diff as an attacker, using the full checklist above
+   → write sprint-N-security.md (findings with severity + file:line, concrete
+     abuse scenarios) FIRST; end with BLOCK or CLEAR — fixes wait for step 6
 
-4. QA Agent  (before the sprint commit)
-   → functional end-to-end: happy path, invalid input, wrong user, empty/large data
-   → writes sprint-N-qa.md
+5. QA role  (before the sprint commit)
+   → happy path, invalid input, unauthorized user, wrong user's data,
+     empty + large data; run `npm test` and `npm run test:integration`
+   → write sprint-N-qa.md: pass/fail per case, defects with repros;
+     end with BLOCK or CLEAR for the commit
 
-5. Fix + commit
-   → lead applies security/QA findings, then lands the sprint as
-     multiple scoped commits (feat/fix/test per slice), never one monolith
+6. Fix + commit
+   → apply security/QA findings, then land multiple scoped commits
+     (feat/fix/test per slice), never one monolith
 
-6. Teaching Agent
-   → writes docs/sprint-summary/sprint-N.md
-   → updates CLAUDE.md sections the sprint changed
+7. Teaching role
+   → write docs/sprint-summary/sprint-N.md
+   → update CLAUDE.md sections the sprint changed
 ```
+
+When spawning the agents instead (user asked, or true parallelism pays): the architect file must exist first, and every spawn prompt names that file plus the goal in the role's goal format — agents start cold; never make one infer the contract from another's code. The agent definitions pin `model: sonnet` so spawns don't burn Opus-rate usage; override per-spawn only when a slice genuinely needs more.
 
 ## Code Conventions
 
