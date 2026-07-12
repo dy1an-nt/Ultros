@@ -7,6 +7,8 @@
 
 Positioned alongside LangSmith / HumanLoop / PromptLayer: every run is a first-class, scored, tracked experiment.
 
+**Live at [ultros.vercel.app](https://ultros.vercel.app).**
+
 ![Prompt workspace](docs/screenshots/prompt-workspace.png)
 
 ## What it does
@@ -157,7 +159,7 @@ npm run typecheck
 
 ## Demo
 
-See [`docs/demo-script.md`](docs/demo-script.md) for the < 4-minute walkthrough: prompt → rubric → dataset run → experiment → regression catch.
+Try it live at [ultros.vercel.app](https://ultros.vercel.app), or see [`docs/demo-script.md`](docs/demo-script.md) for the < 4-minute walkthrough: prompt → rubric → dataset run → experiment → regression catch.
 
 ## License
 
