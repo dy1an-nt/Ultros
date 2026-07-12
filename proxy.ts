@@ -3,6 +3,8 @@ import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server"
 const isPublicRoute = createRouteMatcher([
   "/",
   "/docs",
+  // Extensionless metadata route — the config matcher below only skips *.png etc.
+  "/opengraph-image",
   "/sign-in(.*)",
   "/sign-up(.*)",
   "/api/webhooks/(.*)",

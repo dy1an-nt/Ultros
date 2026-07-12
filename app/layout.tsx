@@ -11,7 +11,13 @@ const description =
   "AI evaluation and prompt experimentation platform — run prompts across models and datasets, score every output, and catch regressions between versions."
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "https://ultros.vercel.app"),
+  // Vercel's build env can carry a stale/localhost NEXT_PUBLIC_APP_URL; the
+  // platform-provided production host is authoritative in deploys.
+  metadataBase: new URL(
+    process.env.VERCEL_PROJECT_PRODUCTION_URL
+      ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+      : (process.env.NEXT_PUBLIC_APP_URL ?? "https://ultros.vercel.app")
+  ),
   title: { default: "Ultros", template: "%s · Ultros" },
   description,
   openGraph: {
