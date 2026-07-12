@@ -7,9 +7,25 @@ import "./globals.css"
 
 const inter = Inter({ subsets: ["latin"] })
 
+const description =
+  "AI evaluation and prompt experimentation platform — run prompts across models and datasets, score every output, and catch regressions between versions."
+
 export const metadata: Metadata = {
-  title: "Ultros",
-  description: "AI evaluation and prompt experimentation platform",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "https://ultros.vercel.app"),
+  title: { default: "Ultros", template: "%s · Ultros" },
+  description,
+  openGraph: {
+    title: "Ultros",
+    description,
+    siteName: "Ultros",
+    type: "website",
+    url: "/",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Ultros",
+    description,
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
