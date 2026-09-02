@@ -157,6 +157,16 @@ npm run typecheck
 - Rate limits per class: runs 30/min, evals 60/min, launches 5/min, mutations 60/min, public share views 60/min/IP, 429 + `Retry-After`.
 - Public share payloads are allowlist-built in `lib/share/resolve.ts`; nothing else constructs them.
 
+## How this was built
+
+I built Ultros with Claude Code, one sprint at a time. The commit trailers record it, and the workflow is in `.claude/`.
+
+It is role-separated rather than one long conversation. Every sprint opens with a written contract in `docs/sprint-summary/`: requirements, schema changes, and the full API shape with request and response examples. Backend and frontend are then built against that contract, so neither side reads the other's code to learn the interface. An adversarial security review runs over the diff before anything is committed, and it writes its findings to a file before any fix is applied, so the review cannot be quietly softened by the patch that follows. Functional QA runs after that, and only then does the sprint get committed in scoped pieces.
+
+The gates are the part that matters. Nothing counts as done until `npm run typecheck` is clean and the integration suite passes against a real Postgres, and CI enforces both on every push along with a migration replay from scratch.
+
+[`docs/security-audit-2026-07-06.md`](docs/security-audit-2026-07-06.md) is one of those adversarial passes, published with its findings intact. It caught three logging paths that skipped the secret scrubber and a rate limiter keyed on a spoofable header. Both are fixed now, and the second one shipped with the regression tests in `lib/rateLimit.test.ts`.
+
 ## Demo
 
 Try it live at [ultros.vercel.app](https://ultros.vercel.app), or see [`docs/demo-script.md`](docs/demo-script.md) for the < 4-minute walkthrough: prompt → rubric → dataset run → experiment → regression catch.

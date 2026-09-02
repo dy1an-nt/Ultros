@@ -304,6 +304,9 @@ Done when: CI gates every push; routes are covered by integration tests; errors 
 # Supabase
 DATABASE_URL=
 DIRECT_URL=
+# The Supabase password can contain characters that break URL parsing, so
+# lib/prisma.ts takes the password from here and the rest from DATABASE_URL.
+DB_PASSWORD=
 
 # Clerk
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=

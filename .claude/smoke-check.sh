@@ -5,7 +5,7 @@
 
 set -u
 
-ROOT="/Volumes/Untitled/Ultros"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 results=""
 ok()   { results+="  ✓ $1"$'\n'; }
