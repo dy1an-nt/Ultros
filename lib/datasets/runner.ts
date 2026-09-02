@@ -3,6 +3,7 @@ import { Client } from "@upstash/qstash"
 import { prisma } from "@/lib/prisma"
 import type { Prisma } from "@/app/generated/prisma/client"
 import { runDatasetRowJob } from "./rowJob"
+import { logger } from "@/lib/logger"
 
 export type LaunchParams = {
   userId: string
@@ -67,7 +68,10 @@ export async function fanOutDatasetRun(run: { id: string; userId: string }, tota
         try {
           await runDatasetRowJob(run.id, rowIndex)
         } catch (err) {
-          console.error(`Dataset row job ${run.id}:${rowIndex} failed:`, err)
+          logger.exception("Dataset row job failed", err, {
+            datasetRunId: run.id,
+            rowIndex,
+          })
         }
       }
     })

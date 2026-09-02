@@ -7,6 +7,7 @@ import { getModelInfo } from "@/lib/ai/models"
 import { validateRunParams, validateVariables, type ValidatedRunParams } from "@/lib/ai/validate"
 import { calculateCost } from "@/lib/ai/pricing"
 import { errorResponse } from "@/lib/api/errors"
+import { logger } from "@/lib/logger"
 
 type CompareSlot = { slot: 0 | 1 | 2; model: string }
 
@@ -154,7 +155,7 @@ export async function POST(req: NextRequest) {
               update: { totalRuns: { increment: 1 }, totalInputTokens: { increment: inputTokens }, totalOutputTokens: { increment: outputTokens }, totalCostUsd: { increment: costUsd } },
             })
           } catch (err) {
-            console.error("Failed to persist compare run:", err)
+            logger.exception("Failed to persist compare run", err, { slot, model })
           }
 
           safeEnqueue({ type: "done", slot, runId, inputTokens, outputTokens, costUsd, latencyMs })

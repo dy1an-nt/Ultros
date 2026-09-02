@@ -7,6 +7,7 @@ import { getModelInfo } from "@/lib/ai/models"
 import { validateRunParams, validateVariables } from "@/lib/ai/validate"
 import { calculateCost } from "@/lib/ai/pricing"
 import { errorResponse } from "@/lib/api/errors"
+import { logger } from "@/lib/logger"
 
 export async function POST(req: NextRequest) {
   const { userId: clerkId } = await auth()
@@ -135,7 +136,10 @@ export async function POST(req: NextRequest) {
       // Client abort rejects the result promises; the onAbort path has
       // already persisted the partial run with estimated tokens.
       if (!(err instanceof Error && err.name === "AbortError")) {
-        console.error("Failed to persist prompt run:", err)
+        logger.exception("Failed to persist prompt run", err, {
+          promptVersionId: version.id,
+          model: params.model,
+        })
       }
     }
   })
