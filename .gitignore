@@ -42,6 +42,9 @@ next-env.d.ts
 
 /app/generated/prisma
 
+# personal notes, kept locally and out of the public repo
+docs/interview-prep.md
+
 # claude code (local state stays local)
 .claude/settings.local.json
 .claude/worktrees/
