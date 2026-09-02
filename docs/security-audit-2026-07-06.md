@@ -9,6 +9,11 @@ no fixes applied. Two findings, both low-to-medium; no criticals.
 **Verdict: CLEAR.** Nothing here blocks a launch. Both findings are hygiene /
 defense-in-depth on internal or DoS-only surfaces, with ready fixes.
 
+**Status, 2026-09-01.** Both findings are closed. Finding 1 was fixed in
+`08584c1` (the three call sites now use `logger.exception`). Finding 2 was fixed
+by deriving the client IP from the rightmost proxy hop, covered by
+`lib/rateLimit.test.ts`.
+
 ---
 
 ## Findings

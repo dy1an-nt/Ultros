@@ -65,8 +65,19 @@ export function rateLimitResponse(result: { retryAfterSec: number }): Response {
   )
 }
 
-// First proxied client IP, for the unauthenticated share view.
+// Client IP for the unauthenticated share view, the one rate limit not keyed
+// by an authenticated userId.
+//
+// Vercel sets x-vercel-forwarded-for itself and appends the real client to
+// x-forwarded-for, so the trustworthy entry is the rightmost one. The leftmost
+// is whatever the caller sent, and rotating it would defeat the per-IP limit.
 export function clientIp(req: Request): string {
+  const vercel = req.headers.get("x-vercel-forwarded-for")?.trim()
+  if (vercel) return vercel
+
   const fwd = req.headers.get("x-forwarded-for")
-  return fwd ? fwd.split(",")[0].trim() : "unknown"
+  if (!fwd) return "unknown"
+
+  const hops = fwd.split(",").map((h) => h.trim()).filter(Boolean)
+  return hops[hops.length - 1] ?? "unknown"
 }
