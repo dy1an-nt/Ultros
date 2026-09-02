@@ -7,7 +7,7 @@
 
 Positioned alongside LangSmith / HumanLoop / PromptLayer: every run is a first-class, scored, tracked experiment.
 
-**Live at [ultros.vercel.app](https://ultros.vercel.app).**
+**Live at [ultros.vercel.app](https://ultros.vercel.app).** No account needed to see real output: [this shared experiment](https://ultros.vercel.app/share/pXilc3XRgfl69SECGxsFzYEubQeQD0SH) compares two prompt versions across Claude and GPT-4o on a 20-row dataset, scored and laid out in a win matrix.
 
 ![Prompt workspace](docs/screenshots/prompt-workspace.png)
 
@@ -169,7 +169,9 @@ The gates are the part that matters. Nothing counts as done until `npm run typec
 
 ## Demo
 
-Try it live at [ultros.vercel.app](https://ultros.vercel.app), or see [`docs/demo-script.md`](docs/demo-script.md) for the < 4-minute walkthrough: prompt → rubric → dataset run → experiment → regression catch.
+[Shared experiment result](https://ultros.vercel.app/share/pXilc3XRgfl69SECGxsFzYEubQeQD0SH), read-only and no sign-in. This is the share-via-link feature itself, an allowlisted public payload built in `lib/share/resolve.ts` and revocable at any time.
+
+To run your own prompts, sign in at [ultros.vercel.app](https://ultros.vercel.app). [`docs/demo-script.md`](docs/demo-script.md) has the under-4-minute walkthrough: prompt, rubric, dataset run, experiment, regression catch.
 
 ## License
 
