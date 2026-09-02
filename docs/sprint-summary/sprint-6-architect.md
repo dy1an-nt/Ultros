@@ -5,6 +5,13 @@ ships; it adds one small feature surface (share links) and closes every debt
 item parked during Sprints 1–5. Where this document deviates from the
 CLAUDE.md baseline, this document wins.
 
+Superseded in one place, noted 2026-09-02. Items 2 and 3 below ask for the
+sanitized message to reach `console.error`. The requirement still holds and the
+mechanism does not: Sprint 7 added `lib/logger.ts`, which scrubs secrets on
+every write, and `console.*` is now banned in committed code. `runEvalJob`
+calls `logger.error` with the sanitized message and `logger.exception` in its
+catch blocks. The contract text below is left as it was written.
+
 ## Architect changes vs the CLAUDE.md baseline (read first)
 
 1. **Share scope pinned.** `POST /api/share` shares exactly one of:
