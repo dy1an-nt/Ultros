@@ -15,10 +15,10 @@ copy. Do not sweep existing docs into compliance as a drive-by; that's a diff
 the user didn't ask for (CLAUDE.md, scope). If existing prose breaks these rules
 badly, list it as a suggestion instead.
 
-Rule 13 (no em dashes) binds prose you write through this skill. Much of this
-repo's existing writing, `CLAUDE.md` included, predates the rule and is full of
-them. Those get fixed when you are already editing the file, not in a separate
-sweep.
+Rule 13 (no em dashes) is a house rule, recorded in `CLAUDE.md` Code Conventions.
+It binds every prose surface here whether or not this skill was invoked: docs,
+README, commit messages, PR descriptions, code comments, and user-facing copy.
+The repo was swept clean of them once; keep it that way as you edit.
 
 Rule 16 has a carve-out here: `CLAUDE.md` and the sprint summaries use bold
 lead-in labels deliberately as a reference format. Leave them alone.
