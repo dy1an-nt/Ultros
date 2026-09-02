@@ -101,7 +101,7 @@ function NavCard({ title, desc, onClick }: { title: string; desc: string; onClic
       className="bg-[#121815] border border-[#1B231F] hover:border-[#4FB286] rounded-[10px] p-5 text-left flex flex-col gap-1.5 transition-colors w-full"
     >
       <span className="text-base font-semibold text-[#ECF1ED]">{title} →</span>
-      <span className="text-sm text-[#5F6F64]">{desc}</span>
+      <span className="text-sm text-[#7E8C82]">{desc}</span>
     </button>
   )
 }
@@ -138,7 +138,7 @@ function Installation({ go }: { go: (s: Section) => void }) {
           Ultros calls model providers with your own API keys. You pay them directly at their list
           price. Keys are encrypted at rest and never logged.
         </p>
-        <p className="text-sm text-[#5F6F64]">
+        <p className="text-sm text-[#7E8C82]">
           Go to{" "}
           <Link href="/settings" className="text-[#7FD6AE]">
             Settings → API Keys
@@ -156,7 +156,7 @@ function Installation({ go }: { go: (s: Section) => void }) {
               className="bg-[#121815] border border-[#243029] rounded-lg p-3.5 flex flex-col gap-1"
             >
               <span className="text-sm font-semibold text-[#ECF1ED]">{p.label}</span>
-              <span className={`${mono.className} text-xs text-[#5F6F64]`}>{p.key}</span>
+              <span className={`${mono.className} text-xs text-[#7E8C82]`}>{p.key}</span>
             </div>
           ))}
         </div>
@@ -168,11 +168,11 @@ function Installation({ go }: { go: (s: Section) => void }) {
         </p>
         <CodeBlock>
           <div>
-            <span className="text-[#5F6F64]">$ </span>pip install ultros
+            <span className="text-[#7E8C82]">$ </span>pip install ultros
           </div>
           <div>
-            <span className="text-[#5F6F64]">$ </span>ultros auth login{" "}
-            <span className="text-[#5F6F64]"># opens browser, stores token</span>
+            <span className="text-[#7E8C82]">$ </span>ultros auth login{" "}
+            <span className="text-[#7E8C82]"># opens browser, stores token</span>
           </div>
         </CodeBlock>
       </Step>
@@ -211,7 +211,7 @@ function Quickstart({ go }: { go: (s: Section) => void }) {
 
       <Step n={1} title="Install the SDK">
         <CodeBlock>
-          <span className="text-[#5F6F64]">$ </span>pip install ultros
+          <span className="text-[#7E8C82]">$ </span>pip install ultros
         </CodeBlock>
       </Step>
 
@@ -222,10 +222,10 @@ function Quickstart({ go }: { go: (s: Section) => void }) {
         </p>
         <CodeBlock>
           <div>
-            <span className="text-[#5F6F64]">$ </span>ultros auth login
+            <span className="text-[#7E8C82]">$ </span>ultros auth login
           </div>
           <div>
-            <span className="text-[#5F6F64]">$ </span>ultros keys add anthropic{" "}
+            <span className="text-[#7E8C82]">$ </span>ultros keys add anthropic{" "}
             <span className="text-[#7FD6AE]">sk-ant-…</span>
           </div>
         </CodeBlock>
@@ -273,7 +273,7 @@ function Quickstart({ go }: { go: (s: Section) => void }) {
           <div>&nbsp;</div>
           <div>
             <span className="text-[#9C7DD4]">print</span>(run.summary()){" "}
-            <span className="text-[#5F6F64]"># accuracy, rubric scores, Δ vs previous version</span>
+            <span className="text-[#7E8C82]"># accuracy, rubric scores, Δ vs previous version</span>
           </div>
         </CodeBlock>
         <p className="text-base leading-[1.65] text-[#9FAFA4]">
@@ -397,14 +397,14 @@ function Datasets({ go }: { go: (s: Section) => void }) {
           Datasets page, or push programmatically with the SDK.
         </p>
         <CodeBlock>
-          <div className="text-[#5F6F64]"># CSV. First row is the header</div>
+          <div className="text-[#7E8C82]"># CSV. First row is the header</div>
           <div>input,expected_output</div>
           <div>
             <span className="text-[#7FD6AE]">&quot;Summarise this ticket…&quot;</span>,
             <span className="text-[#7FD6AE]">&quot;Billing issue, high priority&quot;</span>
           </div>
           <div>&nbsp;</div>
-          <div className="text-[#5F6F64]"># JSON Lines, one object per line</div>
+          <div className="text-[#7E8C82]"># JSON Lines, one object per line</div>
           <div>
             {'{'}
             <span className="text-[#7FD6AE]">&quot;input&quot;</span>:{" "}
@@ -425,7 +425,7 @@ function Datasets({ go }: { go: (s: Section) => void }) {
           Variable mapping is shown on the dataset detail page before you run.
         </p>
         <div className="bg-[#121815] border border-[#243029] rounded-[10px] overflow-hidden">
-          <div className="grid grid-cols-2 gap-4 px-5 py-3 border-b border-[#1B231F] text-xs font-semibold tracking-[0.08em] uppercase text-[#5F6F64]">
+          <div className="grid grid-cols-2 gap-4 px-5 py-3 border-b border-[#1B231F] text-xs font-semibold tracking-[0.08em] uppercase text-[#7E8C82]">
             <span>Dataset column</span>
             <span>Prompt variable</span>
           </div>
@@ -661,24 +661,24 @@ function Calibration({ go }: { go: (s: Section) => void }) {
       <div className="flex flex-col gap-4">
         <h2 className="m-0 text-[22px] font-semibold tracking-tight">Calibration run (SDK)</h2>
         <CodeBlock>
-          <div className="text-[#5F6F64]"># Score a small gold set with your rubric</div>
+          <div className="text-[#7E8C82]"># Score a small gold set with your rubric</div>
           <div>cal = ultros.calibrate(</div>
           <div className="pl-6">
             rubric=<span className="text-[#7FD6AE]">&quot;helpfulness-v2&quot;</span>,
           </div>
           <div className="pl-6">
             gold_set=<span className="text-[#7FD6AE]">&quot;gold-50.jsonl&quot;</span>,
-            <span className="text-[#5F6F64]"> # rows with human_score column</span>
+            <span className="text-[#7E8C82]"> # rows with human_score column</span>
           </div>
           <div>)</div>
           <div>&nbsp;</div>
           <div>
             <span className="text-[#9C7DD4]">print</span>(cal.correlation){" "}
-            <span className="text-[#5F6F64]"># Spearman ρ vs human labels</span>
+            <span className="text-[#7E8C82]"># Spearman ρ vs human labels</span>
           </div>
           <div>
             <span className="text-[#9C7DD4]">print</span>(cal.variance){" "}
-            <span className="text-[#5F6F64]"># avg score variance across 3 reruns</span>
+            <span className="text-[#7E8C82]"># avg score variance across 3 reruns</span>
           </div>
         </CodeBlock>
       </div>
@@ -745,7 +745,7 @@ function RegressionGates({ go }: { go: (s: Section) => void }) {
           your CI pipeline. It exits non-zero if the new version scores below the threshold.
         </p>
         <CodeBlock>
-          <div className="text-[#5F6F64]"># GitHub Actions step</div>
+          <div className="text-[#7E8C82]"># GitHub Actions step</div>
           <div>- <span className="text-[#7FD6AE]">name</span>: Check prompt regression</div>
           <div className="pl-4">
             <span className="text-[#7FD6AE]">run</span>: |
@@ -761,7 +761,7 @@ function RegressionGates({ go }: { go: (s: Section) => void }) {
           </div>
           <div className="pl-10">
             --min-delta <span className="text-[#9C7DD4]">-0.5</span>
-            <span className="text-[#5F6F64]">  # fail if score drops &gt; 0.5</span>
+            <span className="text-[#7E8C82]">  # fail if score drops &gt; 0.5</span>
           </div>
         </CodeBlock>
         <Callout>
@@ -869,18 +869,18 @@ function PythonSDK({ go }: { go: (s: Section) => void }) {
       <div className="flex flex-col gap-4">
         <h2 className="m-0 text-[22px] font-semibold tracking-tight">Authentication</h2>
         <CodeBlock>
-          <div className="text-[#5F6F64]"># Authenticate via browser (one-time)</div>
+          <div className="text-[#7E8C82]"># Authenticate via browser (one-time)</div>
           <div>
-            <span className="text-[#5F6F64]">$ </span>ultros auth login
+            <span className="text-[#7E8C82]">$ </span>ultros auth login
           </div>
           <div>&nbsp;</div>
-          <div className="text-[#5F6F64]"># Or set token directly</div>
+          <div className="text-[#7E8C82]"># Or set token directly</div>
           <div>
             <span className="text-[#9C7DD4]">import</span> ultros
           </div>
           <div>
             ultros.api_key = <span className="text-[#7FD6AE]">&quot;ultr_…&quot;</span>
-            <span className="text-[#5F6F64]">  # or ULTROS_API_KEY env var</span>
+            <span className="text-[#7E8C82]">  # or ULTROS_API_KEY env var</span>
           </div>
         </CodeBlock>
       </div>
@@ -1072,7 +1072,7 @@ function RestAPI({ go }: { go: (s: Section) => void }) {
         <h2 className="m-0 text-[22px] font-semibold tracking-tight">Authentication</h2>
         <CodeBlock>
           <div>
-            <span className="text-[#5F6F64]">$ </span>curl https://ultros.app/api/prompts \
+            <span className="text-[#7E8C82]">$ </span>curl https://ultros.app/api/prompts \
           </div>
           <div className="pl-6">
             -H <span className="text-[#7FD6AE]">&quot;Authorization: Bearer ultr_…&quot;</span>
@@ -1093,7 +1093,7 @@ function RestAPI({ go }: { go: (s: Section) => void }) {
               <span className={`${mono.className} text-[13.5px] text-[#ECF1ED] shrink-0`}>
                 {e.path}
               </span>
-              <span className="text-[13.5px] text-[#5F6F64]">{e.desc}</span>
+              <span className="text-[13.5px] text-[#7E8C82]">{e.desc}</span>
             </div>
           ))}
         </div>
@@ -1144,7 +1144,7 @@ export default function DocsPage() {
           <span className={`${serif.className} text-[22px] font-semibold tracking-tight`}>
             Ultros
           </span>
-          <span className="text-[14px] font-medium text-[#5F6F64] border-l border-[#243029] pl-2.5 ml-0.5">
+          <span className="text-[14px] font-medium text-[#7E8C82] border-l border-[#243029] pl-2.5 ml-0.5">
             Docs
           </span>
         </Link>
@@ -1182,7 +1182,7 @@ export default function DocsPage() {
         <aside className="sticky top-0 py-12 flex flex-col gap-8">
           {sidebarGroups.map((group) => (
             <div key={group.label} className="flex flex-col gap-2.5">
-              <span className="text-[12px] font-semibold tracking-[0.12em] uppercase text-[#5F6F64]">
+              <span className="text-[12px] font-semibold tracking-[0.12em] uppercase text-[#7E8C82]">
                 {group.label}
               </span>
               {group.items.map((item) => (
@@ -1216,10 +1216,10 @@ export default function DocsPage() {
             <span className={`${serif.className} text-lg font-semibold`}>Ultros</span>
           </div>
           <div className="flex items-center gap-7">
-            <Link href="/docs" className="text-sm text-[#5F6F64] hover:text-[#9FAFA4] transition-colors">
+            <Link href="/docs" className="text-sm text-[#7E8C82] hover:text-[#9FAFA4] transition-colors">
               Docs
             </Link>
-            <span className="text-sm text-[#5F6F64]">An AI evaluation platform. Every run scored, every regression caught.</span>
+            <span className="text-sm text-[#7E8C82]">An AI evaluation platform. Every run scored, every regression caught.</span>
           </div>
         </div>
       </footer>
