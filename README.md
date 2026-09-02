@@ -13,13 +13,13 @@ Positioned alongside LangSmith / HumanLoop / PromptLayer: every run is a first-c
 
 ## What it does
 
-- **Prompt workspace**. CodeMirror editor with system-prompt builder, `{{variable}}` templating, streaming runs, and full version history with diff/restore.
+- **Prompt workspace.** CodeMirror editor with system-prompt builder, `{{variable}}` templating, streaming runs, and full version history with diff/restore.
 - **Multi-model.** Claude, GPT, and Gemini direct (prompt caching / batch-friendly paths) plus OpenRouter for the long-tail catalog. Side-by-side comparison across 3 models.
 - **Evaluation engine.** Rubrics combine AI-as-judge criteria with deterministic matchers (exact, regex, JSON schema, contains). Judge calls run async through QStash; every batch row is auto-scored.
-- **Dataset testing**. Upload CSV/JSON (≤ 500 rows), map columns to template variables, fan out a prompt version across every row with live progress, aggregates (mean, sample variance, pass rate, latency, cost), per-row drill-down, CSV export.
-- **Experiments**. A/B/C/D variants × up to 3 models over a dataset; win matrix (pairwise difference of means), per-criterion breakdown, cell-level drill-down.
-- **Regression testing**. Pin a baseline run; any new version re-runs the same dataset/rubric/model and reports the score delta, a regressed verdict against a threshold, and *exactly which rows* flipped or dropped, score-over-time chart.
-- **Launch hardening**. Share-via-link (read-only, revocable, never indexed), per-route-class rate limiting, monthly budget banner + confirm, usage CSV export, Sentry + Vercel Analytics.
+- **Dataset testing.** Upload CSV/JSON (≤ 500 rows), map columns to template variables, fan out a prompt version across every row with live progress, aggregates (mean, sample variance, pass rate, latency, cost), per-row drill-down, CSV export.
+- **Experiments.** A/B/C/D variants × up to 3 models over a dataset; win matrix (pairwise difference of means), per-criterion breakdown, cell-level drill-down.
+- **Regression testing.** Pin a baseline run; any new version re-runs the same dataset/rubric/model and reports the score delta, a regressed verdict against a threshold, and *exactly which rows* flipped or dropped, plus a score-over-time chart.
+- **Launch hardening.** Share-via-link (read-only, revocable, never indexed), per-route-class rate limiting, monthly budget banner + confirm, usage CSV export, Sentry + Vercel Analytics.
 
 ## Screenshots
 
