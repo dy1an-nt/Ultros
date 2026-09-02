@@ -33,7 +33,7 @@ export const MODEL_CATALOG: ModelInfo[] = [
   { id: "qwen/qwen-2.5-72b-instruct", displayName: "Qwen 2.5 72B", provider: "openrouter", category: "openrouter", contextWindow: 32000, inputPerMillion: 0.35, outputPerMillion: 0.40 },
   { id: "cohere/command-r-plus", displayName: "Cohere Command R+", provider: "openrouter", category: "openrouter", contextWindow: 128000, inputPerMillion: 2.50, outputPerMillion: 10.00 },
   { id: "nousresearch/hermes-3-llama-3.1-70b", displayName: "Hermes 3 70B", provider: "openrouter", category: "openrouter", contextWindow: 128000, inputPerMillion: 0.40, outputPerMillion: 0.40 },
-  // Ollama (local inference — $0, dev only; hidden unless OLLAMA_BASE_URL is set)
+  // Ollama (local inference, $0, dev only; hidden unless OLLAMA_BASE_URL is set)
   { id: "qwen3:8b", displayName: "Qwen 3 8B (local)", provider: "ollama", category: "local", contextWindow: 40960, inputPerMillion: 0, outputPerMillion: 0 },
 ]
 
@@ -42,7 +42,7 @@ const PROVIDER_ENV_KEYS: Record<ProviderName, string> = {
   openai: "OPENAI_API_KEY",
   google: "GOOGLE_GENERATIVE_AI_API_KEY",
   openrouter: "OPENROUTER_API_KEY",
-  // Not a key — presence of the base URL is what marks local inference as
+  // Not a key. Presence of the base URL is what marks local inference as
   // available, so local models never surface in production deployments.
   ollama: "OLLAMA_BASE_URL",
 }
@@ -55,7 +55,7 @@ export function getModelInfo(modelId: string): ModelInfo | undefined {
   return MODEL_CATALOG.find((m) => m.id === modelId)
 }
 
-// Only models whose provider API key is configured — advertising the rest
+// Only models whose provider API key is configured, advertising the rest
 // guarantees runtime failures when a user selects them.
 export function getAvailableModels(): ModelInfo[] {
   return MODEL_CATALOG.filter((m) => isProviderConfigured(m.provider))

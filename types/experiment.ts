@@ -1,4 +1,4 @@
-// Shared experiments + regression contract — owned by the architect plan
+// Shared experiments + regression contract, owned by the architect plan
 // (docs/sprint-summary/sprint-5-architect.md). Backend and frontend both
 // import from here; do not redefine these shapes.
 
@@ -56,7 +56,7 @@ export type ExperimentResultDto = {
   cellStatus: "complete" | "failed"
 }
 
-// Per-criterion mean score within one cell — drives CriterionBreakdown.
+// Per-criterion mean score within one cell, drives CriterionBreakdown.
 export type CriterionStat = {
   promptVersionId: string
   model: string
@@ -81,7 +81,7 @@ export type BaselineDto = {
   rubricId: string
   rubricName: string | null
   datasetRunId: string
-  model: string | null // the baseline run's model — regressions reuse it
+  model: string | null // the baseline run's model, regressions reuse it
   baselineScore: number
   baselinePassRate: number
   setAt: string

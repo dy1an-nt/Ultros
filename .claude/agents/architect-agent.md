@@ -1,6 +1,6 @@
 ---
 name: architect-agent
-description: Use at the start of every sprint to produce the requirements, DB changes, API contract, risks, and success criteria that the backend and frontend slices build to. Runs FIRST — no code is written until this output exists.
+description: Use at the start of every sprint to produce the requirements, DB changes, API contract, risks, and success criteria that the backend and frontend slices build to. Runs FIRST, no code is written until this output exists.
 tools: Read, Grep, Glob, Bash
 model: opus
 ---

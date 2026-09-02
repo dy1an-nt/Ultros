@@ -14,41 +14,41 @@ regression testing. Record at 1080p; keep the cursor deliberate.
 
 ## Script
 
-**0:00 — Landing (10s).** Open `/`. "Ultros is an AI evaluation platform —
+**0:00: Landing (10s).** Open `/`. "Ultros is an AI evaluation platform,
 every prompt run is scored, tracked, and comparable." Click *Start evaluating*
 → dashboard.
 
-**0:10 — Prompt + streaming run (40s).** Open the prompt. Show system prompt +
+**0:10: Prompt + streaming run (40s).** Open the prompt, show system prompt +
 `{{question}}` templating. Pick a model, hit Run, let the response stream.
-Point at the run history row: tokens, latency, cost — "every run is recorded
+Point at the run history row: tokens, latency, cost. "every run is recorded
 with its exact cost."
 
-**0:50 — Rubric (30s).** Open Rubrics. Show "helpfulness": AI-judge criterion
+**0:50: Rubric (30s).** Open Rubrics, show "helpfulness": AI-judge criterion
 next to deterministic matchers, weights, pass threshold. "Scores combine an
 LLM judge with checks that can't drift."
 
-**1:20 — Dataset run (50s).** Open the dataset → Run prompt. Pick v1 + model +
+**1:20: Dataset run (50s).** Open the dataset → Run prompt, pick v1 + model +
 rubric; variables map automatically; show the cost estimate and tick the
 confirm box. Launch. Progress bar fills; aggregates appear: avg score, pass
 rate, variance, latency, cost. Expand one row: input → response → per-criterion
 scores. Click *Export CSV* briefly.
 
-**2:10 — Experiment (50s).** Experiments → New. Pick v1 and v2, two models —
+**2:10: Experiment (50s).** Experiments → New, pick v1 and v2, two models,
 "2×2, four cells, every cell is a full dataset run." Estimate → confirm →
-launch. Cells complete live. Results: per-cell table, then the win matrix —
+launch. Cells complete live, results: per-cell table, then the win matrix,
 "v2 beats v1 by +0.07 on Claude; this cell is under-sampled so it's flagged,
 not trusted." Show the per-criterion breakdown: "v2 wins on clarity, ties on
 format."
 
-**3:00 — Regression catch (45s).** Prompt → Regression. Set baseline from the
+**3:00: Regression catch (45s).** Prompt → Regression, set baseline from the
 existing scored run of v1 ("I bless these numbers"). Now run the check against
-v3 — a deliberately worsened version. Delta comes back negative past the
+v3, a deliberately worsened version. Delta comes back negative past the
 threshold: **regressed**, with the exact rows that flipped listed. "This is
-the deploy gate: not vibes — row-level evidence." Show the score-over-time
+the deploy gate: not vibes, row-level evidence." Show the score-over-time
 chart.
 
-**3:45 — Share + close (15s).** Click Share on the experiment, open the public
-link in an incognito window — read-only, no auth, revocable. "Ship prompt
+**3:45: Share + close (15s).** Click Share on the experiment, open the public
+link in an incognito window, read-only, no auth, revocable. "Ship prompt
 changes with evidence. Ultros." End.
 
 ## Backup beats (if time allows / retakes)

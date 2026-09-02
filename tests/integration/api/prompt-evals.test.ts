@@ -213,7 +213,7 @@ describe("GET /api/prompts/:id/leaderboard", () => {
         completedAt: new Date(),
       },
     })
-    await createEvaluation(user.id, run.id) // no rubricId — excluded by the filter
+    await createEvaluation(user.id, run.id) // no rubricId, excluded by the filter
 
     signInAs(user.clerkId)
     const { data } = await (

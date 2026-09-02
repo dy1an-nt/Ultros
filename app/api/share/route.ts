@@ -37,7 +37,7 @@ export async function GET() {
 }
 
 // Idempotent per (user, resource): re-POST returns the existing live link.
-// A revoked share gets a NEW token — the old URL must stay dead forever.
+// A revoked share gets a NEW token. The old URL must stay dead forever.
 export async function POST(req: NextRequest) {
   const { userId: clerkId } = await auth()
   if (!clerkId) return errorResponse("UNAUTHORIZED")

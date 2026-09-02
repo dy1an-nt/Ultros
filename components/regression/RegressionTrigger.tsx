@@ -34,7 +34,7 @@ export function RegressionTrigger({ promptId, baseline }: { promptId: string; ba
   const terminal = activeRun.data?.status === "complete" || activeRun.data?.status === "failed"
   useEffect(() => {
     if (!terminal || activeRunId === null) return
-    // The verdict lands via the finalize hook — refresh the history feed once.
+    // The verdict lands via the finalize hook, refresh the history feed once.
     queryClient.invalidateQueries({ queryKey: ["regressionHistory", promptId] })
     setActiveRunId(null)
   }, [terminal, activeRunId, promptId, queryClient])
@@ -56,7 +56,7 @@ export function RegressionTrigger({ promptId, baseline }: { promptId: string; ba
         >
           <option value="">New version…</option>
           {(versions.data ?? []).map((v) => (
-            <option key={v.id} value={v.id}>v{v.versionNumber}{v.label ? ` — ${v.label}` : ""}</option>
+            <option key={v.id} value={v.id}>v{v.versionNumber}{v.label ? `: ${v.label}` : ""}</option>
           ))}
         </select>
         <label className="flex items-center gap-1">
@@ -92,7 +92,7 @@ export function RegressionTrigger({ promptId, baseline }: { promptId: string; ba
             <div className="h-full bg-indigo-600 transition-all" style={{ width: `${pct}%` }} />
           </div>
           <p className="text-xs text-gray-500">
-            {done}/{activeRun.data?.totalRows ?? "?"} rows ({pct}%) — verdict appears in the history below
+            {done}/{activeRun.data?.totalRows ?? "?"} rows ({pct}%), verdict appears in the history below
           </p>
         </div>
       )}

@@ -30,7 +30,7 @@ model Prompt {
   title       String
   description String?
   tags        String[]
-  deletedAt   DateTime? // soft delete — runs/evals survive for usage accounting
+  deletedAt   DateTime? // soft delete, runs/evals survive for usage accounting
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
   versions    PromptVersion[]
@@ -231,7 +231,7 @@ model ExperimentResult {
 model Baseline {
   id               String          @id @default(cuid())
   userId           String
-  promptId         String          @unique // one active baseline per prompt — re-POST replaces
+  promptId         String          @unique // one active baseline per prompt, re-POST replaces
   promptVersionId  String
   datasetId        String
   rubricId         String
@@ -269,7 +269,7 @@ model Share {
   id           String    @id @default(cuid())
   userId       String
   user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  token        String    @unique // nanoid(32) — capability URL, stored plain by design
+  token        String    @unique // nanoid(32), capability URL, stored plain by design
   resourceType String // "promptRun" | "datasetRun" | "experiment"
   resourceId   String
   createdAt    DateTime  @default(now())

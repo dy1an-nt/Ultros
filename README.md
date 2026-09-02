@@ -3,7 +3,7 @@
 [![CI](https://github.com/dy1an-nt/Ultros/actions/workflows/ci.yml/badge.svg)](https://github.com/dy1an-nt/Ultros/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-**AI evaluation and prompt experimentation platform.** Test prompts against multiple models, run them across datasets, score every output automatically (AI-as-judge + deterministic rubrics), and catch performance regressions between prompt versions — before your users do.
+**AI evaluation and prompt experimentation platform.** Test prompts against multiple models, run them across datasets, score every output automatically (AI-as-judge + deterministic rubrics), and catch performance regressions between prompt versions, before your users do.
 
 Positioned alongside LangSmith / HumanLoop / PromptLayer: every run is a first-class, scored, tracked experiment.
 
@@ -13,13 +13,13 @@ Positioned alongside LangSmith / HumanLoop / PromptLayer: every run is a first-c
 
 ## What it does
 
-- **Prompt workspace** — CodeMirror editor with system-prompt builder, `{{variable}}` templating, streaming runs, and full version history with diff/restore.
-- **Multi-model** — Claude, GPT, and Gemini direct (prompt caching / batch-friendly paths) plus OpenRouter for the long-tail catalog. Side-by-side comparison across 3 models.
-- **Evaluation engine** — rubrics combine AI-as-judge criteria with deterministic matchers (exact, regex, JSON schema, contains). Judge calls run async through QStash; every batch row is auto-scored.
-- **Dataset testing** — upload CSV/JSON (≤ 500 rows), map columns to template variables, fan out a prompt version across every row with live progress, aggregates (mean, sample variance, pass rate, latency, cost), per-row drill-down, CSV export.
-- **Experiments** — A/B/C/D variants × up to 3 models over a dataset; win matrix (pairwise difference of means), per-criterion breakdown, cell-level drill-down.
-- **Regression testing** — pin a baseline run; any new version re-runs the same dataset/rubric/model and reports the score delta, a regressed verdict against a threshold, and *exactly which rows* flipped or dropped. Score-over-time chart.
-- **Launch hardening** — share-via-link (read-only, revocable, never indexed), per-route-class rate limiting, monthly budget banner + confirm, usage CSV export, Sentry + Vercel Analytics.
+- **Prompt workspace**. CodeMirror editor with system-prompt builder, `{{variable}}` templating, streaming runs, and full version history with diff/restore.
+- **Multi-model.** Claude, GPT, and Gemini direct (prompt caching / batch-friendly paths) plus OpenRouter for the long-tail catalog. Side-by-side comparison across 3 models.
+- **Evaluation engine.** Rubrics combine AI-as-judge criteria with deterministic matchers (exact, regex, JSON schema, contains). Judge calls run async through QStash; every batch row is auto-scored.
+- **Dataset testing**. Upload CSV/JSON (≤ 500 rows), map columns to template variables, fan out a prompt version across every row with live progress, aggregates (mean, sample variance, pass rate, latency, cost), per-row drill-down, CSV export.
+- **Experiments**. A/B/C/D variants × up to 3 models over a dataset; win matrix (pairwise difference of means), per-criterion breakdown, cell-level drill-down.
+- **Regression testing**. Pin a baseline run; any new version re-runs the same dataset/rubric/model and reports the score delta, a regressed verdict against a threshold, and *exactly which rows* flipped or dropped, score-over-time chart.
+- **Launch hardening**. Share-via-link (read-only, revocable, never indexed), per-route-class rate limiting, monthly budget banner + confirm, usage CSV export, Sentry + Vercel Analytics.
 
 ## Screenshots
 
@@ -31,23 +31,23 @@ Positioned alongside LangSmith / HumanLoop / PromptLayer: every run is a first-c
 
 ```mermaid
 flowchart TB
-    subgraph browser ["Browser — Next.js App Router · React 19"]
+    subgraph browser ["Browser: Next.js App Router · React 19"]
         UI["CodeMirror 6 · Recharts · shadcn/ui"]
         STATE["TanStack Query (server state, self-terminating polls) · Zustand"]
     end
 
-    subgraph api ["Next.js API routes (Vercel) — Clerk JWT on every protected route"]
-        AI["lib/ai — Vercel AI SDK wrappers"]
-        EVAL["lib/eval — deterministic matchers + AI judge"]
-        BATCH["lib/datasets — batch runner (per-row jobs, idempotent finalize)"]
-        EXP["lib/experiments · lib/regression — built ON the batch runner (a cell IS a DatasetRun)"]
-        RL["lib/rateLimit — sliding windows per route class"]
+    subgraph api ["Next.js API routes (Vercel): Clerk JWT on every protected route"]
+        AI["lib/ai: Vercel AI SDK wrappers"]
+        EVAL["lib/eval: deterministic matchers + AI judge"]
+        BATCH["lib/datasets: batch runner (per-row jobs, idempotent finalize)"]
+        EXP["lib/experiments · lib/regression: built ON the batch runner (a cell IS a DatasetRun)"]
+        RL["lib/rateLimit: sliding windows per route class"]
     end
 
     PROVIDERS["Anthropic · OpenAI · Google (direct) + OpenRouter (long-tail)"]
-    QSTASH["Upstash QStash — signed webhooks (dev: in-process after())"]
+    QSTASH["Upstash QStash: signed webhooks (dev: in-process after())"]
     REDIS[("Upstash Redis")]
-    DB[("Supabase Postgres — Prisma 7, every query scoped by userId")]
+    DB[("Supabase Postgres: Prisma 7, every query scoped by userId")]
     SENTRY["Sentry (env-gated)"]
 
     browser -->|streamed runs · polling| api
@@ -105,7 +105,7 @@ erDiagram
     RegressionRun ||--|| DatasetRun : "backed by"
 ```
 
-Key design decisions are documented per sprint in [`docs/sprint-summary/`](docs/sprint-summary/) — each sprint has an architect contract and a teaching write-up. A cross-cutting adversarial pass lives in [`docs/security-audit-2026-07-06.md`](docs/security-audit-2026-07-06.md).
+Key design decisions are documented per sprint in [`docs/sprint-summary/`](docs/sprint-summary/). Each sprint has an architect contract and a teaching write-up. A cross-cutting adversarial pass lives in [`docs/security-audit-2026-07-06.md`](docs/security-audit-2026-07-06.md).
 
 ## Local setup
 
@@ -118,7 +118,7 @@ npm run dev
 
 > Supabase note: if `DIRECT_URL` (the `db.<ref>.supabase.co` host) is unreachable from your network (it is IPv6-only), run migrations through the IPv4 session pooler: same credentials, host `aws-<region>.pooler.supabase.com`, port `5432`.
 
-In development, batch jobs run in-process (sequential `after()` loop) — QStash cannot reach localhost. Production uses signed QStash webhooks with per-user flow control.
+In development, batch jobs run in-process (sequential `after()` loop) because QStash cannot reach localhost. Production uses signed QStash webhooks with per-user flow control.
 
 ## Environment variables
 
@@ -154,7 +154,7 @@ npm run typecheck
 - API responses are always `{ data, error }`; costs in USD floats (`costUsd`), tokens as integers, latency in ms.
 - Every protected query is scoped by the Clerk-derived `userId`; cross-user ids return 400/404 without an existence leak.
 - Expensive launches (dataset runs, experiments) require a cost estimate + `confirm: true`.
-- Rate limits per class: runs 30/min, evals 60/min, launches 5/min, mutations 60/min, public share views 60/min/IP — 429 + `Retry-After`.
+- Rate limits per class: runs 30/min, evals 60/min, launches 5/min, mutations 60/min, public share views 60/min/IP, 429 + `Retry-After`.
 - Public share payloads are allowlist-built in `lib/share/resolve.ts`; nothing else constructs them.
 
 ## Demo

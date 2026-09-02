@@ -69,7 +69,7 @@ export function ExperimentConfig() {
     name.trim().length > 0 && variantIds.length > 0 && modelIds.length > 0 && datasetId !== "" && rubricId !== ""
 
   // Per-cell estimate via the Sprint 4 endpoint: token counts barely differ
-  // across variants of one prompt, prices differ across models — so estimate
+  // across variants of one prompt, prices differ across models, so estimate
   // the first variant on each model, then multiply by variant count.
   async function estimateCost() {
     setEstimating(true)
@@ -115,7 +115,7 @@ export function ExperimentConfig() {
         ) : prompts.error ? (
           <p className="text-sm text-red-400">Failed to load prompts: {prompts.error.message}</p>
         ) : !prompts.data || prompts.data.length === 0 ? (
-          <p className="text-sm text-gray-500">No prompts yet — create one first.</p>
+          <p className="text-sm text-gray-500">No prompts yet. Create one first.</p>
         ) : (
           <select
             value={promptId}
@@ -156,7 +156,7 @@ export function ExperimentConfig() {
 
       {promptId !== "" && (
         <div className="flex flex-col gap-1">
-          <p className="text-xs text-gray-500">Variants — up to {MAX_VARIANTS} versions to compare:</p>
+          <p className="text-xs text-gray-500">Up to {MAX_VARIANTS} versions to compare:</p>
           {versions.isLoading ? (
             <div className="h-8 bg-gray-800 rounded animate-pulse" />
           ) : versions.error ? (
@@ -170,7 +170,7 @@ export function ExperimentConfig() {
                     checked={variantIds.includes(v.id)}
                     onChange={() => { setVariantIds(toggle(variantIds, v.id, MAX_VARIANTS)); resetConfirmation() }}
                   />
-                  v{v.versionNumber}{v.label ? ` — ${v.label}` : ""}
+                  v{v.versionNumber}{v.label ? `: ${v.label}` : ""}
                 </label>
               ))}
             </div>
@@ -179,7 +179,7 @@ export function ExperimentConfig() {
       )}
 
       <div className="flex flex-col gap-1">
-        <p className="text-xs text-gray-500">Models — up to {MAX_MODELS}:</p>
+        <p className="text-xs text-gray-500">Up to {MAX_MODELS} models:</p>
         <div className="flex flex-wrap gap-2">
           {(models.data ?? []).map((m) => (
             <label key={m.id} className={checkRow(modelIds.includes(m.id))}>

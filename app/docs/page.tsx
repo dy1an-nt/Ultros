@@ -117,7 +117,7 @@ function Installation({ go }: { go: (s: Section) => void }) {
           Installation
         </h1>
         <p className="m-0 text-[17px] leading-[1.65] text-[#9FAFA4]">
-          Ultros runs as a web app — no install required for the UI. The Python SDK is optional and
+          Ultros runs as a web app, no install required for the UI. The Python SDK is optional and
           adds programmatic access for CI pipelines and notebook workflows.
         </p>
       </div>
@@ -135,7 +135,7 @@ function Installation({ go }: { go: (s: Section) => void }) {
 
       <Step n={2} title="Add your model keys">
         <p className="text-base leading-[1.65] text-[#9FAFA4]">
-          Ultros calls model providers with your own API keys — you pay them directly at their list
+          Ultros calls model providers with your own API keys. You pay them directly at their list
           price. Keys are encrypted at rest and never logged.
         </p>
         <p className="text-sm text-[#5F6F64]">
@@ -217,7 +217,7 @@ function Quickstart({ go }: { go: (s: Section) => void }) {
 
       <Step n={2} title="Connect your keys">
         <p className="text-base leading-[1.65] text-[#9FAFA4]">
-          Ultros calls providers with your own keys — you pay them directly. Set the ones you plan
+          Ultros calls providers with your own keys. You pay them directly. Set the ones you plan
           to test against.
         </p>
         <CodeBlock>
@@ -247,8 +247,8 @@ function Quickstart({ go }: { go: (s: Section) => void }) {
           </div>
         </CodeBlock>
         <Callout>
-          Pushing the same name again creates a new version —{" "}
-          <span className={`${mono.className} text-[#7FD6AE]`}>support-triage@v2</span> — never an
+          Pushing the same name again creates a new version, {" "}
+          <span className={`${mono.className} text-[#7FD6AE]`}>support-triage@v2</span>, never an
           overwrite. Old runs stay reproducible.
         </Callout>
       </Step>
@@ -277,7 +277,7 @@ function Quickstart({ go }: { go: (s: Section) => void }) {
           </div>
         </CodeBlock>
         <p className="text-base leading-[1.65] text-[#9FAFA4]">
-          The run appears in your dashboard as it executes — every row scored, every output stored,
+          The run appears in your dashboard as it executes, every row scored, every output stored,
           every delta computed against the last version of the prompt.
         </p>
       </Step>
@@ -302,7 +302,7 @@ function CoreConcepts({ go }: { go: (s: Section) => void }) {
   const concepts = [
     {
       term: "Prompt",
-      def: "A named, versioned unit of text — system prompt + user message template — stored in Ultros. Each save creates a new version; nothing is ever overwritten.",
+      def: "A named, versioned unit of text stored in Ultros: a system prompt plus a user message template. Each save creates a new version; nothing is ever overwritten.",
     },
     {
       term: "Version",
@@ -310,7 +310,7 @@ function CoreConcepts({ go }: { go: (s: Section) => void }) {
     },
     {
       term: "Dataset",
-      def: "A collection of rows, each a map of column→value pairs. Rows drive batch evaluation — {{variables}} in the prompt template are filled from dataset columns.",
+      def: "A collection of rows, each a map of column→value pairs. Rows drive batch evaluation. {{variables}} in the prompt template are filled from dataset columns.",
     },
     {
       term: "Rubric",
@@ -397,14 +397,14 @@ function Datasets({ go }: { go: (s: Section) => void }) {
           Datasets page, or push programmatically with the SDK.
         </p>
         <CodeBlock>
-          <div className="text-[#5F6F64]"># CSV — first row is the header</div>
+          <div className="text-[#5F6F64]"># CSV. First row is the header</div>
           <div>input,expected_output</div>
           <div>
             <span className="text-[#7FD6AE]">&quot;Summarise this ticket…&quot;</span>,
             <span className="text-[#7FD6AE]">&quot;Billing issue, high priority&quot;</span>
           </div>
           <div>&nbsp;</div>
-          <div className="text-[#5F6F64]"># JSON Lines — one object per line</div>
+          <div className="text-[#5F6F64]"># JSON Lines, one object per line</div>
           <div>
             {'{'}
             <span className="text-[#7FD6AE]">&quot;input&quot;</span>:{" "}
@@ -463,7 +463,7 @@ function Datasets({ go }: { go: (s: Section) => void }) {
           <div>)</div>
         </CodeBlock>
         <Callout>
-          Uploading a dataset with the same name creates a new version of it — existing runs that
+          Uploading a dataset with the same name creates a new version of it. Existing runs that
           reference the old version are unaffected.
         </Callout>
       </div>
@@ -494,7 +494,7 @@ function JudgesRubrics({ go }: { go: (s: Section) => void }) {
     {
       name: "exact",
       label: "Exact match",
-      desc: "Output must equal the expected_output column value (case-insensitive). Fast and cheap — use for classification or fixed-answer tasks.",
+      desc: "Output must equal the expected_output column value (case-insensitive). Fast and cheap. Use for classification or fixed-answer tasks.",
     },
     {
       name: "regex",
@@ -1219,7 +1219,7 @@ export default function DocsPage() {
             <Link href="/docs" className="text-sm text-[#5F6F64] hover:text-[#9FAFA4] transition-colors">
               Docs
             </Link>
-            <span className="text-sm text-[#5F6F64]">An AI evaluation platform — every run scored, every regression caught.</span>
+            <span className="text-sm text-[#5F6F64]">An AI evaluation platform. Every run scored, every regression caught.</span>
           </div>
         </div>
       </footer>

@@ -4,7 +4,7 @@ import * as Sentry from "@sentry/nextjs"
 import { errorBody } from "@/lib/api/errors"
 
 // One limiter, five route classes (architect pin #4). Applied as an explicit
-// helper call at the top of each limited route — no middleware magic that
+// helper call at the top of each limited route, no middleware magic that
 // hides which routes are limited. Keyed by userId everywhere except the
 // public share view, which has no user and is keyed by IP.
 export type LimitClass = "run" | "eval" | "launch" | "mutation" | "sharePublic"
@@ -42,8 +42,8 @@ function getLimiter(cls: LimitClass): Ratelimit | null {
 
 export type RateLimitResult = { ok: true } | { ok: false; retryAfterSec: number }
 
-// Fails OPEN when Redis is unconfigured or down — availability over
-// strictness for a portfolio product — but reports to Sentry so silent
+// Fails OPEN when Redis is unconfigured or down, availability over
+// strictness for a portfolio product, but reports to Sentry so silent
 // no-limiting is visible.
 export async function checkRateLimit(cls: LimitClass, key: string): Promise<RateLimitResult> {
   const limiter = getLimiter(cls)
@@ -60,7 +60,7 @@ export async function checkRateLimit(cls: LimitClass, key: string): Promise<Rate
 
 export function rateLimitResponse(result: { retryAfterSec: number }): Response {
   return Response.json(
-    errorBody("RATE_LIMITED", "Rate limit exceeded — slow down and retry shortly"),
+    errorBody("RATE_LIMITED", "Rate limit exceeded, slow down and retry shortly"),
     { status: 429, headers: { "Retry-After": String(result.retryAfterSec) } }
   )
 }

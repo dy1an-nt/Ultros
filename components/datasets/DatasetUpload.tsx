@@ -2,7 +2,7 @@
 import { useState } from "react"
 import { useCreateDataset } from "@/hooks/useDatasets"
 
-// Server is the validator of record — this component just collects the text
+// Server is the validator of record, this component just collects the text
 // and surfaces the server's field-specific 400s.
 export function DatasetUpload({ onClose }: { onClose: () => void }) {
   const createDataset = useCreateDataset()
@@ -86,7 +86,7 @@ export function DatasetUpload({ onClose }: { onClose: () => void }) {
       />
       <p className="text-xs text-gray-600">
         Max 500 rows, 20 columns, 2 MB. An optional <code>expectedOutput</code> column is stored
-        separately for scoring. Datasets are immutable — delete and re-upload to change rows.
+        separately for scoring. Datasets are immutable, delete and re-upload to change rows.
       </p>
       {error && <p className="text-sm text-red-400">{error}</p>}
       <div className="flex gap-2">

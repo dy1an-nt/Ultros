@@ -17,7 +17,7 @@ function post(body: unknown) {
 }
 
 // Real dataset (columns: ["question"]), rubric, and a prompt whose template
-// variable matches the dataset column — the identity mapping succeeds.
+// variable matches the dataset column, the identity mapping succeeds.
 async function launchFixtures(userId: string) {
   const dataset = await createDataset(userId)
   const rubric = await createRubric(userId)
@@ -65,7 +65,7 @@ describe("POST /api/experiments", () => {
     expect((await post({ confirm: true })).status).toBe(401)
   })
 
-  it("refuses to launch without confirm: true — cost fan-outs must be deliberate", async () => {
+  it("refuses to launch without confirm: true. Cost fan-outs must be deliberate", async () => {
     const user = await createUser()
     const f = await launchFixtures(user.id)
     signInAs(user.clerkId)
@@ -83,7 +83,7 @@ describe("POST /api/experiments", () => {
     expect((await post({ ...validBody(f), name: "  " })).status).toBe(400)
   })
 
-  it("rejects another user's dataset as 'invalid datasetId' — same as nonexistent", async () => {
+  it("rejects another user's dataset as 'invalid datasetId', same as nonexistent", async () => {
     const owner = await createUser()
     const intruder = await createUser()
     const theirs = await createDataset(owner.id)

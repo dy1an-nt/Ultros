@@ -1,4 +1,4 @@
-# Sprint 3 — Evaluation Engine — Architect Plan
+# Sprint 3: Evaluation Engine: Architect Plan
 
 Status: APPROVED contract. Backend and Frontend build to this document; neither inspects the other's code to understand the API.
 
@@ -13,12 +13,12 @@ manual eval trigger (true auto-scoring arrives with Sprint 4 dataset runs).
 Done when: a run can be scored against a rubric with both deterministic and
 AI-judge methods, the score is reproducible, and history + leaderboard render.
 
-1. Rubric CRUD — criteria with weights, type-specific config, pass threshold.
+1, rubric CRUD. Criteria with weights, type-specific config, pass threshold.
 2. Deterministic matchers run synchronously in the request: exact, regex,
    json_schema, contains.
 3. AI-as-judge runs asynchronously: QStash in prod, in-process `after()`
    fallback in dev (QStash cannot reach localhost; deployment is Sprint 6).
-4. Every Evaluation snapshots the rubric criteria at eval time — editing a
+4, every Evaluation snapshots the rubric criteria at eval time, editing a
    rubric never changes the meaning of historical scores (Sprint 5 baselines
    depend on this).
 5. Judge token usage and cost are recorded on the Evaluation and rolled into
@@ -26,18 +26,18 @@ AI-judge methods, the score is reproducible, and history + leaderboard render.
 6. Eval history per prompt and a version leaderboard (avg score per prompt
    version, optionally filtered by rubric).
 
-## Scoring math (pinned — do not improvise)
+## Scoring math (pinned: do not improvise)
 
 - Every criterion produces a score in **[0, 1]**. Deterministic matchers
   produce exactly 0 or 1. The judge returns a float in [0, 1] per criterion.
-- `totalScore = Σ(weightᵢ × scoreᵢ) / Σ(weightᵢ)` — weighted mean, also in [0, 1].
+- `totalScore = Σ(weightᵢ × scoreᵢ) / Σ(weightᵢ)`, weighted mean, also in [0, 1].
 - `passed = totalScore >= passThreshold` (passThreshold in [0, 1]).
 - Judge: **one** `generateObject` call covering all ai_judge criteria
   (cheaper, internally consistent), `temperature: 0`, default model
   `claude-haiku-4-5` (overridable via `JUDGE_MODEL` env; must pass
   `isModelAvailable`). Judge cost computed with `lib/ai/pricing.ts`.
 
-## Criterion spec (shared contract — see `types/eval.ts`, written by architect)
+## Criterion spec (shared contract: see `types/eval.ts`, written by architect)
 
 ```ts
 type CriterionType = "ai_judge" | "exact" | "regex" | "json_schema" | "contains"
@@ -59,7 +59,7 @@ Validation limits (server-side, return 400):
 - ≤ 20 criteria per rubric; ≥ 1 criterion.
 - regex: pattern ≤ 500 chars; flags restricted to subset of `imsu`; compile in
   try/catch; match against at most the first **100 KB** of response text
-  (ReDoS mitigation — JS regex has no timeout).
+  (ReDoS mitigation. JS regex has no timeout).
 - json_schema: serialized schema ≤ 10 KB; validated with Ajv (`strict: false`);
   the run's responseText must parse as JSON or the criterion scores 0.
 - exact/contains: expected/substring 1–10000 chars.
@@ -114,7 +114,7 @@ model Evaluation {
 
 Add back-relations: `User.rubrics Rubric[]`, `User` ← Evaluation via userId is
 plain column (no relation needed), `PromptRun.evaluations Evaluation[]`.
-Rubric deletion: `SetNull` on Evaluation — history survives via snapshot.
+Rubric deletion: `SetNull` on Evaluation, history survives via snapshot.
 
 ## New files / services
 
@@ -124,7 +124,7 @@ lib/eval/matchers.ts     # exact/regex/json_schema/contains → 0|1 + detail str
 lib/eval/judge.ts        # generateObject judge call (zod schema), default model, cost calc
 lib/eval/runEvalJob.ts   # async job body: claim → judge → merge → complete/fail (idempotent)
 lib/eval/queue.ts        # enqueueEvalJob(): QStash publish in prod, after() in dev
-types/eval.ts            # shared DTO/criterion types (WRITTEN BY ARCHITECT — do not redefine)
+types/eval.ts            # shared DTO/criterion types (WRITTEN BY ARCHITECT, do not redefine)
 app/api/rubrics/route.ts                 # GET list, POST create
 app/api/rubrics/[id]/route.ts            # GET, PATCH, DELETE
 app/api/runs/[runId]/eval/route.ts       # POST trigger eval
@@ -156,7 +156,7 @@ New env (all optional in dev): `UPSTASH_QSTASH_TOKEN`,
 
 Job (`runEvalJob(evaluationId)`):
 1. **Claim**: `updateMany({ where: { id, status: { in: ["pending", "running", "failed"] } }, data: { status: "running" } })`
-   — count 0 means complete (terminal) → no-op. This makes QStash retries
+  . Count 0 means complete (terminal) → no-op. This makes QStash retries
    idempotent; `complete` is the only terminal no-op state.
 2. Judge call for all ai_judge criteria in one generateObject; merge with
    stored deterministic scores; compute totals; set `complete` + judge
@@ -166,7 +166,7 @@ Job (`runEvalJob(evaluationId)`):
 `/api/jobs/eval`: verifies QStash signature with `Receiver` from
 `@upstash/qstash` (401 on failure); body `{ evaluationId }`. In dev
 (no QStash env), `enqueueEvalJob` calls `after(() => runEvalJob(id))`
-directly — no HTTP hop, no tunnel needed.
+directly, no HTTP hop, no tunnel needed.
 
 ## API contract (request/response examples)
 
@@ -187,7 +187,7 @@ res 400: { "data": null, "error": "criteria[0].config.pattern: invalid regex" }
 
 `GET /api/rubrics` → `{ data: Rubric[], error: null }` (user's only, newest first).
 `GET /api/rubrics/:id` → 200 / 404 / 403.
-`PATCH /api/rubrics/:id` — same body/validation as POST (partial allowed for
+`PATCH /api/rubrics/:id`, same body/validation as POST (partial allowed for
 name/description/passThreshold; criteria replaced wholesale if present).
 `DELETE /api/rubrics/:id` → `{ data: { id }, error: null }`; evals keep snapshots.
 
@@ -217,7 +217,7 @@ res: { "data": [ { "promptVersionId": "v2", "versionNumber": 2, "label": "tighte
 ```
 Computed from **complete** evaluations only, sorted by avgScore desc.
 
-`POST /api/jobs/eval` — QStash only, signature-verified, not for browsers.
+`POST /api/jobs/eval`, QStash only, signature-verified, not for browsers.
 
 ## Frontend behavior
 
@@ -235,15 +235,15 @@ Computed from **complete** evaluations only, sorted by avgScore desc.
 
 ## Risks / security notes
 
-- `/api/jobs/eval` is the only unauthenticated-by-Clerk route — QStash
+- `/api/jobs/eval` is the only unauthenticated-by-Clerk route, QStash
   signature verification is mandatory; without configured signing keys the
   route must 503, never run open.
-- User-supplied regex is a ReDoS vector — enforce the caps above.
+- User-supplied regex is a ReDoS vector, enforce the caps above.
 - Judge errors must not leak provider API keys into `error`.
 - All rubric/eval queries scoped by userId (Evaluation.userId is denormalized
   for exactly this).
 - QStash retries → idempotent claim transition (above).
-- `.bin` shims are broken on this volume — invoke tools as
+- `.bin` shims are broken on this volume, invoke tools as
   `node node_modules/typescript/bin/tsc`, `node node_modules/prisma/build/index.js`,
   `node node_modules/eslint/bin/eslint.js`, `node node_modules/next/dist/bin/next`.
 

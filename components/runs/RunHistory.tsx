@@ -38,7 +38,7 @@ export function RunHistory({ promptId }: { promptId: string }) {
   if (!runs.length) {
     return (
       <div className="text-center py-8 text-gray-600 text-sm">
-        No runs yet — hit Run to get started
+        No runs yet. Hit Run to get started
       </div>
     )
   }

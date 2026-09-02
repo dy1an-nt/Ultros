@@ -4,7 +4,7 @@ import { useDatasetRunRows } from "@/hooks/useDatasetRun"
 import type { RegressionHistoryDto, RegressionRunDto } from "@/types/experiment"
 
 function RegressedRows({ run }: { run: RegressionRunDto }) {
-  // Regressed rows are a subset of the new run's rows — pull one page big
+  // Regressed rows are a subset of the new run's rows, pull one page big
   // enough for the 500-row dataset cap and filter by the flagged ids.
   const rowsQuery = useDatasetRunRows(run.datasetRunId, 0, 200, true)
   const flagged = new Set(run.regressedRowIds)
@@ -17,7 +17,7 @@ function RegressedRows({ run }: { run: RegressionRunDto }) {
     (r) => r.datasetRowId !== null && flagged.has(r.datasetRowId)
   )
   if (rows.length === 0) {
-    return <p className="text-sm text-gray-500">Flagged rows are beyond the first 200 — open the run export.</p>
+    return <p className="text-sm text-gray-500">Flagged rows are beyond the first 200. Open the run export.</p>
   }
   return (
     <div className="bg-gray-950 rounded p-3 flex flex-col gap-3 text-xs">
@@ -53,7 +53,7 @@ export function RegressionResult({ history }: { history: RegressionHistoryDto })
   if (history.runs.length === 0) {
     return (
       <div className="text-center py-8 text-gray-600 text-sm">
-        No regression runs yet — pick a version above and run a check.
+        No regression runs yet. Pick a version above and run a check.
       </div>
     )
   }
@@ -82,14 +82,14 @@ export function RegressionResult({ history }: { history: RegressionHistoryDto })
               >
                 <td className="px-3 py-2 text-gray-500">{new Date(run.createdAt).toLocaleString()}</td>
                 <td className="px-3 py-2">v{run.versionNumber ?? "?"}</td>
-                <td className="px-3 py-2">{run.newScore !== null ? run.newScore.toFixed(3) : "—"}</td>
+                <td className="px-3 py-2">{run.newScore !== null ? run.newScore.toFixed(3) : "N/A"}</td>
                 <td className="px-3 py-2">
                   {run.scoreDelta !== null ? (
                     <span className={run.scoreDelta < 0 ? "text-red-400" : "text-green-400"}>
                       {run.scoreDelta >= 0 ? "+" : ""}{run.scoreDelta.toFixed(3)}
                     </span>
                   ) : (
-                    <span className="text-gray-600">—</span>
+                    <span className="text-gray-600">, </span>
                   )}
                 </td>
                 <td className="px-3 py-2">
@@ -104,7 +104,7 @@ export function RegressionResult({ history }: { history: RegressionHistoryDto })
                   )}
                 </td>
                 <td className="px-3 py-2 text-gray-500">
-                  {run.status === "complete" ? run.regressedRowIds.length : "—"}
+                  {run.status === "complete" ? run.regressedRowIds.length : "N/A"}
                 </td>
               </tr>
               {expanded === run.id && (

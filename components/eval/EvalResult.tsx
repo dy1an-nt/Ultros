@@ -14,7 +14,7 @@ export function PassBadge({ passed }: { passed: boolean | null }) {
 }
 
 export function formatScore(score: number | null): string {
-  return score === null ? "—" : `${(score * 100).toFixed(1)}%`
+  return score === null ? ", " : `${(score * 100).toFixed(1)}%`
 }
 
 type Props = { evaluation: EvaluationDto }

@@ -22,7 +22,7 @@ export const EVAL_LEASE_MS = 5 * 60 * 1000
 // terminal-success state and is never re-claimable. The claim is a *leased*
 // transition: it matches a job only if it is pending/failed, or running with
 // an expired (or never-set) lease. A row that another worker just stamped
-// `running` is therefore NOT re-claimed — this closes the race where, under
+// `running` is therefore NOT re-claimed. This closes the race where, under
 // Postgres READ COMMITTED, two concurrent deliveries that both saw `running`
 // in the claimable set would each proceed (double judge call, double usage
 // increment, double completion write).
@@ -42,7 +42,7 @@ export async function runEvalJob(evaluationId: string): Promise<void> {
     },
     data: { status: "running", startedAt: now, error: null },
   })
-  if (claimed.count === 0) return // complete, freshly-claimed, or nonexistent — no-op
+  if (claimed.count === 0) return // complete, freshly-claimed, or nonexistent, no-op
 
   try {
     const evaluation = await prisma.evaluation.findUnique({
@@ -84,7 +84,7 @@ export async function runEvalJob(evaluationId: string): Promise<void> {
         judgeCostUsd: judge.costUsd,
       }
 
-      // Judge usage rolls into UsageSummary tokens and cost only — a judge
+      // Judge usage rolls into UsageSummary tokens and cost only, a judge
       // call is not a user-initiated run, so totalRuns stays untouched.
       const today = new Date()
       today.setUTCHours(0, 0, 0, 0)
@@ -121,12 +121,12 @@ export async function runEvalJob(evaluationId: string): Promise<void> {
       },
     })
 
-    // Batch rows wait for their judge evals — this eval may be the last thing
+    // Batch rows wait for their judge evals. This eval may be the last thing
     // holding its DatasetRun open.
     if (datasetRunId) await finalizeIfDone(datasetRunId)
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown eval job error"
-    // Sanitized only — raw provider errors can echo request fragments or keys.
+    // Sanitized only. Raw provider errors can echo request fragments or keys.
     const safe = sanitizeErrorMessage(message)
     logger.error("eval job failed", { evaluationId, error: safe })
     try {
@@ -134,7 +134,7 @@ export async function runEvalJob(evaluationId: string): Promise<void> {
         where: { id: evaluationId },
         data: { status: "failed", error: safe },
       })
-      // A failed eval no longer blocks finalization — let its batch close out.
+      // A failed eval no longer blocks finalization. Let its batch close out.
       const failed = await prisma.evaluation.findUnique({
         where: { id: evaluationId },
         select: { promptRun: { select: { datasetRunId: true } } },

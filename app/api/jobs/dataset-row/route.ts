@@ -4,7 +4,7 @@ import { runDatasetRowJob } from "@/lib/datasets/rowJob"
 import { errorResponse, jsonOk } from "@/lib/api/errors"
 import { logger } from "@/lib/logger"
 
-// QStash webhook — not authed by Clerk; signature-verified, fail-closed.
+// QStash webhook, not authed by Clerk; signature-verified, fail-closed.
 export async function POST(req: NextRequest) {
   const sig = await verifyQstashSignature(req, "/api/jobs/dataset-row")
   if (!sig.ok) {
@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Row failures are persisted by the job itself (finishReason "error"); a 200
-  // tells QStash not to retry — duplicate deliveries are no-ops anyway.
+  // tells QStash not to retry. Duplicate deliveries are no-ops anyway.
   logger.info("dataset-row job received", { datasetRunId, rowIndex })
   await runDatasetRowJob(datasetRunId, rowIndex)
 

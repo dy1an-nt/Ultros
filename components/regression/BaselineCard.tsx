@@ -14,7 +14,7 @@ async function unwrap<T>(res: Response): Promise<T> {
 }
 
 // Set a baseline by pointing at an existing complete, scored DatasetRun of a
-// version — the user blesses numbers they have already seen.
+// version. The user blesses numbers they have already seen.
 function SetBaselineForm({ promptId, onDone }: { promptId: string; onDone: () => void }) {
   const datasets = useDatasets()
   const setBaseline = useSetBaseline(promptId)
@@ -53,7 +53,7 @@ function SetBaselineForm({ promptId, onDone }: { promptId: string; onDone: () =>
         >
           <option value="">Version…</option>
           {(versions.data ?? []).map((v) => (
-            <option key={v.id} value={v.id}>v{v.versionNumber}{v.label ? ` — ${v.label}` : ""}</option>
+            <option key={v.id} value={v.id}>v{v.versionNumber}{v.label ? `: ${v.label}` : ""}</option>
           ))}
         </select>
         <select
@@ -82,7 +82,7 @@ function SetBaselineForm({ promptId, onDone }: { promptId: string; onDone: () =>
       </div>
       {versionId !== "" && datasetId !== "" && !runs.isLoading && candidates.length === 0 && (
         <p className="text-sm text-gray-500">
-          No complete scored runs of that version on this dataset — launch one from the dataset page first.
+          No complete scored runs of that version on this dataset, launch one from the dataset page first.
         </p>
       )}
       {setBaseline.error && <p className="text-sm text-red-400">{setBaseline.error.message}</p>}
@@ -142,16 +142,16 @@ export function BaselineCard({ promptId }: { promptId: string }) {
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3 text-sm">
           <div>
             <p className="text-xs text-gray-500">Version</p>
-            <p className="text-white">{baseline.versionNumber !== null ? `v${baseline.versionNumber}` : "—"}</p>
+            <p className="text-white">{baseline.versionNumber !== null ? `v${baseline.versionNumber}` : "N/A"}</p>
           </div>
           <div>
             <p className="text-xs text-gray-500">Dataset</p>
-            <p className="text-white truncate">{baseline.datasetName ?? "—"}</p>
+            <p className="text-white truncate">{baseline.datasetName ?? "N/A"}</p>
           </div>
           <div>
             <p className="text-xs text-gray-500">Rubric · model</p>
             <p className="text-white truncate">
-              {baseline.rubricName ?? "deleted rubric"} · {baseline.model ?? "—"}
+              {baseline.rubricName ?? "deleted rubric"} · {baseline.model ?? "N/A"}
             </p>
           </div>
           <div>

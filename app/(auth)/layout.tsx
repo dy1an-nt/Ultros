@@ -2,7 +2,7 @@ import Link from "next/link"
 import { Hanken_Grotesk, Source_Serif_4 } from "next/font/google"
 import { UltrosLogo } from "@/components/landing/Logo"
 
-// Auth shell from docs/design/Ultros Sign In.dc.html — same dark-green brand
+// Auth shell from docs/design/Ultros Sign In.dc.html, same dark-green brand
 // surface as the landing page; Clerk renders the form inside it.
 const sans = Hanken_Grotesk({ subsets: ["latin"], weight: ["400", "500", "600", "700"] })
 const serif = Source_Serif_4({ subsets: ["latin"], weight: ["400", "500", "600"] })

@@ -3,14 +3,14 @@ import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server"
 const isPublicRoute = createRouteMatcher([
   "/",
   "/docs",
-  // Extensionless metadata route — the config matcher below only skips *.png etc.
+  // Extensionless metadata route, the config matcher below only skips *.png etc.
   "/opengraph-image",
   "/sign-in(.*)",
   "/sign-up(.*)",
   "/api/webhooks/(.*)",
   "/share/(.*)",
   "/api/share/(.*)",
-  // QStash workers authenticate via signature verification, not Clerk —
+  // QStash workers authenticate via signature verification, not Clerk,
   // auth.protect() here would bounce every production job delivery.
   "/api/jobs/(.*)",
 ])

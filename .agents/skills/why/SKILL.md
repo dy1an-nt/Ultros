@@ -1,6 +1,6 @@
 ---
 name: why
-description: "Reconstruct why code is shaped the way it is, from git, gh, and docs/, with explicit confidence tiers. Use for "why does X work this way" or design rationale."
+description: "Reconstruct why code is shaped the way it is, from git, gh, and docs/, with explicit confidence tiers. Use for 'why does X work this way' or design rationale."
 ---
 
 # Why

@@ -1,6 +1,6 @@
 ---
 name: how
-description: "Explain how a subsystem works: runtime flow, file ownership, and layering. Use for "how does X work", a walkthrough before changing unfamiliar code, or placement questions. Use why for historical motivation."
+description: "Explain how a subsystem works: runtime flow, file ownership, and layering. Use for 'how does X work', a walkthrough before changing unfamiliar code, or placement questions. Use why for historical motivation."
 ---
 
 # How

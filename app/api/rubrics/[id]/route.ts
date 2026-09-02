@@ -77,7 +77,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     data.passThreshold = value
   }
   if (body.criteria !== undefined) {
-    // Criteria are replaced wholesale — no partial criterion merging.
+    // Criteria are replaced wholesale, no partial criterion merging.
     const { criteria, error: criteriaError } = validateCriteria(body.criteria)
     if (criteria === null) return errorResponse("VALIDATION_ERROR", criteriaError)
     data.criteria = criteria

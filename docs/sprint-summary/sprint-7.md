@@ -1,34 +1,34 @@
-# Sprint 7 — Testing & Reliability
+# Sprint 7: Testing & Reliability
 
 Teaching summary. This sprint added no user-facing features. It made the
 platform safe to change: a test suite around the pure business logic, a CI
 pipeline that runs on every push and PR, a fix for a real concurrency bug in
 the eval queue, and a standardized error + logging spine. The theme is
-**confidence** — after this sprint you can refactor `matchers.ts` or the eval
+**confidence**. After this sprint you can refactor `matchers.ts` or the eval
 job and the suite tells you in seconds whether you broke the contract.
 
 The work was scoped "core reliability first": the test framework, unit tests,
 CI, the QStash race fix, and the error/logging infrastructure landed this
 pass. Broad rollout of the structured error envelope to all ~30 user-facing
 routes (and the matching frontend change) is staged as a follow-up so it can
-ship together with the UI update — see "What's deliberately deferred."
+ship together with the UI update, see "What's deliberately deferred."
 
 ## Testing framework
 
 We use **Vitest** (`vitest.config.ts`). Why Vitest over Jest:
 
-- Native ESM + TypeScript with no Babel/ts-jest transform layer — it reuses
+- Native ESM + TypeScript with no Babel/ts-jest transform layer, it reuses
   Vite's transform, so `import`s "just work" with our `moduleResolution:
   bundler` tsconfig.
 - The `@/` path alias is mirrored in the config's `resolve.alias`, so test
   files import app modules with the exact specifier the app uses
   (`@/lib/eval/matchers`), not brittle relative paths.
-- `environment: "node"` — the code under test is server logic, no DOM needed.
+- `environment: "node"`. The code under test is server logic, no DOM needed.
 - `tests/setup.ts` (a `setupFile`) provides harmless fallback env vars
   (`DATABASE_URL`, `DB_PASSWORD`) so any module that touches `lib/prisma.ts`
   at import time doesn't throw during a pure unit test. The Prisma client
-  builds a connection pool lazily — it never actually connects unless a query
-  runs — so a placeholder URL is safe.
+  builds a connection pool lazily, it never actually connects unless a query
+  runs, so a placeholder URL is safe.
 
 Scripts in `package.json`: `test` (CI, one-shot), `test:watch` (local TDD),
 `test:coverage` (v8 coverage over `lib/**`), plus `typecheck` (`tsc --noEmit`).
@@ -68,21 +68,21 @@ writing the route-level integration suites is the natural next increment.
 
 Runs on every push to `main` and every pull request. Three parallel jobs:
 
-1. **quality** — `npm ci` → `prisma generate` (the client is git-ignored and
+1. **quality**. `npm ci` → `prisma generate` (the client is git-ignored and
    generated) → `lint` → `typecheck` → `test`. This is the gating job for
    correctness.
-2. **migrations** — spins up Postgres, runs `prisma migrate deploy`. Catches a
+2. **migrations**. Spins up Postgres, runs `prisma migrate deploy`, catches a
    malformed migration or schema/migration drift before it reaches a real
    environment.
-3. **build** — `next build` with placeholder secrets, confirming the app still
+3. **build**, `next build` with placeholder secrets, confirming the app still
    compiles.
 
 Security choices baked in:
 
-- `permissions: contents: read` at the workflow level — **least privilege**. A
+- `permissions: contents: read` at the workflow level, **least privilege**, a
   compromised dependency in a CI step cannot push commits, cut releases, or
   mint tokens, because the `GITHUB_TOKEN` has no write scopes.
-- `concurrency` with `cancel-in-progress` — a new push supersedes an in-flight
+- `concurrency` with `cancel-in-progress`, a new push supersedes an in-flight
   run, saving minutes.
 - Secrets in the build job are obvious placeholders; no real provider keys live
   in CI. Nothing in the test path makes a real provider call.
@@ -90,7 +90,7 @@ Security choices baked in:
 ### A real fix CI surfaced
 
 Adding `npm run lint` to CI immediately exposed that lint was already failing on
-a clean checkout — ESLint was walking `.claude/worktrees/**` (agent worktree
+a clean checkout. ESLint was walking `.claude/worktrees/**` (agent worktree
 copies of the repo) and `docs/design/support.js` (a vendored design mockup).
 Those are now in `globalIgnores`, alongside the generated Prisma client. Two
 new React-Compiler advisory rules (`react-hooks/set-state-in-effect`,
@@ -98,7 +98,7 @@ new React-Compiler advisory rules (`react-hooks/set-state-in-effect`,
 they stay visible for paydown but a stylistic advisory predating the sprint
 shouldn't block every merge. Genuine errors still fail the gate.
 
-## The QStash race condition — root cause and fix
+## The QStash race condition: root cause and fix
 
 ### Symptom
 
@@ -108,7 +108,7 @@ writes for one `Evaluation`.
 
 ### Root cause
 
-QStash delivers **at-least-once** — the same job can arrive twice (retry,
+QStash delivers **at-least-once**. The same job can arrive twice (retry,
 network hiccup, or a genuine duplicate). `runEvalJob` guards against this with a
 "claim" transition: an `updateMany` that flips the row to `running` and only
 proceeds if it matched a row. The bug was in *which* states were claimable:
@@ -121,7 +121,7 @@ where: { id, status: { in: ["pending", "running", "failed"] } }
 `running` was in the claimable set. Under Postgres' default **READ COMMITTED**
 isolation, two concurrent deliveries serialize on the row lock, but the second
 one re-reads the row *after* the first commits and re-evaluates the `WHERE`
-clause against the new value. It sees `status = "running"` — still in the set —
+clause against the new value, it sees `status = "running"`. Still in the set,
 so it claims too. Both workers proceed. `running` was meant to let a *crashed*
 job be retried, but it also let a *live, in-flight* job be re-claimed. That
 single overloaded meaning is the whole bug.
@@ -146,9 +146,9 @@ data: { status: "running", startedAt: now }              // stamp a fresh lease
 
 Now the two meanings are separated. A *fresh* `running` row (claimed seconds
 ago) matches none of the branches, so a concurrent duplicate delivery claims 0
-rows and no-ops — the race is closed. A *stale* `running` row (worker died, its
+rows and no-ops. The race is closed, a *stale* `running` row (worker died, its
 lease lapsed past `EVAL_LEASE_MS`) is reclaimable, so genuine crashes still
-recover. The lease window must exceed worst-case job latency — a judge call is
+recover. The lease window must exceed worst-case job latency. A judge call is
 seconds, so 5 minutes is comfortably safe.
 
 `complete` is the only terminal-success state and is in **no** branch, so a
@@ -177,20 +177,20 @@ failure: { data: null, error: { code, message } }
 
 Pieces:
 
-- `ERROR_CODES` — the closed set of codes, each mapped to an HTTP status and a
+- `ERROR_CODES`. The closed set of codes, each mapped to an HTTP status and a
   default user-safe message.
-- `ApiError` — a throwable carrying a `code`; `.status` derives from the code.
+- `ApiError`, a throwable carrying a `code`; `.status` derives from the code.
   Services throw it; the boundary converts it.
-- `errorResponse(code, message?)` / `jsonOk(data, status?)` — build the
+- `errorResponse(code, message?)` / `jsonOk(data, status?)`, build the
   envelope so no handler hand-rolls `Response.json({ data: null, error: ... })`.
-- `toErrorResponse(err)` — the safety net: a known `ApiError` passes its
+- `toErrorResponse(err)`. The safety net: a known `ApiError` passes its
   code/message through; **anything else collapses to a generic 500**. A raw
   driver error or stack trace (which can carry a connection string or secret)
   never reaches the client. A test asserts a leaked `password=...` in a thrown
   message does not survive into the response body.
 
 Applied this pass to the two QStash job routes (`/api/jobs/eval`,
-`/api/jobs/dataset-row`) — they're machine-to-machine, so changing the error
+`/api/jobs/dataset-row`), they're machine-to-machine, so changing the error
 shape there has zero frontend coupling and demonstrates the pattern end to end.
 
 ## Logging improvements (`lib/logger.ts`)
@@ -200,14 +200,14 @@ but raw `console.log` is unstructured and unsafe:
 
 - Emits single-line JSON (`{ level, message, ...context, timestamp }`) so
   Vercel/Sentry can index fields.
-- **Every message is run through `sanitizeErrorMessage`** before it's written —
-  the same secret-scrubbing used for persisted errors — so an API key echoed in
+- **Every message is run through `sanitizeErrorMessage`** before it's written,
+  the same secret-scrubbing used for persisted errors, so an API key echoed in
   a provider error can't leak into logs.
 - `info`/`debug` are suppressed in production to keep function logs lean;
   `warn`/`error` always emit.
 - `logger.exception(msg, err, ctx)` is the catch-block convenience: it scrubs
   the error and attaches it as a field. The eval job's failure path now uses it.
-- Context is restricted to safe identifiers (ids, codes, counts) by convention —
+- Context is restricted to safe identifiers (ids, codes, counts) by convention,
   never raw request bodies or headers.
 
 `sanitizeErrorMessage` itself was extracted from `runEvalJob.ts` into its own
@@ -218,7 +218,7 @@ module with no IO imports.**
 
 ## What's deliberately deferred
 
-Nothing remains deferred — both items below shipped as follow-ups within the
+Nothing remains deferred, both items below shipped as follow-ups within the
 sprint.
 
 - ~~**Broad error-envelope rollout.**~~ Shipped. All ~35 route files now build
@@ -246,7 +246,7 @@ sprint.
   chain, cell fan-out with next/server after() stubbed, results win matrix,
   per-row drill-down), baseline/regression (blessed-run pinning,
   replace-in-place, cascade on delete, launch pinning the baseline's model,
-  and the history route's lazy finalize — the lost-hook safety net —
+  and the history route's lazy finalize, the lost-hook safety net,
   producing real verdicts), usage (windowed aggregation, per-user isolation,
   CSV export bounds), and run/eval (manual eval trigger: deterministic
   synchronous path with weighted totals and rubric snapshot, queued
@@ -261,7 +261,7 @@ sprint.
   and how a leased claim provides idempotency *and* crash recovery from one
   column.
 - Why including `running` in a claimable set defeats idempotency under READ
-  COMMITTED — i.e. that `WHERE` predicates are re-evaluated after a lock is
+  COMMITTED, i.e. that `WHERE` predicates are re-evaluated after a lock is
   released, not frozen at statement start.
 - Why we test pure functions and isolate IO, and how that shaped the
   `matchers` / `stats` / `compare` factoring.
@@ -273,20 +273,20 @@ sprint.
 
 All five closed in follow-up work:
 
-1. ~~Route-level integration suite~~ — done, see above.
-2. ~~Error-envelope rollout~~ — done, see above.
-3. ~~Coverage threshold~~ — done: `vitest.config.ts` pins a ratchet floor over
+1. ~~Route-level integration suite~~. Done, see above.
+2. ~~Error-envelope rollout~~. Done, see above.
+3. ~~Coverage threshold~~, done: `vitest.config.ts` pins a ratchet floor over
    `lib/**` and CI's quality job runs `test:coverage`, so unit coverage can
-   only rise. The floor is low by design — lib's IO modules are exercised by
+   only rise. The floor is low by design. Lib's IO modules are exercised by
    the (uninstrumented) integration suite.
-4. ~~Concurrency test~~ — done: `tests/integration/lib/runEvalJob-concurrency.test.ts`
+4. ~~Concurrency test~~, done: `tests/integration/lib/runEvalJob-concurrency.test.ts`
    fires two simultaneous deliveries at one evaluation against real Postgres
    and asserts exactly one judge call, plus lease-reclaim and
    complete-is-terminal behavior.
-5. ~~DLQ handling~~ — done: both QStash publishers set
+5. ~~DLQ handling~~. Done: both QStash publishers set
    `failureCallback: /api/jobs/failed`; when a message exhausts every delivery
    retry, the callback marks a still-open eval `failed` (or records the lost
-   dataset row as a failed `PromptRun`) and finalizes any waiting batch —
+   dataset row as a failed `PromptRun`) and finalizes any waiting batch,
    previously either case wedged a `DatasetRun` forever. Execution routes
    (`/api/run`, `/api/compare`) also gained integration suites with `lib/ai`
    stubbed at the `runStream` seam.

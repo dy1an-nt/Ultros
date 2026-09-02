@@ -6,7 +6,7 @@ import { errorResponse, jsonOk } from "@/lib/api/errors"
 
 // Per-row drill-down for one experiment cell: ?cell=<datasetRunId>&offset&limit.
 // Proxies the cell's DatasetRun rows after verifying the cell belongs to this
-// experiment — same row shape as /api/dataset-runs/:id/rows.
+// experiment. Same row shape as /api/dataset-runs/:id/rows.
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const { userId: clerkId } = await auth()

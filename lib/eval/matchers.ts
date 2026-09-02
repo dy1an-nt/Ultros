@@ -95,7 +95,7 @@ export function runDeterministicCriterion(criterion: Criterion, responseText: st
   }
 }
 
-// totalScore = Σ(weightᵢ × scoreᵢ) / Σ(weightᵢ) — weighted mean in [0, 1].
+// totalScore = Σ(weightᵢ × scoreᵢ) / Σ(weightᵢ), weighted mean in [0, 1].
 export function computeTotalScore(scores: CriterionScore[]): number {
   const weightSum = scores.reduce((acc, s) => acc + s.weight, 0)
   if (weightSum === 0) return 0

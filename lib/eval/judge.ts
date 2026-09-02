@@ -39,7 +39,7 @@ function clamp01(n: number): number {
   return Math.min(1, Math.max(0, n))
 }
 
-// One generateObject call covering all ai_judge criteria — cheaper than one
+// One generateObject call covering all ai_judge criteria, cheaper than one
 // call per criterion and internally consistent. temperature pinned to 0.
 export async function judgeCriteria(criteria: Criterion[], responseText: string): Promise<JudgeResult> {
   const model = getJudgeModel()

@@ -123,7 +123,7 @@ export async function POST(req: NextRequest) {
           const latencyMs = Date.now() - startTime
           const modelInfo = getModelInfo(model)
 
-          // Persistence failures must not be reported as generation errors —
+          // Persistence failures must not be reported as generation errors,
           // the model output above already succeeded.
           let runId: string | null = null
           try {

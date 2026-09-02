@@ -57,7 +57,7 @@ describe("POST /api/share", () => {
     expect((await post({ resourceType: "promptRun", resourceId: "ghost" })).status).toBe(404)
   })
 
-  it("returns 404 (not 403) for another user's resource — same as nonexistent", async () => {
+  it("returns 404 (not 403) for another user's resource, same as nonexistent", async () => {
     const owner = await createUser()
     const intruder = await createUser()
     const { run } = await createPromptRun(owner.id)
@@ -102,7 +102,7 @@ describe("POST /api/share", () => {
     expect(await prisma.share.count()).toBe(1)
   })
 
-  it("re-sharing a revoked resource mints a NEW token — the old URL stays dead", async () => {
+  it("re-sharing a revoked resource mints a NEW token. The old URL stays dead", async () => {
     const user = await createUser()
     const { run } = await createPromptRun(user.id)
     const revoked = await createShare(user.id, "promptRun", run.id, { revokedAt: new Date() })
@@ -113,7 +113,7 @@ describe("POST /api/share", () => {
     const { data } = await res.json()
     expect(data.token).not.toBe(revoked.token)
 
-    // Same row, reissued — not a second share for the resource.
+    // Same row, reissued, not a second share for the resource.
     const shares = await prisma.share.findMany({ where: { userId: user.id } })
     expect(shares).toHaveLength(1)
     expect(shares[0].revokedAt).toBeNull()

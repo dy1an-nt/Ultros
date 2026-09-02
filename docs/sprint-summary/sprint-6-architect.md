@@ -1,4 +1,4 @@
-# Sprint 6 — Polish & Launch — Architect Plan
+# Sprint 6: Polish & Launch: Architect Plan
 
 Status: Contract draft, architect-reviewed 2026-06-09. This sprint hardens and
 ships; it adds one small feature surface (share links) and closes every debt
@@ -10,7 +10,7 @@ CLAUDE.md baseline, this document wins.
 1. **Share scope pinned.** `POST /api/share` shares exactly one of:
    a PromptRun (single result), a DatasetRun (batch results), or an
    Experiment (full comparison). Read-only, revocable, no auth on the public
-   view. Sharing a *prompt* (editable thing) is out of scope — this is an
+   view. Sharing a *prompt* (editable thing) is out of scope. This is an
    eval platform; you share results.
 2. **Debt closure is in-contract, not best-effort.** Items parked earlier are
    listed in "Deferred fixes" below with their origin; QA tests them like
@@ -29,10 +29,10 @@ CLAUDE.md baseline, this document wins.
    single runs + compare 30/min, eval triggers 60/min, dataset-run and
    experiment launches 5/min, mutations (CRUD) 60/min, public share views
    60/min/IP. 429 with `Retry-After`. Implemented once in `lib/rateLimit.ts`
-   and applied as a helper call at the top of each route — no middleware
+   and applied as a helper call at the top of each route, no middleware
    magic that hides which routes are limited.
 5. **Share tokens are 32+ chars of crypto randomness** (`nanoid(32)`), stored
-   hashed? No — pinned: stored plain. They are capability URLs, not
+   hashed? No, pinned: stored plain. They are capability URLs, not
    credentials equivalent to passwords; hashing would break "list my share
    links". Revocation (DELETE) and per-resource scoping bound the blast
    radius. Never index share pages (`noindex` + `X-Robots-Tag`).
@@ -116,14 +116,14 @@ New env: `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`,
 ## Public share DTOs (sanitization contract)
 
 `lib/share/resolve.ts` is the only code that builds public payloads, and it
-is allowlist-based — it copies named fields, never spreads a Prisma object:
+is allowlist-based, it copies named fields, never spreads a Prisma object:
 
 - promptRun → model, createdAt, responseText, latencyMs, tokens, costUsd,
   finishReason, prompt title + version number, eval summary (score, passed,
   criteria names/scores). **Never:** userId, ids of private resources beyond
   the share itself, judge reasoning is included but error fields are not.
 - datasetRun → aggregates, per-row table (input data, response, score).
-  Dataset rows are the sharer's own uploaded data — sharing them is the
+  Dataset rows are the sharer's own uploaded data. Sharing them is the
   point; the share dialog says so explicitly.
 - experiment → results matrix + win matrix (no per-row drill-down on public
   experiments; link the underlying datasetRun shares instead if wanted).
@@ -155,7 +155,7 @@ formula-injection guard as the Sprint 4 export.
 ## Launch checklist (deployment is part of the contract)
 
 1. Vercel project: all env vars from CLAUDE.md plus Sentry/Redis; QStash
-   signing keys set so `/api/jobs/*` come alive (they 503 until then —
+   signing keys set so `/api/jobs/*` come alive (they 503 until then,
    verify they 503, then verify they work).
 2. Clerk production instance + webhook URL updated; Svix secret rotated.
 3. `prisma migrate deploy` against Supabase (not `migrate dev`).
@@ -170,7 +170,7 @@ formula-injection guard as the Sprint 4 export.
 
 ## Risks / security notes
 
-- Share pages render user-generated text (responses, dataset cells) — React
+- Share pages render user-generated text (responses, dataset cells), React
   text nodes only, no `dangerouslySetInnerHTML`, no markdown rendering on
   public pages this sprint (markdown introduces an XSS surface for zero
   demo value).
@@ -178,12 +178,12 @@ formula-injection guard as the Sprint 4 export.
   (`Referrer-Policy: no-referrer` on share pages), revocation works
   immediately (no caching of resolve results).
 - Rate limiter fails **open** if Redis is down (availability over strictness
-  for a portfolio product) — but logs to Sentry so it's visible.
-- Budget check reads UsageSummary aggregates — cheap, no extra provider
+  for a portfolio product), but logs to Sentry so it's visible.
+- Budget check reads UsageSummary aggregates, cheap, no extra provider
   calls; month boundary computed in UTC like the daily rows.
-- Soft-deleted prompts must not resurrect via share links created earlier —
+- Soft-deleted prompts must not resurrect via share links created earlier,
   resolve checks `prompt.deletedAt` and 404s.
-- `.bin` shims broken on this volume — `node node_modules/...` invocations.
+- `.bin` shims broken on this volume, `node node_modules/...` invocations.
 
 ## Success criteria
 

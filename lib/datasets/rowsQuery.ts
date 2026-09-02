@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma"
 export const ROWS_DEFAULT_LIMIT = 50
 export const ROWS_MAX_LIMIT = 200
 
-// Shared by /api/dataset-runs/:id/rows and the experiment drill-down proxy —
+// Shared by /api/dataset-runs/:id/rows and the experiment drill-down proxy,
 // one query, one row shape, regardless of which surface asks.
 export async function fetchDatasetRunRows(datasetRunId: string, offset: number, limit: number) {
   const [total, promptRuns] = await Promise.all([

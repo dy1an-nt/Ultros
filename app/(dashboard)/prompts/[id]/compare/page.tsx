@@ -59,7 +59,7 @@ export default function ComparePage() {
       </div>
       <p className="text-sm text-gray-500 mb-6">
         Running version {latestVersion.versionNumber}
-        {latestVersion.label ? ` — ${latestVersion.label}` : ""}
+        {latestVersion.label ? `, ${latestVersion.label}` : ""}
       </p>
       <CompareView promptVersionId={latestVersion.id} />
     </div>

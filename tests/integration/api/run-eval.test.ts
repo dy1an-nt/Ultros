@@ -134,7 +134,7 @@ describe("POST /api/runs/:runId/eval", () => {
     expect(data.totalScore).toBeNull()
     expect(data.criteriaScores).toHaveLength(1) // deterministic half already scored
 
-    // after() is stubbed in the harness, so the queued job never runs — the
+    // after() is stubbed in the harness, so the queued job never runs, the
     // row must still be pending, exactly what a real client would poll.
     const stored = await prisma.evaluation.findUnique({ where: { id: data.id } })
     expect(stored?.status).toBe("pending")

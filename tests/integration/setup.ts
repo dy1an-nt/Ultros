@@ -2,8 +2,8 @@ import { vi, beforeEach } from "vitest"
 import { authState, signOut } from "./helpers/clerk"
 import { resetDb } from "./helpers/db"
 
-// Clerk is the only auth boundary the handlers see; everything below it —
-// user lookup, isolation checks, Prisma — runs for real. `auth()` resolves to
+// Clerk is the only auth boundary the handlers see; everything below it,
+// user lookup, isolation checks, and Prisma, all run for real. `auth()` resolves to
 // whatever identity the current test set via signInAs().
 vi.mock("@clerk/nextjs/server", () => ({
   auth: async () => ({ userId: authState.clerkId }),
@@ -18,7 +18,7 @@ vi.mock("@sentry/nextjs", () => ({
 }))
 
 // Dev-mode dataset-run fan-out defers row jobs via after(), which throws
-// outside a real Next request scope — and the jobs would call AI providers.
+// outside a real Next request scope, and the jobs would call AI providers.
 // Stubbing it keeps launches observable (DatasetRuns persist as "pending")
 // while the work itself never runs. Everything else in next/server is real.
 vi.mock("next/server", async (importOriginal) => {

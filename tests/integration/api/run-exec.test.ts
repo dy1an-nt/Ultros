@@ -8,7 +8,7 @@ import { jsonRequest, rawRequest } from "../helpers/request"
 
 // The execution routes are the only ones whose behavior spans a live provider
 // stream. The stub below stands in for lib/ai's runStream at the exact seam
-// the routes consume — everything else (validation, interpolation, pricing,
+// the routes consume, everything else (validation, interpolation, pricing,
 // persistence, the ndjson protocol) runs for real.
 const stub = {
   chunks: ["Hello ", "world"],
@@ -42,7 +42,7 @@ vi.mock("@/lib/ai", async (importOriginal) => {
 
 // /api/run persists through next/server's after(); the global harness stub
 // no-ops it. Capture callbacks here instead so each test flushes deliberately
-// — the same "response first, persistence after" order production has.
+// the same "response first, persistence after" order production has.
 const afterCallbacks: Array<() => unknown> = []
 vi.mock("next/server", async (importOriginal) => {
   const actual = await importOriginal<typeof import("next/server")>()
@@ -54,7 +54,7 @@ async function flushAfter() {
 }
 
 // Anthropic ids: the harness sets only ANTHROPIC_API_KEY, so other providers
-// are legitimately unavailable — that's an assertion below, not a limitation.
+// are legitimately unavailable, that's an assertion below, not a limitation.
 const MODEL_A = "claude-sonnet-4-6"
 const MODEL_B = "claude-haiku-4-5"
 
@@ -124,7 +124,7 @@ describe("POST /api/run", () => {
     // {{name}} interpolated before the provider sees the prompt
     expect(runStreamCalls[0].userPrompt).toBe("Say hi to Ada")
 
-    // Nothing persists until the after() hook runs — streaming never blocks on the DB.
+    // Nothing persists until the after() hook runs, streaming never blocks on the DB.
     expect(await prisma.promptRun.count()).toBe(0)
     await flushAfter()
 

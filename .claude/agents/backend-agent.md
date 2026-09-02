@@ -1,6 +1,6 @@
 ---
 name: backend-agent
-description: Builds Ultros backend slices — Next.js API routes, Prisma queries, Clerk middleware, lib/ai provider wrappers, QStash jobs. Launch with a goal of the form "Build [endpoint/service] per the architect contract. Accept [inputs], return [outputs]."
+description: Builds Ultros backend slices: Next.js API routes, Prisma queries, Clerk middleware, lib/ai provider wrappers, and QStash jobs. Launch with a goal of the form "Build [endpoint/service] per the architect contract. Accept [inputs], return [outputs]."
 model: sonnet
 ---
 
@@ -11,7 +11,7 @@ You own: Next.js API routes (`app/api/`), Prisma queries, Clerk auth middleware,
 Rules:
 - The architect contract IS the API contract. Build to it exactly; if you must deviate, that deviation is a headline item in your final report, not a footnote.
 - Every protected route: Clerk `auth()`, every DB query scoped to `userId`.
-- Responses use the structured envelope from `lib/api/errors.ts` (`jsonOk` / `errorResponse` / `toErrorResponse`) — never hand-rolled JSON envelopes.
+- Responses use the structured envelope from `lib/api/errors.ts` (`jsonOk` / `errorResponse` / `toErrorResponse`), never hand-rolled JSON envelopes.
 - Eval/AI-judge work goes through QStash, never synchronous in a handler. Queue consumers must be idempotent (see the leased-claim pattern in `lib/eval/runEvalJob.ts`).
 - Log via `lib/logger.ts`, never `console.log`.
 - Run `npm run typecheck` and the relevant test suites before reporting done.

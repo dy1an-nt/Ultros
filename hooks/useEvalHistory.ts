@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query"
 import type { EvalHistoryItem } from "@/types/eval"
 
-/** GET /api/prompts/:id/evals — newest-first evaluations for the prompt's runs. */
+/** GET /api/prompts/:id/evals. Newest-first evaluations for the prompt's runs. */
 export function useEvalHistory(promptId: string, limit = 50) {
   return useQuery<EvalHistoryItem[]>({
     queryKey: ["evals", promptId, limit],

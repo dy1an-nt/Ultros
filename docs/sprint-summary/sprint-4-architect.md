@@ -1,4 +1,4 @@
-# Sprint 4 — Dataset Testing — Architect Plan
+# Sprint 4: Dataset Testing: Architect Plan
 
 Status: Contract draft, architect-reviewed 2026-06-09. Backend and Frontend
 build to this document; neither inspects the other's code to understand the
@@ -7,16 +7,16 @@ wins.
 
 ## Architect changes vs the CLAUDE.md baseline (read first)
 
-1. **New `DatasetRun` model.** The baseline schema has no batch entity — no
+1. **New `DatasetRun` model.** The baseline schema has no batch entity, no
    way to track a queued batch's status, progress, or aggregates. `DatasetRun`
    is one prompt version × one model × one dataset (× optional rubric).
    Sprint 5 reuses it wholesale: an experiment cell IS a DatasetRun, and a
    regression run IS a DatasetRun. Design it once here.
-2. **Datasets are immutable after creation.** No row editing, no append —
+2. **Datasets are immutable after creation.** No row editing, no append,
    delete and re-upload instead. Sprint 5 baselines pin a datasetId; mutable
    rows would silently change what a baseline means (same reasoning as the
    Sprint 3 rubric snapshot). Deleting a dataset that has DatasetRuns is
-   blocked (409) — history stays interpretable.
+   blocked (409). History stays interpretable.
 3. **Lease-based job claim (fixes Sprint 3 QA observation O3).** The Sprint 3
    claim transition lets two concurrent deliveries both run a judge call.
    Fine for single manual evals; not fine for 500-row fan-out. New rule, also
@@ -28,17 +28,17 @@ wins.
    .../run-estimate` returns `estimatedCostUsd`; the launch endpoint requires
    `confirm: true` and re-checks the row count it estimated against.
 5. **Auto-scoring lands here.** If a DatasetRun has a `rubricId`, every row
-   run is evaluated automatically — deterministic criteria inline in the row
+   run is evaluated automatically, deterministic criteria inline in the row
    job, ai_judge via the existing Sprint 3 eval job. This fulfills the
    platform positioning ("every run auto-scored"); Sprint 3's manual trigger
    stays for ad-hoc runs.
 6. **Pinned from Sprint 3 QA:** `contains`/`exact` default to
-   **case-sensitive** when `caseSensitive` is omitted (D1) — document in
+   **case-sensitive** when `caseSensitive` is omitted (D1), document in
    `types/eval.ts`, do not change behavior (history is already written and the
    UI always sends the flag). Fix the prompt page `runsQuery` to check
    `res.ok` so HTTP errors hit the error state, not the empty state (O1).
 7. **Non-streaming generation path.** `lib/ai` only exports `runStream`.
-   Batch jobs need `generateText` (`lib/ai/generate.ts`) — same provider
+   Batch jobs need `generateText` (`lib/ai/generate.ts`), same provider
    routing, same cost calc, no stream.
 8. **QStash signature verification extracted** to `lib/jobs/verifySignature.ts`
    and shared by `/api/jobs/eval` and the new `/api/jobs/dataset-row`
@@ -124,9 +124,9 @@ model DatasetRun {
 }
 ```
 
-`PromptRun` gains `datasetRowId String?` (relation, `onDelete: Cascade` —
+`PromptRun` gains `datasetRowId String?` (relation, `onDelete: Cascade`,
 rows only die with their dataset, which is blocked while runs exist) and
-`datasetRunId String?` (+ index). `Evaluation` is unchanged — auto-eval rows
+`datasetRunId String?` (+ index). `Evaluation` is unchanged, auto-eval rows
 are ordinary Evaluations whose PromptRun carries the dataset linkage.
 
 ## New files / services
@@ -170,7 +170,7 @@ Launch (`POST /api/datasets/:id/run`):
 5. Return 202 with the DatasetRun.
 
 Row job (`runDatasetRowJob(datasetRunId, rowIndex)`):
-1. Lease-claim: create-or-reclaim the row's PromptRun marker atomically —
+1. Lease-claim: create-or-reclaim the row's PromptRun marker atomically,
    implemented as `updateMany` on DatasetRun only for status bump to
    `running`, plus a per-row idempotency check: if a PromptRun with
    `(datasetRunId, datasetRowId)` already exists, exit (QStash dedup is
@@ -178,18 +178,18 @@ Row job (`runDatasetRowJob(datasetRunId, rowIndex)`):
 2. Interpolate variables from `row.data` via `variableMapping`, call
    `generate()` (non-streaming), persist PromptRun (tokens, latency, cost,
    `datasetRowId`, `datasetRunId`). Roll into UsageSummary (runs + tokens +
-   cost — these ARE user-initiated runs, unlike judge calls).
+   cost. These ARE user-initiated runs, unlike judge calls).
 3. If `rubricId`: create Evaluation with snapshot exactly as Sprint 3's
    trigger route does (deterministic inline; if ai_judge criteria exist,
-   chain `runEvalJob` inline in this job — already in a worker, no second hop).
+   chain `runEvalJob` inline in this job, already in a worker, no second hop).
 4. On row failure: increment `failedRows`, store sanitized error on the
    PromptRun-less row result (a failed row = no PromptRun; the drill-down
-   shows the error from a `failedRowIndices`-style query — pinned: failed rows
+   shows the error from a `failedRowIndices`-style query, pinned: failed rows
    are recorded as PromptRuns with `finishReason: "error"`, empty
    responseText, zero tokens, so drill-down stays uniform).
 5. Increment `completedRows` (or `failedRows`), then `finalizeIfDone()`:
    if `completedRows + failedRows >= totalRows`, recompute aggregates from
-   the persisted rows (idempotent — recomputation always yields the same
+   the persisted rows (idempotent, recomputation always yields the same
    result) and set `complete` + `completedAt`. avgScore/passRate/variance
    come from complete Evaluations only; runs with pending judge evals leave
    the DatasetRun `running` until their eval jobs finish (the eval job calls
@@ -245,14 +245,14 @@ res: { "data": { "rows": [ { "rowIndex": 0, "input": { "question": "..." },
 `GET /api/dataset-runs/:id/export` → `text/csv` attachment; **cells starting
 with `= + - @` are prefixed with `'`** (spreadsheet formula-injection guard).
 
-`POST /api/jobs/dataset-row` — QStash only; body
+`POST /api/jobs/dataset-row`, QStash only; body
 `{ datasetRunId, rowIndex }`; 503 without signing keys, 401 bad signature,
 200 always after processing (retries handled by idempotency, not HTTP errors).
 
 ## Frontend behavior
 
 - `/datasets`: library list (loading/error/empty mandatory), upload dialog
-  with client-side papaparse preview (first 5 rows) — server remains the
+  with client-side papaparse preview (first 5 rows), server remains the
   validator of record.
 - `/datasets/:id`: paginated row table; "Run prompt" opens RunConfigDialog:
   pick prompt → version → model → optional rubric → auto-filled variable
@@ -272,13 +272,13 @@ with `= + - @` are prefixed with `'`** (spreadsheet formula-injection guard).
   `finalizeIfDone` recompute is idempotent so double-finalize is harmless.
 - All new queries scoped by `userId` (DatasetRun denormalizes it; rows reach
   the user only through dataset ownership checks).
-- CSV export formula injection — quote-prefix dangerous leading chars.
-- Uploaded cell values flow into prompts (that is their purpose) — they are
+- CSV export formula injection, quote-prefix dangerous leading chars.
+- Uploaded cell values flow into prompts (that is their purpose), they are
   the user's own data hitting the user's own prompt; no trust boundary
   crossed. Never interpolate dataset values into SQL or shell anywhere.
 - `/api/jobs/dataset-row` shares the fail-closed signature verification;
   also pass `url` to `Receiver.verify` now (Sprint 3 review nit).
-- `.bin` shims are broken on this volume — `node node_modules/typescript/lib/tsc.js`,
+- `.bin` shims are broken on this volume, `node node_modules/typescript/lib/tsc.js`,
   `node node_modules/prisma/build/index.js`, `node node_modules/next/dist/bin/next`.
 
 ## Success criteria

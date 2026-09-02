@@ -34,7 +34,7 @@ function RowDetail({ row }: { row: DatasetRunRowItem }) {
   )
 }
 
-// Pick a cell, see its rows — the same row shape as the dataset run view.
+// Pick a cell, see its rows. The same row shape as the dataset run view.
 export function ResultDrilldown({ experiment }: { experiment: ExperimentDetailDto }) {
   const [cellId, setCellId] = useState<string | null>(null)
   const [offset, setOffset] = useState(0)
@@ -97,7 +97,7 @@ export function ResultDrilldown({ experiment }: { experiment: ExperimentDetailDt
                         </td>
                         <td className="px-3 py-2">
                           {row.eval === null ? (
-                            <span className="text-gray-600">—</span>
+                            <span className="text-gray-600">, </span>
                           ) : row.eval.status !== "complete" ? (
                             <span className="text-gray-500">{row.eval.status}</span>
                           ) : (

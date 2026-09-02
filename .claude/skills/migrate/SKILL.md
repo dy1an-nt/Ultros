@@ -1,6 +1,6 @@
 ---
 name: migrate
-description: Author and apply an Ultros database migration through Prisma Migrate. Use whenever a schema change is needed (new model/field/constraint/index) or when migrations must be applied to local, CI, or the Supabase production database — "add a migration", "run migrations", "deploy the schema change". Never edit an applied migration and never hand-edit the production schema in the Supabase SQL editor.
+description: Author and apply an Ultros database migration through Prisma Migrate. Use whenever a schema change is needed (new model/field/constraint/index) or when migrations must be applied to local, CI, or the Supabase production database, for example "add a migration", "run migrations", or "deploy the schema change". Never edit an applied migration and never hand-edit the production schema in the Supabase SQL editor.
 ---
 
 # Database migrations
@@ -8,7 +8,7 @@ description: Author and apply an Ultros database migration through Prisma Migrat
 Schema lives in `prisma/schema.prisma`. Every change ships as a timestamped
 directory under `prisma/migrations/`, applied in name order by Prisma Migrate,
 which records each one in `_prisma_migrations` so it runs exactly once.
-**Never edit a migration that has been applied anywhere — add a new one.**
+**Never edit a migration that has been applied anywhere: add a new one.**
 Prisma Migrate is forward-only in production: roll back with a compensating
 migration, or restore from a Supabase backup for destructive mistakes.
 

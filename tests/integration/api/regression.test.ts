@@ -16,7 +16,7 @@ function history(id: string) {
 }
 
 // Scored baseline run (avgScore 0.75) blessed as the prompt's baseline, plus
-// a v2 whose {{question}} still maps onto the dataset — ready to regress.
+// a v2 whose {{question}} still maps onto the dataset, ready to regress.
 async function baselineFixtures(userId: string) {
   const f = await createScoredDatasetRun(userId)
   signInAs((await prisma.user.findUniqueOrThrow({ where: { id: userId } })).clerkId)
@@ -45,7 +45,7 @@ describe("POST /api/prompts/:id/regression", () => {
 
     const res = await launch(prompt.id, { newVersionId: version.id })
     expect(res.status).toBe(404)
-    expect((await res.json()).error.message).toContain("set a baseline first")
+    expect((await res.json()).error.message).toContain("Set a baseline first")
   })
 
   it("rejects a version from a different prompt", async () => {
@@ -104,7 +104,7 @@ describe("POST /api/prompts/:id/regression", () => {
     const run = await prisma.datasetRun.findUniqueOrThrow({ where: { id: data.datasetRunId } })
     expect(run.status).toBe("pending") // fan-out stubbed
     expect(run.promptVersionId).toBe(f.v2.id)
-    expect(run.model).toBe("claude-sonnet-5") // pinned — regression compares prompts, not models
+    expect(run.model).toBe("claude-sonnet-5") // pinned, regression compares prompts, not models
     expect(run.rubricId).toBe(f.rubric.id)
 
     const verdict = await prisma.regressionRun.findUniqueOrThrow({ where: { id: data.regressionRunId } })
@@ -149,7 +149,7 @@ describe("GET /api/prompts/:id/regression/history", () => {
     expect(data.runs[0]).toMatchObject({ status: "pending", versionNumber: 2, newScore: null })
   })
 
-  it("lazily finalizes a pending verdict whose run went terminal — the lost-hook safety net", async () => {
+  it("lazily finalizes a pending verdict whose run went terminal, the lost-hook safety net", async () => {
     const user = await createUser()
     const f = await baselineFixtures(user.id)
     const { data: launched } = await (await launch(f.prompt.id, { newVersionId: f.v2.id })).json()

@@ -61,14 +61,14 @@ export function parseCsv(csvText: string): ParseResult {
     header: true,
     skipEmptyLines: true,
   })
-  // Papaparse renames duplicate headers (a → a_1) instead of erroring —
+  // Papaparse renames duplicate headers (a → a_1) instead of erroring,
   // surface that as the validation failure it is.
   const renamed = parsed.meta.renamedHeaders
   if (renamed && Object.keys(renamed).length > 0) {
     return fail(`duplicate column name "${Object.values(renamed)[0]}"`)
   }
   // Single-column CSVs have no delimiter to detect; papaparse defaults to
-  // comma and parses fine — that "error" is not a failure.
+  // comma and parses fine. That "error" is not a failure.
   const errors = parsed.errors.filter((e) => e.code !== "UndetectableDelimiter")
   // Papaparse reports recoverable errors (e.g. field count mismatch) per row.
   const rowError = errors.find((e) => e.row !== undefined)
@@ -91,7 +91,7 @@ export function parseJsonRows(rows: unknown): ParseResult {
     }
     for (const value of Object.values(row)) {
       if (value !== null && typeof value === "object") {
-        return fail(`row ${i + 1}: nested objects are not allowed — cells must be scalar`)
+        return fail(`row ${i + 1}: nested objects are not allowed. Cells must be scalar`)
       }
     }
   }

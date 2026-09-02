@@ -14,7 +14,7 @@ export type ExperimentLaunchParams = {
   temperature: number
   maxTokens: number
   totalRows: number
-  // per-variant mapping — variants of one prompt can declare different {{vars}}
+  // per-variant mapping. Variants of one prompt can declare different {{vars}}
   variableMappings: Record<string, Record<string, string>>
 }
 
@@ -62,7 +62,7 @@ export async function launchExperiment(params: ExperimentLaunchParams) {
   }
 
   // Guarded bump: a fast cell may already have finalized the experiment to
-  // "complete" — never write "running" over a terminal state.
+  // "complete", never write "running" over a terminal state.
   await prisma.experiment.updateMany({
     where: { id: experiment.id, status: "pending" },
     data: { status: "running" },

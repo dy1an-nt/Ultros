@@ -1,4 +1,4 @@
-// Pure regression comparison — no DB, no IO, unit-executable.
+// Pure regression comparison, no DB, no IO, unit-executable.
 // Rows are matched baseline↔new by rowIndex: datasets are immutable after
 // creation (Sprint 4 decision), so the same rowIndex is the same input.
 

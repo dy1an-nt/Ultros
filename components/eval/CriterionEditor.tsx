@@ -223,7 +223,7 @@ export function CriterionEditor({ draft, weightShare, error, onChange, onRemove 
           onChange={(e) => set({ weight: e.target.value })}
         />
         <span className="text-xs text-gray-500 w-12 text-right shrink-0">
-          {Number.isFinite(weightShare) ? `${(weightShare * 100).toFixed(0)}%` : "—"}
+          {Number.isFinite(weightShare) ? `${(weightShare * 100).toFixed(0)}%` : "N/A"}
         </span>
         <button
           onClick={onRemove}

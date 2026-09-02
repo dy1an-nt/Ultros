@@ -99,7 +99,7 @@ function evalSummary(evaluation: {
 }
 
 // Unknown token, revoked share, missing resource and soft-deleted prompt all
-// return null — the route turns every one of them into the same 404.
+// return null. The route turns every one of them into the same 404.
 export async function resolveShareByToken(token: string): Promise<PublicShare | null> {
   const share = await prisma.share.findUnique({ where: { token } })
   if (!share || share.revokedAt !== null) return null
@@ -265,7 +265,7 @@ function buildPublicWinMatrix(
   return entries
 }
 
-// Ownership check for share creation — 404 on anything that isn't the
+// Ownership check for share creation. 404 on anything that isn't the
 // caller's resource, with no existence leak.
 export async function resourceBelongsToUser(
   resourceType: string,

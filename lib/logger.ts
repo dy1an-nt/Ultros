@@ -6,7 +6,7 @@ import { sanitizeErrorMessage } from "@/lib/eval/sanitize"
 //
 // Levels: error and warn always emit; info/debug are suppressed in production
 // to keep function logs lean. Never pass raw request bodies or headers as
-// context — only safe identifiers (ids, codes, counts, durations).
+// context, only safe identifiers (ids, codes, counts, durations).
 
 type LogLevel = "error" | "warn" | "info" | "debug"
 type LogContext = Record<string, string | number | boolean | null | undefined>

@@ -8,7 +8,7 @@ import "./globals.css"
 const inter = Inter({ subsets: ["latin"] })
 
 const description =
-  "AI evaluation and prompt experimentation platform — run prompts across models and datasets, score every output, and catch regressions between versions."
+  "AI evaluation and prompt experimentation platform. Run prompts across models and datasets, score every output, and catch regressions between versions."
 
 export const metadata: Metadata = {
   // Vercel's build env can carry a stale/localhost NEXT_PUBLIC_APP_URL; the

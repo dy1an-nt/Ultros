@@ -5,7 +5,7 @@ import { checkRateLimit, clientIp, rateLimitResponse } from "@/lib/rateLimit"
 import { resolveShareByToken } from "@/lib/share/resolve"
 import { errorResponse, jsonOk } from "@/lib/api/errors"
 
-// Public resolve — no auth, limited per IP. Unknown and revoked tokens return
+// Public resolve, no auth, limited per IP. Unknown and revoked tokens return
 // byte-identical 404s; capability URLs must not leak which guesses were close.
 export async function GET(req: NextRequest, { params }: { params: Promise<{ token: string }> }) {
   const { token } = await params
@@ -23,7 +23,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ toke
   )
 }
 
-// Revoke — auth required, owner only. Effective immediately (resolve never
+// Revoke, auth required, owner only, effective immediately (resolve never
 // caches).
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ token: string }> }) {
   const { token } = await params

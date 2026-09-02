@@ -32,7 +32,7 @@ export function EvalHistory({ promptId }: { promptId: string }) {
   if (!evals || evals.length === 0) {
     return (
       <div className="text-center py-8 text-gray-600 text-sm">
-        No evaluations yet — pick a run above and evaluate it against a rubric.
+        No evaluations yet. Pick a run above and evaluate it against a rubric.
       </div>
     )
   }

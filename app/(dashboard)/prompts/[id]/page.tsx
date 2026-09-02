@@ -65,7 +65,7 @@ export default function PromptDetailPage() {
   const [runOutput, setRunOutput] = useState<{ text: string; done: boolean } | null>(null)
   const [saveError, setSaveError] = useState<string | null>(null)
 
-  // Runs for the Evals tab — same query key/shape as RunHistory so the cache is shared.
+  // Runs for the Evals tab. Same query key/shape as RunHistory so the cache is shared.
   const runsQuery = useQuery<{ data: RunRow[] }>({
     queryKey: ["runs", id],
     queryFn: async () => {
@@ -144,7 +144,7 @@ export default function PromptDetailPage() {
         queryClient.invalidateQueries({ queryKey: ["prompt", id] })
       }
     } catch {
-      setSaveError("Failed to save — check your connection and try again.")
+      setSaveError("Failed to save. Check your connection and try again.")
     }
   }
 
@@ -259,7 +259,7 @@ export default function PromptDetailPage() {
                     <div className="text-sm text-red-400 py-4">Failed to load runs.</div>
                   ) : !runsQuery.data?.data?.length ? (
                     <div className="text-center py-8 text-gray-600 text-sm">
-                      No runs yet — hit Run first, then evaluate the output here.
+                      No runs yet. Hit Run first, then evaluate the output here.
                     </div>
                   ) : (
                     <div className="space-y-2">

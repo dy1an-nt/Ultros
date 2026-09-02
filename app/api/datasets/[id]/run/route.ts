@@ -26,7 +26,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   // The cost gate: launches must be deliberate, never a default.
   if (body.confirm !== true) {
-    return errorResponse("VALIDATION_ERROR", "confirm: true is required — review the cost estimate first")
+    return errorResponse("VALIDATION_ERROR", "confirm: true is required. Review the cost estimate first")
   }
 
   const loaded = await loadRunRequest(user.id, id, body)
@@ -40,7 +40,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     if (typeof body.rubricId !== "string") {
       return errorResponse("VALIDATION_ERROR", "invalid rubricId")
     }
-    // 400 not 404/403 — does not leak whether another user's rubric id exists.
+    // 400 not 404/403. Does not leak whether another user's rubric id exists.
     const rubric = await prisma.rubric.findUnique({ where: { id: body.rubricId } })
     if (!rubric || rubric.userId !== user.id) {
       return errorResponse("VALIDATION_ERROR", "invalid rubricId")

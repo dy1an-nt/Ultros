@@ -1,6 +1,6 @@
 ---
 name: qa-sweep
-description: Pre-completion spot-check for inline (non-sprint) Ultros changes — a convention grep sweep plus typecheck and the narrowest real test run, done by the lead session before calling a small fix done. Use after any inline edit to app/, lib/, or components/. If the change touches auth, user isolation, cost accounting, or share links, this sweep is NOT enough — run a real security-agent pass.
+description: Pre-completion spot-check for inline (non-sprint) Ultros changes. A convention grep sweep plus typecheck and the narrowest real test run, done by the lead session before calling a small fix done. Use after any inline edit to app/, lib/, or components/. If the change touches auth, user isolation, cost accounting, or share links, this sweep is NOT enough, so run a real security-agent pass.
 ---
 
 # QA spot-check (inline path)
@@ -18,25 +18,25 @@ for everything else.
 ## The sweep
 
 ```bash
-# console.* is forbidden in committed code — use lib/logger.ts
+# console.* is forbidden in committed code, use lib/logger.ts
 # (lib/logger.ts itself is the one legitimate hit)
 grep -rn "console\.\(log\|warn\|error\)" app lib components hooks store | grep -v "^lib/logger.ts"
 
-# Hand-rolled response envelopes — routes build responses through lib/api/errors.ts
+# Hand-rolled response envelopes, routes build responses through lib/api/errors.ts
 grep -rn "NextResponse.json" app/api
 
-# Auth boundary — every protected route handler you changed must resolve a Clerk identity
+# Auth boundary. Every protected route handler you changed must resolve a Clerk identity
 git diff --name-only | grep '^app/api/.*route\.ts$' | xargs -r grep -L "auth()"
 
-# User isolation — read the surrounding block for every Prisma call in a route you touched.
+# User isolation. Read the surrounding block for every Prisma call in a route you touched.
 # This is a read prompt, not a pass/fail grep: scoping usually lives in the `where` a few
 # lines below the call, so line-matching alone proves nothing.
 grep -rn -A6 "prisma\.[a-zA-Z]*\.\(find\|update\|delete\|create\)" <files you touched>
 
-# Client bundle leaks — a server-only env var must never be read in a client component
+# Client bundle leaks. A server-only env var must never be read in a client component
 grep -rl '"use client"' app components hooks | xargs -r grep -n "process.env" | grep -v "NEXT_PUBLIC_"
 
-# CodeMirror is client-only — a page that renders the editor must import it through
+# CodeMirror is client-only. A page that renders the editor must import it through
 # dynamic(..., { ssr: false }), never as a plain import
 grep -rn "^import.*editor/PromptEditor" app components
 ```

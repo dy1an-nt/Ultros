@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma"
 // reaches a terminal state: materialize the cell's aggregates into an
 // ExperimentResult, then mark the Experiment complete if this was the last
 // cell. The @@unique([experimentId, promptVersionId, model]) upsert is the
-// idempotency seam — double-finalize writes the same numbers twice.
+// idempotency seam, double-finalize writes the same numbers twice.
 export async function finalizeExperimentCell(datasetRunId: string): Promise<void> {
   const run = await prisma.datasetRun.findUnique({ where: { id: datasetRunId } })
   if (!run || !run.experimentId) return

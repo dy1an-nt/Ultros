@@ -1,6 +1,6 @@
 ---
 name: sprint
-description: Run a full Ultros sprint through the agent team roles (architect → backend + frontend → security → QA → deploy → teaching), inline by default. Use when building a feature or any multi-file vertical slice — "run a sprint", "build [feature]", "Sprint 8". NOT for single-file bug fixes, doc updates, or small refactors; those stay inline in the lead session and end with /qa-sweep.
+description: Run a full Ultros sprint through the agent team roles (architect → backend + frontend → security → QA → deploy → teaching), inline by default. Use when building a feature or any multi-file vertical slice, for example "run a sprint", "build [feature]", or "Sprint 8". NOT for single-file bug fixes, doc updates, or small refactors; those stay inline in the lead session and end with /qa-sweep.
 ---
 
 # Sprint playbook
@@ -23,14 +23,14 @@ before any fix is applied, so the review stays honest.
 
 Every one of these lives in `docs/sprint-summary/`:
 
-- `sprint-N-architect.md` — written before any code. Requirements, DB changes,
+- `sprint-N-architect.md`, written before any code, requirements, DB changes,
   the full API contract with request and response examples, risks, success
   criteria. Backend deviations get appended to this file.
-- `sprint-N-security.md` — findings with severity and `file:line`, concrete
+- `sprint-N-security.md`, findings with severity and `file:line`, concrete
   abuse scenarios, what was waived and why. Ends with BLOCK or CLEAR.
-- `sprint-N-qa.md` — cases exercised, pass or fail per case, defects with
+- `sprint-N-qa.md`. Cases exercised, pass or fail per case, defects with
   repros. Ends with BLOCK or CLEAR.
-- `sprint-N.md` — the teaching summary, written last.
+- `sprint-N.md`, the teaching summary, written last.
 
 ## Workflow
 

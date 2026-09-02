@@ -1,4 +1,4 @@
-// Demo workspace seeder — populates the first User with the demo-script.md
+// Demo workspace seeder, populates the first User with the demo-script.md
 // scenario: a support-triage prompt (3 versions), a mixed rubric, a 20-row
 // ticket dataset, a scored baseline run, a 2×2 experiment, and a regression
 // history ending in a catch. Re-runnable: deletes its own named entities first.
@@ -59,7 +59,7 @@ const daysAgo = (d: number, minuteOffset = 0) =>
 const PROMPT_TITLE = "Support ticket triage"
 const DATASET_NAME = "Support tickets"
 const RUBRIC_NAME = "Helpfulness"
-const EXPERIMENT_NAME = "v1 vs v2 — tone rewrite"
+const EXPERIMENT_NAME = "v1 vs v2, tone rewrite"
 
 const SYSTEM_V1 = `You are a support assistant for Acme Cloud, a developer platform.
 Answer customer tickets accurately and concisely. If the issue needs account
@@ -111,22 +111,22 @@ const TICKETS: Ticket[] = [
   { question: "How do I connect Acme Cloud to GitHub Actions for deploys?", expected: "Use the official acme/deploy action with a deploy token created under Settings → Tokens.", topic: "the GitHub Actions integration", steps: ["Create a deploy token under Settings → Tokens (scope: deploy)", "Add it to your repo secrets as ACME_TOKEN", "Use the acme/deploy@v2 action in your workflow"] },
   { question: "Can I buy 5 more seats mid-cycle, and how is that billed?", expected: "Yes; seats added mid-cycle are prorated on the next invoice.", topic: "adding seats", steps: ["Add seats anytime under Billing → Seats", "Mid-cycle additions are prorated to your renewal date", "The prorated amount appears on your next invoice"] },
   { question: "Our trial expires Friday but the team is on holiday. Can we extend it?", expected: "One-time 14-day extension available; confirm and apply it.", topic: "your trial extension", steps: ["I've applied a one-time 14-day extension to your trial", "No card is charged during the extension", "Your new expiry date is visible under Billing"] },
-  { question: "The dashboard showed a 500 error for about 10 minutes today. Was there an outage?", expected: "Confirm the incident, link the status page post-mortem, note API was unaffected.", topic: "this morning's dashboard errors", steps: ["Yes — the dashboard had a brief incident (status.acme.cloud has the post-mortem)", "The API and your workloads were unaffected", "Subscribe to the status page for real-time notices"] },
-  { question: "Security team asks: where is customer data stored and is it encrypted at rest?", expected: "Data in AWS us-east-1/eu-west-1, AES-256 at rest, TLS in transit; SOC 2 report available on request.", topic: "our security posture", steps: ["Data lives in AWS us-east-1 or eu-west-1, chosen per project", "Everything is encrypted at rest (AES-256) and in transit (TLS 1.2+)", "Our SOC 2 Type II report is available under NDA — ask and we'll send it"] },
-  { question: "How do I rotate an API key without downtime?", expected: "Create a second key, deploy it, then revoke the old one; keys can overlap.", topic: "zero-downtime key rotation", steps: ["Create a new key under Settings → API keys — keys can coexist", "Deploy the new key to your services", "Revoke the old key once traffic on it drops to zero"] },
+  { question: "The dashboard showed a 500 error for about 10 minutes today. Was there an outage?", expected: "Confirm the incident, link the status page post-mortem, note API was unaffected.", topic: "this morning's dashboard errors", steps: ["Yes. The dashboard had a brief incident (status.acme.cloud has the post-mortem)", "The API and your workloads were unaffected", "Subscribe to the status page for real-time notices"] },
+  { question: "Security team asks: where is customer data stored and is it encrypted at rest?", expected: "Data in AWS us-east-1/eu-west-1, AES-256 at rest, TLS in transit; SOC 2 report available on request.", topic: "our security posture", steps: ["Data lives in AWS us-east-1 or eu-west-1, chosen per project", "Everything is encrypted at rest (AES-256) and in transit (TLS 1.2+)", "Our SOC 2 Type II report is available under NDA, ask and we'll send it"] },
+  { question: "How do I rotate an API key without downtime?", expected: "Create a second key, deploy it, then revoke the old one; keys can overlap.", topic: "zero-downtime key rotation", steps: ["Create a new key under Settings → API keys. Keys can coexist", "Deploy the new key to your services", "Revoke the old key once traffic on it drops to zero"] },
   { question: "I want to cancel my subscription at the end of this billing period.", expected: "Cancel under Billing → Plan; access continues to period end; data retained 30 days after.", topic: "your cancellation", steps: ["Choose “Cancel at period end” under Billing → Plan", "You keep full access until the period closes", "We retain your data for 30 days after, in case you return"] },
   { question: "Do you have a sandbox environment where API calls don't count against quota?", expected: "Yes; sandbox keys under Settings → API keys hit a stubbed environment for free.", topic: "the sandbox environment", steps: ["Create a sandbox key under Settings → API keys", "Sandbox calls hit a stubbed environment and are free", "Swap to a live key when you're ready for production"] },
 ]
 
-// Reply generators per version — the deterministic rubric criteria (contains
+// Reply generators per version, the deterministic rubric criteria (contains
 // "thanks", regex follow-up offer) must actually match what each version says.
 function replyV1(t: Ticket): string {
   return `Thanks for reaching out about ${t.topic}. ${t.steps.join(". ")}. Let us know if that doesn't resolve it.`
 }
 function replyV2(t: Ticket): string {
-  return `Thanks for getting in touch — sorry for the trouble with ${t.topic}.\n\n${t.steps
+  return `Thanks for getting in touch, sorry for the trouble with ${t.topic}.\n\n${t.steps
     .map((s, i) => `${i + 1}. ${s}`)
-    .join("\n")}\n\nLet us know if any step doesn't work and we'll dig in — happy to help.`
+    .join("\n")}\n\nLet us know if any step doesn't work and we'll dig in, happy to help.`
 }
 function replyV3(t: Ticket): string {
   return t.steps.join(". ") + "."
@@ -159,7 +159,7 @@ async function main() {
   const user = await prisma.user.findFirst({ orderBy: { createdAt: "asc" } })
   if (!user) {
     throw new Error(
-      "No User row found. Sign in once (or insert your Clerk user) before seeding — the demo data needs an owner."
+      "No User row found, sign in once (or insert your Clerk user) before seeding. The demo data needs an owner."
     )
   }
   console.log(`Seeding demo workspace for user ${user.username ?? user.id}`)

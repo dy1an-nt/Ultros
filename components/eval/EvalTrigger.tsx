@@ -58,7 +58,7 @@ export function EvalTrigger({ runId, promptId }: Props) {
           <span className="text-xs text-red-400">Failed to load rubrics</span>
         ) : !rubrics || rubrics.length === 0 ? (
           <span className="text-xs text-gray-500">
-            No rubrics yet —{" "}
+            No rubrics yet, {" "}
             <Link href="/rubrics" className="text-indigo-400 hover:text-indigo-300">
               create one
             </Link>{" "}

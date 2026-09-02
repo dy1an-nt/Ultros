@@ -1,4 +1,4 @@
-# Sprint 1 — Architect Output
+# Sprint 1: Architect Output
 > Foundation: prompt editor, Claude streaming, versioning, auth
 
 ---
@@ -17,7 +17,7 @@
 10. User can view a list of all their prompts
 11. User can view the run history for a specific prompt
 
-## DB Changes (Prisma — Sprint 1 only)
+## DB Changes (Prisma: Sprint 1 only)
 
 ```prisma
 model User {
@@ -80,7 +80,7 @@ model PromptRun {
 }
 ```
 
-**Migration:** new database — `prisma migrate dev --name init`
+**Migration:** new database, `prisma migrate dev --name init`
 
 ## New Files / Services
 
@@ -206,7 +206,7 @@ Response 404: { data: null, error: "Not found" }
 ```
 
 ### PATCH /api/prompts/:id
-Updates prompt metadata (not version content — that creates a new version).
+Updates prompt metadata (not version content, that creates a new version).
 ```
 Auth: Clerk session required; must own prompt
 Body: { title?: string, description?: string, tags?: string[] }
@@ -262,8 +262,8 @@ Body:
   variables?: object   ← values to interpolate into {{variable}} placeholders
 }
 Response: text/event-stream (Vercel AI SDK data stream protocol)
-  — streams response tokens
-  — final chunk includes: { inputTokens, outputTokens, latencyMs, costUsd, runId }
+  streams response tokens
+  final chunk includes: { inputTokens, outputTokens, latencyMs, costUsd, runId }
 Response 400: { data: null, error: "promptVersionId is required" }
 Response 403: { data: null, error: "Forbidden" }
 ```
@@ -295,7 +295,7 @@ Response 200:
 
 ## Risks
 
-- **Streaming in Next.js API route:** Must use `new Response(stream)` with correct headers, not `res.json()`. Vercel AI SDK's `streamText` + `toDataStreamResponse()` handles this — do not deviate.
+- **Streaming in Next.js API route:** Must use `new Response(stream)` with correct headers, not `res.json()`. Vercel AI SDK's `streamText` + `toDataStreamResponse()` handles this, do not deviate.
 - **Clerk middleware config:** App Router requires `clerkMiddleware()` in `middleware.ts` at the root, with a `publicRoutes` matcher. Missing this blocks all routes or protects none.
 - **Supabase connection pooling:** Next.js serverless functions need `DATABASE_URL` to use pgbouncer (port 6543) and `DIRECT_URL` for migrations (port 5432). Both env vars required in Prisma schema.
 - **Cost calculation:** Haiku pricing may change. Store in `lib/ai/pricing.ts` with a verified-date comment, never hardcode inline.

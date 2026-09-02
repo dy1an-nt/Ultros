@@ -7,7 +7,7 @@ async function unwrap<T>(res: Response): Promise<T> {
   return json.data as T
 }
 
-// "No baseline" is a normal state, not an error — 404 maps to null.
+// "No baseline" is a normal state, not an error, 404 maps to null.
 export function useBaseline(promptId: string) {
   return useQuery<BaselineDto | null>({
     queryKey: ["baseline", promptId],
@@ -77,7 +77,7 @@ export function useRunRegression(promptId: string) {
   })
 }
 
-// Polls while any run is pending — the server lazily finalizes stale ones.
+// Polls while any run is pending, the server lazily finalizes stale ones.
 export function useRegressionHistory(promptId: string) {
   return useQuery<RegressionHistoryDto>({
     queryKey: ["regressionHistory", promptId],

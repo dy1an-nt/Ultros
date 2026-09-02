@@ -2,7 +2,7 @@
 import type { ExperimentDetailDto, ExperimentResultsDto } from "@/types/experiment"
 import { versionLabel } from "./CellGrid"
 
-// Per-criterion mean score, one column per cell — shows *where* a variant
+// Per-criterion mean score, one column per cell, shows *where* a variant
 // wins, not just that it wins.
 export function CriterionBreakdown({
   experiment,
@@ -57,7 +57,7 @@ export function CriterionBreakdown({
                         {stat.avgScore.toFixed(3)}
                       </span>
                     ) : (
-                      <span className="text-gray-600">—</span>
+                      <span className="text-gray-600">, </span>
                     )}
                   </td>
                 )

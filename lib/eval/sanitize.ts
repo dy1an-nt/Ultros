@@ -1,4 +1,4 @@
-// Pure, IO-free secret scrubbing — kept separate from runEvalJob (which pulls
+// Pure, IO-free secret scrubbing, kept separate from runEvalJob (which pulls
 // in Prisma) so it is unit-testable without a DB. Provider error messages can
 // echo request headers; never persist or log an API key.
 const SECRET_ENV_KEYS = [

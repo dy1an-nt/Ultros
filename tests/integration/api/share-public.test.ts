@@ -26,14 +26,14 @@ describe("GET /api/share/:token (public)", () => {
     const { run } = await createPromptRun(user.id)
     const share = await createShare(user.id, "promptRun", run.id)
 
-    // no signInAs — this is the one deliberately public route
+    // no signInAs. This is the one deliberately public route
     const res = await get(share.token)
     expect(res.status).toBe(200)
     expect(res.headers.get("X-Robots-Tag")).toBe("noindex, nofollow")
     expect(res.headers.get("Cache-Control")).toBe("no-store")
   })
 
-  it("exposes exactly the allowlisted promptRun fields — no ids, no owner", async () => {
+  it("exposes exactly the allowlisted promptRun fields, no ids, no owner", async () => {
     const user = await createUser()
     const { run } = await createPromptRun(user.id)
     await createEvaluation(user.id, run.id)
@@ -103,7 +103,7 @@ describe("GET /api/share/:token (public)", () => {
     expect(data.resource.rows.map((r: { rowIndex: number }) => r.rowIndex)).toEqual([0, 1])
     expect(data.resource.rows[0].input).toEqual({ question: "What is 2+2?" })
     expect(data.resource.rows[0].score).toBe(0.9)
-    // second row's eval is pending — only complete evals surface a score
+    // second row's eval is pending, only complete evals surface a score
     expect(data.resource.rows[1].score).toBeNull()
     expect(data.resource.rows[1].passed).toBeNull()
   })

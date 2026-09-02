@@ -53,7 +53,7 @@ export default function SettingsPage() {
               </button>
               <span className="text-xs text-gray-600">
                 Empty clears the budget. At 80% you get a banner; at 100% launches ask for
-                confirmation — never a lockout.
+                confirmation, never a lockout.
               </span>
             </div>
             {update.error && <p className="text-sm text-red-400">{update.error.message}</p>}

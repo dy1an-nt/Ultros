@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url"
 // Integration suite: imports route handlers directly and runs them against a
 // real, disposable Postgres (local Homebrew instance or the CI service).
 // Every table is truncated before each test, so this config refuses to point
-// anywhere but localhost — see tests/integration/helpers/env.ts.
+// anywhere but localhost, see tests/integration/helpers/env.ts.
 export default defineConfig({
   resolve: {
     alias: {
@@ -23,7 +23,7 @@ export default defineConfig({
       "./tests/integration/setup.ts",
     ],
     globalSetup: ["./tests/integration/global-setup.ts"],
-    // Suites share one database and truncate between tests — files must not
+    // Suites share one database and truncate between tests. Files must not
     // run concurrently.
     fileParallelism: false,
   },

@@ -9,7 +9,7 @@ import {
 
 const ok = (config: object, type = "exact") => [{ name: "c", type, weight: 1, config }]
 
-describe("validateCriteria — structure", () => {
+describe("validateCriteria, structure", () => {
   it("rejects a non-array", () => {
     expect(validateCriteria({}).error).toMatch(/must be an array/)
   })
@@ -53,7 +53,7 @@ describe("validateCriteria — structure", () => {
   })
 })
 
-describe("validateCriteria — config by type", () => {
+describe("validateCriteria, config by type", () => {
   it("accepts a well-formed exact criterion", () => {
     const r = validateCriteria(ok({ expected: "hello" }))
     expect(r.error).toBeNull()

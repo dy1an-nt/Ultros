@@ -1,6 +1,6 @@
 ---
 name: blast-radius
-description: "Find what a change could break somewhere else before it ships, and prove the one fact it is safe because of by running real code. Use for "blast radius of X" or "what could this break"."
+description: "Find what a change could break somewhere else before it ships, and prove the one fact it is safe because of by running real code. Use for 'blast radius of X' or 'what could this break'."
 ---
 
 # Blast Radius

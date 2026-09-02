@@ -8,7 +8,7 @@ import { logger } from "@/lib/logger"
 
 const FAILURE_MESSAGE = "delivery failed: QStash retries exhausted"
 
-// QStash failure callback — invoked once a job message exhausts all delivery
+// QStash failure callback, invoked once a job message exhausts all delivery
 // retries (the message also lands in QStash's DLQ for inspection). Without
 // this hook a permanently-lost delivery strands an Evaluation in
 // pending/running and wedges its DatasetRun one row short of finalizing,
@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
         where: { id: evaluationId },
         select: { promptRun: { select: { datasetRunId: true } } },
       })
-      // A failed eval no longer blocks finalization — let its batch close out.
+      // A failed eval no longer blocks finalization. Let its batch close out.
       if (evaluation?.promptRun.datasetRunId) await finalizeIfDone(evaluation.promptRun.datasetRunId)
     }
     logger.error("eval job delivery failed permanently", { evaluationId, dlqId, marked: updated.count > 0 })
@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Unrecognized or garbled callback: ack with 200 so QStash doesn't retry
-  // the callback itself — the original message stays in the DLQ either way.
+  // the callback itself. The original message stays in the DLQ either way.
   logger.warn("unrecognized failure callback", { url, dlqId })
   return jsonOk({ handled: null })
 }

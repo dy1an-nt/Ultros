@@ -14,7 +14,7 @@ export default defineConfig({
     globals: true,
     setupFiles: ["./tests/setup.ts"],
     // Unit + integration suites live next to the code (lib) and under tests/.
-    // App route/component files are excluded — they pull in Next runtime and
+    // App route/component files are excluded, they pull in Next runtime and
     // are exercised through the integration suite, not as bare imports.
     include: ["lib/**/*.test.ts", "tests/**/*.test.ts"],
     // Integration suites need a real Postgres; they run via

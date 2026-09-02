@@ -5,7 +5,7 @@ import type {
 } from "@/lib/share/resolve"
 
 // Server-rendered, read-only views for public share pages. All user content
-// goes through React text nodes — no dangerouslySetInnerHTML, no markdown.
+// goes through React text nodes, no dangerouslySetInnerHTML, no markdown.
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
@@ -17,10 +17,10 @@ function Stat({ label, value }: { label: string; value: string }) {
 }
 
 function pct(v: number | null): string {
-  return v !== null ? `${Math.round(v * 100)}%` : "—"
+  return v !== null ? `${Math.round(v * 100)}%` : "N/A"
 }
 function num(v: number | null, digits = 3): string {
-  return v !== null ? v.toFixed(digits) : "—"
+  return v !== null ? v.toFixed(digits) : "N/A"
 }
 
 export function PublicRunView({ run }: { run: PublicPromptRun }) {
@@ -38,7 +38,7 @@ export function PublicRunView({ run }: { run: PublicPromptRun }) {
         <Stat label="Cost" value={`$${run.costUsd.toFixed(4)}`} />
         <Stat
           label="Score"
-          value={run.eval?.totalScore !== null && run.eval !== null ? num(run.eval.totalScore, 2) : "—"}
+          value={run.eval?.totalScore !== null && run.eval !== null ? num(run.eval.totalScore, 2) : "N/A"}
         />
       </div>
       <div className="bg-gray-900 border border-gray-800 rounded-lg p-4">
@@ -48,7 +48,7 @@ export function PublicRunView({ run }: { run: PublicPromptRun }) {
       {run.eval && (
         <div className="bg-gray-900 border border-gray-800 rounded-lg p-4 flex flex-col gap-2">
           <p className="text-xs text-gray-500">
-            Evaluation — {run.eval.passed ? "passed" : "failed"}
+            Evaluation. {run.eval.passed ? "passed" : "failed"}
           </p>
           <div className="flex flex-wrap gap-2">
             {run.eval.criteria.map((c) => (
@@ -85,7 +85,7 @@ export function PublicBatchView({ run }: { run: PublicDatasetRun }) {
         <Stat label="Avg score" value={num(run.avgScore)} />
         <Stat label="Pass rate" value={pct(run.passRate)} />
         <Stat label="Variance" value={num(run.scoreVariance, 4)} />
-        <Stat label="Avg latency" value={run.avgLatencyMs !== null ? `${run.avgLatencyMs} ms` : "—"} />
+        <Stat label="Avg latency" value={run.avgLatencyMs !== null ? `${run.avgLatencyMs} ms` : "N/A"} />
         <Stat label="Total cost" value={`$${run.totalCostUsd.toFixed(4)}`} />
       </div>
       <div className="rounded-lg border border-gray-800 overflow-hidden">
@@ -114,7 +114,7 @@ export function PublicBatchView({ run }: { run: PublicDatasetRun }) {
                 </td>
                 <td className="px-3 py-2">
                   {row.score === null ? (
-                    <span className="text-gray-600">—</span>
+                    <span className="text-gray-600">, </span>
                   ) : (
                     <span className={row.passed ? "text-green-400" : "text-red-400"}>
                       {row.score.toFixed(2)} {row.passed ? "✓" : "✗"}
@@ -157,7 +157,7 @@ export function PublicExperimentView({ experiment }: { experiment: PublicExperim
               <tr key={`${r.versionNumber}-${r.model}`} className="border-t border-gray-800 text-gray-300">
                 <td className="px-3 py-2">
                   v{r.versionNumber}
-                  {r.label ? ` — ${r.label}` : ""}
+                  {r.label ? `, ${r.label}` : ""}
                 </td>
                 <td className="px-3 py-2 text-gray-500">{r.model}</td>
                 <td className="px-3 py-2">
@@ -169,7 +169,7 @@ export function PublicExperimentView({ experiment }: { experiment: PublicExperim
                 </td>
                 <td className="px-3 py-2">{pct(r.passRate)}</td>
                 <td className="px-3 py-2 text-gray-500">
-                  {r.avgLatencyMs !== null ? `${r.avgLatencyMs} ms` : "—"}
+                  {r.avgLatencyMs !== null ? `${r.avgLatencyMs} ms` : "N/A"}
                 </td>
                 <td className="px-3 py-2 text-gray-500">${r.totalCostUsd.toFixed(4)}</td>
               </tr>

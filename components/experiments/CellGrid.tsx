@@ -18,7 +18,7 @@ function StatusBadge({ status }: { status: string }) {
 export function versionLabel(experiment: ExperimentDetailDto, versionId: string): string {
   const v = experiment.versions.find((x) => x.id === versionId)
   if (!v) return versionId.slice(0, 8)
-  return `v${v.versionNumber}${v.label ? ` — ${v.label}` : ""}`
+  return `v${v.versionNumber}${v.label ? `: ${v.label}` : ""}`
 }
 
 // Live variants × models grid; each cell is one DatasetRun.
@@ -45,7 +45,7 @@ export function CellGrid({ experiment }: { experiment: ExperimentDetailDto }) {
                 const cell = cellFor(versionId, model)
                 if (!cell) {
                   return (
-                    <td key={model} className="px-3 py-2 text-gray-600">—</td>
+                    <td key={model} className="px-3 py-2 text-gray-600">, </td>
                   )
                 }
                 const done = cell.completedRows + cell.failedRows

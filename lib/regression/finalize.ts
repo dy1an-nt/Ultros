@@ -2,8 +2,8 @@ import { prisma } from "@/lib/prisma"
 import { compareToBaseline, type RowEvalScore } from "./compare"
 
 // The regression intent (baseline, new version, threshold) is persisted as a
-// pending RegressionRun at launch; this hook — called from finalizeIfDone when
-// any DatasetRun goes terminal — fills in the verdict. The status-guarded
+// pending RegressionRun at launch; this hook, called from finalizeIfDone when
+// any DatasetRun goes terminal, fills in the verdict, the status-guarded
 // updateMany makes double-finalize a no-op.
 export async function finalizeRegressionIfPending(datasetRunId: string): Promise<void> {
   const pending = await prisma.regressionRun.findUnique({ where: { datasetRunId } })
@@ -14,7 +14,7 @@ export async function finalizeRegressionIfPending(datasetRunId: string): Promise
   if (run.status !== "complete" && run.status !== "failed") return
 
   // A run that finished without scores (all rows failed, or the rubric was
-  // deleted mid-run) cannot be compared — surface that instead of a fake delta.
+  // deleted mid-run) cannot be compared, surface that instead of a fake delta.
   if (run.status === "failed" || run.avgScore === null || run.passRate === null) {
     await prisma.regressionRun.updateMany({
       where: { id: pending.id, status: "pending" },

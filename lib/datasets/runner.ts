@@ -38,7 +38,7 @@ export async function createDatasetRun(params: LaunchParams) {
 
 // QStash fan-out in production (one message per row, deduped, flow-controlled
 // per user so one batch can't starve the platform); sequential after() loop in
-// dev — QStash cannot reach localhost. The row job is identical in both paths.
+// dev, QStash cannot reach localhost. The row job is identical in both paths.
 // Exported separately from creation so callers that persist linked state (a
 // pending RegressionRun) can do so before the first job can possibly finish.
 export async function fanOutDatasetRun(run: { id: string; userId: string }, totalRows: number) {
@@ -57,7 +57,7 @@ export async function fanOutDatasetRun(run: { id: string; userId: string }, tota
           deduplicationId: `${run.id}:${rowIndex}`,
           flowControl: { key: run.userId, parallelism: 5 },
           // A row whose deliveries all fail would wedge the batch one row
-          // short of finalizing — the callback records it as a failed row.
+          // short of finalizing, the callback records it as a failed row.
           failureCallback: `${base}/api/jobs/failed`,
         })
       )

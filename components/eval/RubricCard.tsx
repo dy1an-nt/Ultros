@@ -38,7 +38,7 @@ export function RubricCard({ rubric, onEdit, onDelete, deleting }: Props) {
           <span
             key={c.name}
             className="text-xs bg-gray-800 text-gray-400 px-2 py-0.5 rounded"
-            title={`${TYPE_LABELS[c.type]} — weight ${c.weight} (${
+            title={`${TYPE_LABELS[c.type]}, weight ${c.weight} (${
               totalWeight > 0 ? ((c.weight / totalWeight) * 100).toFixed(0) : 0
             }%)`}
           >

@@ -17,7 +17,7 @@ export function BudgetBanner() {
       }`}
     >
       <span>
-        {over ? "Monthly budget reached" : "Approaching monthly budget"} — $
+        {over ? "Monthly budget reached" : "Approaching monthly budget"}: $
         {data.monthSpendUsd.toFixed(2)} of ${data.monthlyBudgetUsd.toFixed(2)} (
         {Math.round(ratio * 100)}%). New launches will ask for confirmation.
       </span>

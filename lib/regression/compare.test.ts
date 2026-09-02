@@ -15,7 +15,7 @@ const row = (rowIndex: number, score: number | null, passed: boolean | null): Ro
   passed,
 })
 
-describe("compareToBaseline — aggregate verdict", () => {
+describe("compareToBaseline, aggregate verdict", () => {
   it("flags a regression when score drops beyond the threshold", () => {
     const r = compareToBaseline({
       baselineScore: 0.9,
@@ -53,7 +53,7 @@ describe("compareToBaseline — aggregate verdict", () => {
   })
 })
 
-describe("compareToBaseline — per-row regressions", () => {
+describe("compareToBaseline, per-row regressions", () => {
   it("flags a row whose pass flipped true -> false", () => {
     const r = compareToBaseline({
       baselineScore: 0.9,

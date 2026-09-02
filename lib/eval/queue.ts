@@ -2,7 +2,7 @@ import { after } from "next/server"
 import { Client } from "@upstash/qstash"
 import { runEvalJob } from "./runEvalJob"
 
-// QStash in production, in-process after() fallback otherwise — QStash cannot
+// QStash in production, in-process after() fallback otherwise, QStash cannot
 // reach localhost, and after() keeps the serverless invocation alive past the
 // response, so the dev path needs no HTTP hop or tunnel.
 export async function enqueueEvalJob(evaluationId: string): Promise<void> {
@@ -15,7 +15,7 @@ export async function enqueueEvalJob(evaluationId: string): Promise<void> {
     await client.publishJSON({
       url: `${base}/api/jobs/eval`,
       body: { evaluationId },
-      // Exhausted retries strand the eval in pending forever without this —
+      // Exhausted retries strand the eval in pending forever without this,
       // the callback marks it failed and lets any waiting batch finalize.
       failureCallback: `${base}/api/jobs/failed`,
     })

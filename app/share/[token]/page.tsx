@@ -11,7 +11,7 @@ import {
 
 // Capability URL: never indexed, never leaked via referrer.
 export const metadata: Metadata = {
-  title: "Shared result — Ultros",
+  title: "Shared result, Ultros",
   robots: { index: false, follow: false },
   referrer: "no-referrer",
 }
@@ -43,7 +43,7 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
       <main className="max-w-4xl mx-auto px-6 py-8">
         {!limited.ok ? (
           <div className="text-center py-24 text-gray-500">
-            Too many requests — try again in a moment.
+            Too many requests, try again in a moment.
           </div>
         ) : !share ? (
           <div className="text-center py-24 text-gray-500">

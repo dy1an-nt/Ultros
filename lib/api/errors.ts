@@ -7,7 +7,7 @@
 //   success: { data: <payload>, error: null }
 //   failure: { data: null, error: { code, message } }
 //
-// `message` is always safe to surface to a user — it never carries a stack
+// `message` is always safe to surface to a user. It never carries a stack
 // trace, a raw provider/DB error, or a secret. Use `internalError()` for
 // unexpected failures so the caller gets a generic message while the real
 // cause is logged server-side only.

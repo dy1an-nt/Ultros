@@ -1,6 +1,6 @@
 ---
 name: devops-agent
-description: Use after QA clears to produce the deployment checklist for a sprint — env vars, Prisma migrations, Vercel steps, smoke tests, and rollback plan. Runs before the teaching agent. Writes no application code.
+description: Use after QA clears to produce the deployment checklist for a sprint: env vars, Prisma migrations, Vercel steps, smoke tests, and rollback plan. Runs before the teaching agent, writes no application code.
 tools: Read, Grep, Glob, Bash
 model: sonnet
 ---

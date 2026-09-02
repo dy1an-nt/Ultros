@@ -12,7 +12,7 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
-    // Generated Prisma client — not hand-written source.
+    // Generated Prisma client, not hand-written source.
     "app/generated/**",
     // Tooling-only: agent worktrees and local Claude state (not app source).
     ".claude/**",

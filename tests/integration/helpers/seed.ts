@@ -40,7 +40,7 @@ export async function createDataset(
   })
 }
 
-// Minimal terminal run — promptVersionId has no FK, so a placeholder id is fine.
+// Minimal terminal run. PromptVersionId has no FK, so a placeholder id is fine.
 export async function createDatasetRun(userId: string, datasetId: string) {
   return prisma.datasetRun.create({
     data: {
@@ -99,7 +99,7 @@ export async function createEvaluation(userId: string, promptRunId: string) {
 }
 
 // Complete dataset run with one scored row and one unscored row (its eval is
-// still pending) — the fixture a datasetRun share resolves against.
+// still pending), the fixture a datasetRun share resolves against.
 export async function createScoredDatasetRun(userId: string) {
   const prompt = await createPrompt(userId, { title: "Batch prompt" })
   const version = prompt.versions[0]
@@ -270,7 +270,7 @@ export async function createRubric(
   })
 }
 
-// UsageSummary row pinned daysAgo before today's UTC midnight — mirrors how
+// UsageSummary row pinned daysAgo before today's UTC midnight, mirrors how
 // the usage routes window on @db.Date values.
 export async function createUsage(
   userId: string,

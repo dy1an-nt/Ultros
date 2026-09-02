@@ -3,7 +3,7 @@ import type { Baseline } from "@/app/generated/prisma/client"
 import type { BaselineDto } from "@/types/experiment"
 
 // Joins the display context a Baseline row only stores ids for. Names can be
-// null after a rubric delete — the baseline's numbers stay valid (snapshots
+// null after a rubric delete. The baseline's numbers stay valid (snapshots
 // live on the Evaluations), only the label is gone.
 export async function toBaselineDto(baseline: Baseline): Promise<BaselineDto> {
   const [version, dataset, rubric, run] = await Promise.all([

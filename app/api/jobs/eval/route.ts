@@ -4,7 +4,7 @@ import { runEvalJob } from "@/lib/eval/runEvalJob"
 import { errorResponse, jsonOk } from "@/lib/api/errors"
 import { logger } from "@/lib/logger"
 
-// QStash webhook — not authed by Clerk; signature-verified, fail-closed.
+// QStash webhook, not authed by Clerk; signature-verified, fail-closed.
 export async function POST(req: NextRequest) {
   const sig = await verifyQstashSignature(req, "/api/jobs/eval")
   if (!sig.ok) {
@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
     return errorResponse("VALIDATION_ERROR", "evaluationId is required")
   }
 
-  // runEvalJob never throws on eval failure — it records status "failed" on
+  // runEvalJob never throws on eval failure. It records status "failed" on
   // the row. A 200 here tells QStash not to retry; retries are handled by the
   // idempotent claim transition inside the job.
   logger.info("eval job received", { evaluationId })

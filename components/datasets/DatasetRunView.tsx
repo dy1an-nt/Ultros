@@ -96,7 +96,7 @@ export function DatasetRunView({ runId }: { runId: string }) {
             <div className="h-full bg-indigo-600 transition-all" style={{ width: `${pct}%` }} />
           </div>
           <p className="text-xs text-gray-500">
-            {done}/{run.totalRows} rows ({pct}%) — judge evals may finish after the last row
+            {done}/{run.totalRows} rows ({pct}%). Judge evals may finish after the last row
           </p>
         </div>
       )}
@@ -105,10 +105,10 @@ export function DatasetRunView({ runId }: { runId: string }) {
 
       {terminal && (
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          <Stat label="Avg score" value={run.avgScore !== null ? run.avgScore.toFixed(3) : "—"} />
-          <Stat label="Pass rate" value={run.passRate !== null ? `${Math.round(run.passRate * 100)}%` : "—"} />
-          <Stat label="Variance" value={run.scoreVariance !== null ? run.scoreVariance.toFixed(4) : "—"} />
-          <Stat label="Avg latency" value={run.avgLatencyMs !== null ? `${run.avgLatencyMs} ms` : "—"} />
+          <Stat label="Avg score" value={run.avgScore !== null ? run.avgScore.toFixed(3) : "N/A"} />
+          <Stat label="Pass rate" value={run.passRate !== null ? `${Math.round(run.passRate * 100)}%` : "N/A"} />
+          <Stat label="Variance" value={run.scoreVariance !== null ? run.scoreVariance.toFixed(4) : "N/A"} />
+          <Stat label="Avg latency" value={run.avgLatencyMs !== null ? `${run.avgLatencyMs} ms` : "N/A"} />
           <Stat label="Total cost" value={`$${run.totalCostUsd.toFixed(4)}`} />
         </div>
       )}
@@ -150,7 +150,7 @@ export function DatasetRunView({ runId }: { runId: string }) {
                         </td>
                         <td className="px-3 py-2">
                           {row.eval === null ? (
-                            <span className="text-gray-600">—</span>
+                            <span className="text-gray-600">, </span>
                           ) : row.eval.status !== "complete" ? (
                             <span className="text-gray-500">{row.eval.status}</span>
                           ) : (

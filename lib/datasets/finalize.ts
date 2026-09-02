@@ -3,13 +3,13 @@ import { finalizeExperimentCell } from "@/lib/experiments/aggregate"
 import { finalizeRegressionIfPending } from "@/lib/regression/finalize"
 
 // Finalization is a recompute from persisted rows, so calling it twice (or
-// from two racing jobs) is harmless — both arrive at the same numbers.
+// from two racing jobs) is harmless, both arrive at the same numbers.
 // A DatasetRun with judge evals still pending stays "running"; the eval job
 // calls this again when the last judge lands.
 export async function finalizeIfDone(datasetRunId: string): Promise<void> {
   const run = await prisma.datasetRun.findUnique({ where: { id: datasetRunId } })
   if (!run || run.status === "complete" || run.status === "failed") return
-  // Gate on persisted rows, not the progress counters — a job that dies
+  // Gate on persisted rows, not the progress counters, a job that dies
   // between creating its PromptRun and incrementing can't wedge the batch.
   const persistedRows = await prisma.promptRun.count({ where: { datasetRunId } })
   if (persistedRows < run.totalRows) return

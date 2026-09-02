@@ -46,7 +46,7 @@ export default function DatasetsPage() {
       ) : !datasets || datasets.length === 0 ? (
         !uploading && (
           <div className="text-center py-16 text-gray-600 text-sm">
-            No datasets yet — upload a CSV or JSON file to batch-test your prompts.
+            No datasets yet, upload a CSV or JSON file to batch-test your prompts.
           </div>
         )
       ) : (

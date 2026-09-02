@@ -1,4 +1,4 @@
-// Shared dataset-testing contract — owned by the architect plan
+// Shared dataset-testing contract, owned by the architect plan
 // (docs/sprint-summary/sprint-4-architect.md). Backend and frontend both
 // import from here; do not redefine these shapes.
 

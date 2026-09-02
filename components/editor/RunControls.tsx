@@ -28,7 +28,7 @@ export function RunControls({ onRun, onSaveVersion }: Props) {
   const budget = useBudgetGate()
 
   // The catalog is filtered to configured providers, so the hardcoded default
-  // may not exist — fall back to the first available model.
+  // may not exist, fall back to the first available model.
   const effectiveModel = models.some((m) => m.id === model) ? model : models[0]?.id ?? model
 
   const grouped = models.reduce<Record<string, typeof models>>((acc, m) => {

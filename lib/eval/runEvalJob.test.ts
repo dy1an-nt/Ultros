@@ -39,7 +39,7 @@ beforeEach(() => {
   vi.clearAllMocks()
 })
 
-describe("runEvalJob — idempotent claim", () => {
+describe("runEvalJob, idempotent claim", () => {
   it("no-ops when the claim matches 0 rows (duplicate / already-complete delivery)", async () => {
     updateMany.mockResolvedValue({ count: 0 })
 

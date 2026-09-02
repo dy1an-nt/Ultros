@@ -46,7 +46,7 @@ export async function runDatasetRowJob(datasetRunId: string, rowIndex: number): 
     where: { datasetRunId, datasetRowId: row.id },
     select: { id: true },
   })
-  if (existing) return // duplicate delivery — work already done
+  if (existing) return // duplicate delivery, work already done
 
   await prisma.datasetRun.updateMany({
     where: { id: datasetRunId, status: "pending" },
@@ -106,7 +106,7 @@ export async function runDatasetRowJob(datasetRunId: string, rowIndex: number): 
     })
   } catch (err) {
     // Unique violation on (datasetRunId, datasetRowId): a concurrent delivery
-    // won the race and persisted this row — not a failure, just a no-op.
+    // won the race and persisted this row, not a failure, just a no-op.
     if ((err as { code?: string }).code === "P2002") return
 
     // Failed rows are PromptRuns too (finishReason "error", sanitized message
@@ -178,7 +178,7 @@ export async function runDatasetRowJob(datasetRunId: string, rowIndex: number): 
             evalMethod,
           },
         })
-        // Already inside a worker — run the judge inline, no second hop.
+        // Already inside a worker, run the judge inline, no second hop.
         await runEvalJob(evaluation.id)
       }
     }
@@ -204,7 +204,7 @@ export async function markRowFailed(datasetRunId: string, rowIndex: number, mess
     where: { datasetRunId, datasetRowId: row.id },
     select: { id: true },
   })
-  if (existing) return // some delivery did land — nothing is stranded
+  if (existing) return // some delivery did land. Nothing is stranded
 
   const version = await prisma.promptVersion.findUnique({ where: { id: run.promptVersionId } })
   if (!version) return
@@ -231,7 +231,7 @@ export async function markRowFailed(datasetRunId: string, rowIndex: number, mess
     })
   } catch (err) {
     // Unique violation on (datasetRunId, datasetRowId): a racing delivery
-    // persisted the row after our existence check — not stranded, no-op.
+    // persisted the row after our existence check, not stranded, no-op.
     if ((err as { code?: string }).code === "P2002") return
     throw err
   }

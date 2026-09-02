@@ -66,7 +66,7 @@ async function seedRunningDatasetRun(userId: string) {
   return { prompt, version, dataset, datasetRun, persisted }
 }
 
-describe("POST /api/jobs/failed — eval branch", () => {
+describe("POST /api/jobs/failed, eval branch", () => {
   it("rejects a malformed callback body with 400", async () => {
     expect((await POST(rawRequest("POST", "/api/jobs/failed", "{bad"))).status).toBe(400)
   })
@@ -98,7 +98,7 @@ describe("POST /api/jobs/failed — eval branch", () => {
     expect(row.error).toContain("retries exhausted")
   })
 
-  it("never demotes a completed eval — a late callback after a successful delivery is a no-op", async () => {
+  it("never demotes a completed eval. A late callback after a successful delivery is a no-op", async () => {
     const user = await createUser()
     const { run } = await createPromptRun(user.id)
     const evaluation = await createEvaluation(user.id, run.id) // status complete
@@ -151,7 +151,7 @@ describe("POST /api/jobs/failed — eval branch", () => {
   })
 })
 
-describe("POST /api/jobs/failed — dataset-row branch", () => {
+describe("POST /api/jobs/failed, dataset-row branch", () => {
   it("records the lost row as failed and finalizes the batch", async () => {
     const user = await createUser()
     const { datasetRun } = await seedRunningDatasetRun(user.id)

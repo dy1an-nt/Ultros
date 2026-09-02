@@ -40,7 +40,7 @@ export default function ExperimentsPage() {
         <div className="text-sm text-red-400 py-4">Failed to load experiments: {error.message}</div>
       ) : !experiments || experiments.length === 0 ? (
         <div className="text-center py-16 text-gray-600 text-sm">
-          No experiments yet — compare prompt variants across models on a dataset.
+          No experiments yet, compare prompt variants across models on a dataset.
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

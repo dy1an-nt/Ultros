@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma"
 import { errorResponse } from "@/lib/api/errors"
 
 // Cells starting with = + - @ execute as formulas when the CSV is opened in a
-// spreadsheet — prefix them with ' so they render as text.
+// spreadsheet, prefix them with ' so they render as text.
 function guardCell(value: string): string {
   return /^[=+\-@]/.test(value) ? `'${value}` : value
 }

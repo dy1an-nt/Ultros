@@ -21,7 +21,7 @@ export type GenerateResult = {
   provider: string
 }
 
-// Non-streaming path for batch jobs — same routing and cost math as runStream,
+// Non-streaming path for batch jobs, same routing and cost math as runStream,
 // but the caller needs the finished result, not a stream.
 export async function generate(params: GenerateParams): Promise<GenerateResult> {
   const start = Date.now()

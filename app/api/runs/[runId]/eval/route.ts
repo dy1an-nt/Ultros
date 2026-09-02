@@ -34,7 +34,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ run
   if (!run) return errorResponse("NOT_FOUND")
   if (run.userId !== user.id) return errorResponse("FORBIDDEN")
 
-  // 400 (not 404/403) for missing or foreign rubrics — does not leak whether
+  // 400 (not 404/403) for missing or foreign rubrics. Does not leak whether
   // another user's rubric id exists.
   const rubric = await prisma.rubric.findUnique({ where: { id: rubricId } })
   if (!rubric || rubric.userId !== user.id) {
@@ -48,7 +48,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ run
   const evalMethod: EvalMethod =
     aiCriteria.length === 0 ? "deterministic" : deterministicCriteria.length === 0 ? "ai_judge" : "mixed"
 
-  // Snapshot the rubric at eval time — editing or deleting the rubric later
+  // Snapshot the rubric at eval time, editing or deleting the rubric later
   // must never change the meaning of this evaluation (Sprint 5 baselines rely on it).
   const criteriaSnapshot: CriteriaSnapshot = {
     rubricName: rubric.name,

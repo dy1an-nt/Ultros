@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
       name,
       description: (body.description as string | null | undefined) ?? null,
       // Criterion["config"] uses Record<string, unknown>, which Prisma's JSON
-      // input type can't verify structurally — validated by validateCriteria above.
+      // input type can't verify structurally, validated by validateCriteria above.
       criteria: criteria as unknown as Prisma.InputJsonValue,
       passThreshold,
     },

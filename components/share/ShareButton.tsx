@@ -32,7 +32,7 @@ export function ShareButton({
         await navigator.clipboard.writeText(data.url)
         setState("copied")
       } catch {
-        setState("idle") // clipboard blocked — the URL is still shown inline
+        setState("idle") // clipboard blocked. The URL is still shown inline
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Share failed")

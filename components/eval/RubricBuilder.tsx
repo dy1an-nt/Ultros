@@ -87,7 +87,7 @@ export function RubricBuilder({ initial, onClose }: Props) {
     <div className="border border-gray-800 rounded-lg p-4 bg-gray-900 space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold text-white">
-          {initial ? `Edit rubric — ${initial.name}` : "New rubric"}
+          {initial ? `Edit rubric, ${initial.name}` : "New rubric"}
         </h2>
         <button onClick={onClose} className="text-sm text-gray-500 hover:text-gray-300">
           Cancel
@@ -118,7 +118,7 @@ export function RubricBuilder({ initial, onClose }: Props) {
 
       <div className="space-y-1">
         <label className="text-xs text-gray-500">
-          Pass threshold —{" "}
+          Pass threshold, {" "}
           <span className="text-indigo-400 font-medium">{(passThreshold * 100).toFixed(0)}%</span>
         </label>
         <input
@@ -135,7 +135,7 @@ export function RubricBuilder({ initial, onClose }: Props) {
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <label className="text-xs text-gray-500">
-            Criteria ({drafts.length}/{MAX_CRITERIA}) — weight share shown per row
+            Criteria ({drafts.length}/{MAX_CRITERIA}), weight share shown per row
           </label>
           <button
             onClick={() => setDrafts((prev) => [...prev, emptyCriterionDraft()])}
@@ -147,7 +147,7 @@ export function RubricBuilder({ initial, onClose }: Props) {
         </div>
         {drafts.length === 0 && (
           <p className="text-sm text-gray-600 text-center py-4">
-            No criteria — add at least one to save this rubric.
+            No criteria, add at least one to save this rubric.
           </p>
         )}
         <div className="space-y-2">

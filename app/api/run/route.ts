@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
     })
   }
 
-  // Aborted streams emit no finish event and no usage — accumulate the text
+  // Aborted streams emit no finish event and no usage, accumulate the text
   // ourselves and estimate tokens at ~4 chars each (same heuristic as the
   // dataset cost estimate) so partial spend still lands in the books.
   let streamedText = ""

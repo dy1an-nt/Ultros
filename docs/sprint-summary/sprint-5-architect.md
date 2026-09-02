@@ -1,7 +1,7 @@
-# Sprint 5 — Experiments & Regression Testing — Architect Plan
+# Sprint 5: Experiments & Regression Testing: Architect Plan
 
 Status: Contract draft, architect-reviewed 2026-06-09. Builds directly on the
-Sprint 4 `DatasetRun` machinery — read `sprint-4-architect.md` first. Where
+Sprint 4 `DatasetRun` machinery, read `sprint-4-architect.md` first, where
 this document deviates from the CLAUDE.md baseline, this document wins.
 
 ## Architect changes vs the CLAUDE.md baseline (read first)
@@ -12,30 +12,30 @@ this document deviates from the CLAUDE.md baseline, this document wins.
    mechanism, no second idempotency story. `ExperimentResult` stays as the
    baseline defines it, but it is a materialized copy of its cell's
    DatasetRun aggregates (plus `datasetRunId` for drill-down) written at cell
-   completion — kept because Sprint 5 charts and the win matrix read results
+   completion. Kept because Sprint 5 charts and the win matrix read results
    long after, and copying decouples them from DatasetRun retention.
 2. **Baselines pin a DatasetRun, not just a score.** The baseline stores
    `datasetRunId` of the run that produced `baselineScore`, enabling
    **per-row** regression comparison (which rows got worse), not only an
    aggregate delta. CLAUDE.md's `regressedRowIds` is impossible without this.
-3. **Statistics are descriptive only — pinned.** Mean, sample variance, pass
+3. **Statistics are descriptive only: pinned.** Mean, sample variance, pass
    rate, latency, cost per cell; win matrix = pairwise difference of means.
    No p-values in v1: n ≤ 500 non-IID rows with judge noise would make them
    theater. The UI shows an "insufficient sample" badge when a cell has
    < 10 scored rows. (Welch's t-test is a documented follow-up, not scope.)
-4. **One active baseline per prompt** (`@@unique([promptId])`) — re-POST
+4. **One active baseline per prompt** (`@@unique([promptId])`), re-POST
    replaces it. Matches the `POST /api/prompts/:id/baseline` shape; multiple
    named baselines are out of scope.
 5. **Regression thresholds pinned.** Run-level: `regressed = scoreDelta <
    -0.05` (request-overridable `threshold` in [0.01, 0.5]). Row-level: a row
    is regressed if its pass flipped true→false OR its score dropped by more
    than the run threshold. Rows are matched baseline↔new by `rowIndex`
-   (datasets are immutable — Sprint 4 decision pays off here).
+   (datasets are immutable, Sprint 4 decision pays off here).
 6. **Cell caps + cost confirmation.** ≤ 4 variants × ≤ 3 models (≤ 12 cells).
    Estimate = Sprint 4 estimate × cells; launch requires `confirm: true`.
    Rubric is **required** for experiments and regressions (comparison without
    scores is meaningless).
-7. **Experiment completes with failed cells visible** — status `complete`
+7. **Experiment completes with failed cells visible**, status `complete`
    when every cell reaches a terminal state; per-cell `failed` is shown, not
    hidden behind an all-or-nothing experiment failure.
 
@@ -123,7 +123,7 @@ model RegressionRun {
 }
 ```
 
-No DatasetRun changes — `experimentId` was added in Sprint 4.
+No DatasetRun changes. `experimentId` was added in Sprint 4.
 
 ## New files / services
 
@@ -156,7 +156,7 @@ No new deps.
 
 Experiment launch (`POST /api/experiments`):
 1. Auth; ownership of dataset, rubric, every variant version (all must belong
-   to the same prompt — 400 otherwise); models pass `isModelAvailable`;
+   to the same prompt. 400 otherwise); models pass `isModelAvailable`;
    caps (≤4 × ≤3); `confirm: true` with estimate echo.
 2. Create Experiment `pending` + one DatasetRun per cell (status `pending`,
    `experimentId` set), then launch cells **sequentially through the Sprint 4
@@ -170,8 +170,8 @@ Experiment launch (`POST /api/experiments`):
 
 Regression (`POST /api/prompts/:id/regression`):
 1. Auth + baseline must exist (404 with actionable message otherwise);
-   body `{ newVersionId, threshold? }` — version must belong to the prompt.
-2. Launch a DatasetRun for (newVersion × baseline's dataset/rubric/model —
+   body `{ newVersionId, threshold? }`. Version must belong to the prompt.
+2, launch a DatasetRun for (newVersion × baseline's dataset/rubric/model,
    **the baseline run's model is reused**, pinned: regression compares
    prompts, not models).
 3. On completion: `lib/regression/compare.ts` matches rows by `rowIndex`,
@@ -180,7 +180,7 @@ Regression (`POST /api/prompts/:id/regression`):
    when finalized, surfaced via the history endpoint).
 
 `POST /api/prompts/:id/baseline` body
-`{ promptVersionId, datasetRunId }` — pinned: a baseline is set by **pointing
+`{ promptVersionId, datasetRunId }`. Pinned: a baseline is set by **pointing
 at an existing complete DatasetRun** of that version (with rubric), not by
 launching a fresh run. Cheaper, and the user blesses numbers they have seen.
 400 if the run isn't complete, isn't theirs, has no rubric, or doesn't match
@@ -217,22 +217,22 @@ res 202: { "data": { "datasetRunId": "drun_12", "baselineScore": 0.84 }, "error"
 
 `GET /api/prompts/:id/regression/history` → RegressionRuns newest-first,
 each `{ newVersionId, versionNumber, newScore, scoreDelta, regressed,
-regressedRowIds, createdAt }` — feeds ScoreOverTimeChart directly.
+regressedRowIds, createdAt }`, feeds ScoreOverTimeChart directly.
 
 ## Risks / security notes
 
-- Cost multiplies by cell count — the confirm gate shows
+- Cost multiplies by cell count, the confirm gate shows
   `cells × per-cell estimate`; cap at 12 cells.
 - Cross-prompt version smuggling: every `variantVersionId` and
   `newVersionId` must be verified to belong to the named prompt AND the
-  authed user (the version table has no userId — join through Prompt).
+  authed user (the version table has no userId, join through Prompt).
 - ExperimentResult upsert is the idempotency seam for double-finalize.
-- Baselines referencing a DatasetRun create a retention dependency —
+- Baselines referencing a DatasetRun create a retention dependency,
   dataset delete is already blocked by Restrict (Sprint 4); add the same 409
   if a dataset's run is referenced by a Baseline.
 - Stats code is pure and unit-tested (QA executes `stats.ts` and
   `compare.ts` directly, like Sprint 3's matchers).
-- `.bin` shims broken on this volume — `node node_modules/...` invocations.
+- `.bin` shims broken on this volume, `node node_modules/...` invocations.
 
 ## Success criteria
 

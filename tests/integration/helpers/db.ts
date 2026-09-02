@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma"
 export { prisma }
 
 // Truncate every application table (CASCADE covers FK order) so each test
-// starts from an empty database. _prisma_migrations survives — the schema is
+// starts from an empty database. _prisma_migrations survives. The schema is
 // applied once in global-setup.
 export async function resetDb() {
   const tables = await prisma.$queryRaw<{ tablename: string }[]>`

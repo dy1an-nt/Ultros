@@ -12,7 +12,7 @@ export function isTerminalEvalStatus(status: string | undefined): boolean {
 }
 
 /**
- * POST /api/runs/:runId/eval — trigger an evaluation.
+ * POST /api/runs/:runId/eval, trigger an evaluation.
  * 200 → already complete (deterministic-only); 202 → pending (ai_judge queued).
  * Either way the response body is the Evaluation; we seed the poll cache with it.
  */
@@ -35,7 +35,7 @@ export function useTriggerEval() {
 }
 
 /**
- * GET /api/evals/:id — polls every 2s while the evaluation is pending/running,
+ * GET /api/evals/:id. Polls every 2s while the evaluation is pending/running,
  * stops once status is "complete" or "failed".
  */
 export function useEval(evalId: string | null) {

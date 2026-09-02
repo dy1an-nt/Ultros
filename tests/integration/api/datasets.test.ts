@@ -67,7 +67,7 @@ describe("POST /api/datasets", () => {
   it("surfaces a CSV parse failure as 400 and persists nothing", async () => {
     const user = await createUser()
     signInAs(user.clerkId)
-    // duplicate header — papaparse would silently rename it
+    // duplicate header. Papaparse would silently rename it
     const res = await POST(jsonRequest("POST", "/api/datasets", { name: "dupes", csvText: "a,a\n1,2" }))
     expect(res.status).toBe(400)
     expect((await res.json()).error.message).toContain("duplicate column")

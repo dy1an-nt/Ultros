@@ -32,7 +32,7 @@ export function useCompareRun() {
           const json = await res.json()
           if (json?.error?.message) message = json.error.message
         } catch {
-          // non-JSON error response — keep generic message
+          // non-JSON error response, keep generic message
         }
         params.slots.forEach(({ slot }) => {
           store.setSlotStatus(slot, "error")
@@ -76,12 +76,12 @@ export function useCompareRun() {
               store.setSlotError(slot, event.error)
             }
           } catch {
-            // malformed line — skip
+            // malformed line, skip
           }
         }
       }
     } catch {
-      // network failure mid-stream — handled by the cleanup below
+      // network failure mid-stream, handled by the cleanup below
     } finally {
       // Any slot the server never resolved would stay "streaming" forever and
       // keep the Run button disabled.

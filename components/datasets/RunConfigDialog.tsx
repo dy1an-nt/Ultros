@@ -101,7 +101,7 @@ export function RunConfigDialog({
       ) : prompts.error ? (
         <p className="text-sm text-red-400">Failed to load prompts: {prompts.error.message}</p>
       ) : !prompts.data || prompts.data.length === 0 ? (
-        <p className="text-sm text-gray-500">No prompts yet — create one first.</p>
+        <p className="text-sm text-gray-500">No prompts yet. Create one first.</p>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
           <select value={promptId} onChange={(e) => { setPromptId(e.target.value); setVersionId("") }} className={selectClass}>
@@ -113,7 +113,7 @@ export function RunConfigDialog({
           <select value={versionId} onChange={(e) => selectVersion(e.target.value)} disabled={!promptId} className={selectClass}>
             <option value="">Version…</option>
             {(versions.data ?? []).map((v) => (
-              <option key={v.id} value={v.id}>v{v.versionNumber}{v.label ? ` — ${v.label}` : ""}</option>
+              <option key={v.id} value={v.id}>v{v.versionNumber}{v.label ? `: ${v.label}` : ""}</option>
             ))}
           </select>
           <select value={model} onChange={(e) => { setModel(e.target.value); setConfirmed(false); estimate.reset() }} className={selectClass}>

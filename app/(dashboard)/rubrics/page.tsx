@@ -60,7 +60,7 @@ export default function RubricsPage() {
       ) : !rubrics || rubrics.length === 0 ? (
         !builderOpen && (
           <div className="text-center py-16 text-gray-600 text-sm">
-            No rubrics yet — create one to start scoring your runs.
+            No rubrics yet. Create one to start scoring your runs.
           </div>
         )
       ) : (

@@ -29,7 +29,7 @@ jobs:
       - run: npx prisma generate
       - run: npm run lint
       - run: npm run typecheck
-      # Coverage thresholds in vitest.config.ts are a ratchet — this fails
+      # Coverage thresholds in vitest.config.ts are a ratchet: this fails
       # if unit coverage over lib/** drops below the pinned floor.
       - run: npm run test:coverage
 
@@ -96,7 +96,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx prisma generate
-      # Applies every migration in order against a clean database — fails the
+      # Applies every migration in order against a clean database: fails the
       # build if any migration SQL is invalid or drifts from the schema.
       - run: npx prisma migrate deploy
 

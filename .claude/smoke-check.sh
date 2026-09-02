@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Ultros smoke check — runs on SessionStart so Claude has a fresh
+# Ultros smoke check. Runs on SessionStart so Claude has a fresh
 # health snapshot before any work begins. Non-blocking: results print
 # regardless of pass/fail.
 

@@ -2,7 +2,7 @@
 import type { ExperimentDetailDto, ExperimentResultsDto } from "@/types/experiment"
 import { versionLabel } from "./CellGrid"
 
-// Pairwise difference of means per model. Descriptive only — no p-values in
+// Pairwise difference of means per model, descriptive only, no p-values in
 // v1 by design; cells under 10 scored rows carry an insufficient-sample badge.
 export function WinMatrix({
   experiment,
@@ -14,7 +14,7 @@ export function WinMatrix({
   if (results.winMatrix.length === 0) {
     return (
       <div className="text-center py-6 text-gray-600 text-sm">
-        No comparable pairs — a win matrix needs at least two scored cells on one model.
+        No comparable pairs. A win matrix needs at least two scored cells on one model.
       </div>
     )
   }

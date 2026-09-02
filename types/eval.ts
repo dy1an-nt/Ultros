@@ -1,4 +1,4 @@
-// Shared eval contract — owned by the architect plan (docs/sprint-summary/sprint-3-architect.md).
+// Shared eval contract, owned by the architect plan (docs/sprint-summary/sprint-3-architect.md).
 // Backend and frontend both import from here; do not redefine these shapes.
 
 export type CriterionType = "ai_judge" | "exact" | "regex" | "json_schema" | "contains"

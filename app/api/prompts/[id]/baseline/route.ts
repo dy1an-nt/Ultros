@@ -88,7 +88,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     baselinePassRate: run.passRate,
     setAt: new Date(),
   }
-  // One active baseline per prompt — re-POST replaces it (and its regression
+  // One active baseline per prompt, re-POST replaces it (and its regression
   // history goes stale against the new anchor, so the cascade is on delete only).
   const baseline = await prisma.baseline.upsert({
     where: { promptId: prompt.id },
@@ -115,7 +115,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   if (!baseline) {
     return errorResponse("NOT_FOUND", "no baseline set for this prompt")
   }
-  // Cascade removes the regression history — it is meaningless without its anchor.
+  // Cascade removes the regression history. It is meaningless without its anchor.
   await prisma.baseline.delete({ where: { id: baseline.id } })
   return jsonOk({ id: baseline.id })
 }

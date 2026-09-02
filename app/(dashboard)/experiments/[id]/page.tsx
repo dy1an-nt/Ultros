@@ -49,7 +49,7 @@ export default function ExperimentDetailPage({ params }: { params: Promise<{ id:
         )}
       </div>
       <p className="text-sm text-gray-500">
-        {experiment.datasetName ?? "dataset"} · rubric {experiment.rubricName ?? "—"} ·{" "}
+        {experiment.datasetName ?? "dataset"} · rubric {experiment.rubricName ?? "N/A"} ·{" "}
         {experiment.variantVersionIds.map((v) => versionLabel(experiment, v)).join(", ")}
       </p>
 
@@ -57,7 +57,7 @@ export default function ExperimentDetailPage({ params }: { params: Promise<{ id:
         <CellGrid experiment={experiment} />
         {!complete && (
           <p className="text-xs text-gray-500">
-            Running — results, win matrix and breakdowns appear when every cell finishes.
+            Running, results, win matrix, and breakdowns appear when every cell finishes.
           </p>
         )}
       </Section>
@@ -98,17 +98,17 @@ export default function ExperimentDetailPage({ params }: { params: Promise<{ id:
                             ) : r.avgScore !== null ? (
                               r.avgScore.toFixed(3)
                             ) : (
-                              "—"
+                              "N/A"
                             )}
                           </td>
                           <td className="px-3 py-2 text-gray-500">
-                            {r.scoreVariance !== null ? r.scoreVariance.toFixed(4) : "—"}
+                            {r.scoreVariance !== null ? r.scoreVariance.toFixed(4) : "N/A"}
                           </td>
                           <td className="px-3 py-2">
-                            {r.passRate !== null ? `${Math.round(r.passRate * 100)}%` : "—"}
+                            {r.passRate !== null ? `${Math.round(r.passRate * 100)}%` : "N/A"}
                           </td>
                           <td className="px-3 py-2 text-gray-500">
-                            {r.avgLatencyMs !== null ? `${r.avgLatencyMs} ms` : "—"}
+                            {r.avgLatencyMs !== null ? `${r.avgLatencyMs} ms` : "N/A"}
                           </td>
                           <td className="px-3 py-2 text-gray-500">${r.totalCostUsd.toFixed(4)}</td>
                           <td className="px-3 py-2">

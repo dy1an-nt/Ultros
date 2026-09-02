@@ -36,7 +36,7 @@ export function Leaderboard({ promptId }: { promptId: string }) {
         <div className="text-sm text-red-400 py-4">Failed to load leaderboard: {error.message}</div>
       ) : !rows || rows.length === 0 ? (
         <div className="text-center py-8 text-gray-600 text-sm">
-          No completed evaluations yet — scores appear here once runs are evaluated.
+          No completed evaluations yet. Scores appear here once runs are evaluated.
         </div>
       ) : (
         <div className="border border-gray-800 rounded-lg bg-gray-900 overflow-hidden">
@@ -70,7 +70,7 @@ export function Leaderboard({ promptId }: { promptId: string }) {
                       </span>
                     </td>
                     <td className="px-3 py-2 text-gray-400 truncate max-w-[200px]">
-                      {row.label ?? "—"}
+                      {row.label ?? "N/A"}
                     </td>
                     <td className="px-3 py-2 text-right font-medium text-white">
                       {(row.avgScore * 100).toFixed(1)}%

@@ -7,7 +7,7 @@ function crit(partial: Partial<Criterion> & Pick<Criterion, "type" | "config">):
   return { name: partial.name ?? "c", weight: partial.weight ?? 1, type: partial.type, config: partial.config }
 }
 
-describe("runDeterministicCriterion — exact", () => {
+describe("runDeterministicCriterion, exact", () => {
   it("scores 1 on an exact match", () => {
     const r = runDeterministicCriterion(crit({ type: "exact", config: { expected: "hello" } }), "hello")
     expect(r.score).toBe(1)
@@ -37,7 +37,7 @@ describe("runDeterministicCriterion — exact", () => {
   })
 })
 
-describe("runDeterministicCriterion — contains", () => {
+describe("runDeterministicCriterion, contains", () => {
   it("finds a substring", () => {
     const r = runDeterministicCriterion(crit({ type: "contains", config: { substring: "wor" } }), "hello world")
     expect(r.score).toBe(1)
@@ -57,7 +57,7 @@ describe("runDeterministicCriterion — contains", () => {
   })
 })
 
-describe("runDeterministicCriterion — regex", () => {
+describe("runDeterministicCriterion, regex", () => {
   it("matches a valid pattern", () => {
     const r = runDeterministicCriterion(crit({ type: "regex", config: { pattern: "^\\d{3}$" } }), "123")
     expect(r.score).toBe(1)
@@ -87,7 +87,7 @@ describe("runDeterministicCriterion — regex", () => {
   })
 })
 
-describe("runDeterministicCriterion — json_schema", () => {
+describe("runDeterministicCriterion, json_schema", () => {
   const schema = { type: "object", required: ["name"], properties: { name: { type: "string" } } }
 
   it("scores 1 when JSON matches the schema", () => {
@@ -108,7 +108,7 @@ describe("runDeterministicCriterion — json_schema", () => {
   })
 })
 
-describe("runDeterministicCriterion — ai_judge guard", () => {
+describe("runDeterministicCriterion, ai_judge guard", () => {
   it("throws because ai_judge is not deterministic", () => {
     expect(() =>
       runDeterministicCriterion(crit({ type: "ai_judge", config: { instructions: "x" } }), "y")

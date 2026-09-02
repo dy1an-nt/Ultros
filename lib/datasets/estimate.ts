@@ -19,7 +19,7 @@ export type Estimate = {
 
 // ~4 chars per token is close enough for a pre-launch sanity number.
 // Output is costed at the full maxTokens cap, so the estimate is an upper
-// bound — a wallet guard should never under-promise.
+// bound. A wallet guard should never under-promise.
 function approxTokens(text: string): number {
   return Math.ceil(text.length / 4)
 }

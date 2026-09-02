@@ -49,7 +49,7 @@ export function useBudgetGate() {
     confirmIfOverBudget(): boolean {
       if (ratio === null || ratio < 1) return true
       return window.confirm(
-        "You are at 100% of your monthly budget. Launch anyway? (Budgets never hard-lock your account — this is a deliberate-spend check.)"
+        "You are at 100% of your monthly budget, launch anyway? (Budgets never hard-lock your account. This is a deliberate-spend check.)"
       )
     },
   }

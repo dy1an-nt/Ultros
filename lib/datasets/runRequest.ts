@@ -14,7 +14,7 @@ type Loaded = {
 type Result = { value: Loaded; error: null; status: 0 } | { value: null; error: string; status: 400 | 404 }
 
 // Shared by run-estimate and run launch: ownership, model/params, mapping.
-// Omitted mapping defaults to identity for template vars that match columns —
+// Omitted mapping defaults to identity for template vars that match columns,
 // validateMapping still rejects anything left unmapped.
 export async function loadRunRequest(
   userId: string,

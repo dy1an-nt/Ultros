@@ -6,7 +6,7 @@ import { userInfo } from "node:os"
 // the app (lib/prisma.ts never reads it from the URL).
 //
 // Hard guard: the suite TRUNCATEs every table between tests, so any host
-// other than localhost is refused outright — a stray DATABASE_URL pointing at
+// other than localhost is refused outright, a stray DATABASE_URL pointing at
 // Supabase must never reach the truncate.
 export function testDatabaseUrl(): string {
   const url =

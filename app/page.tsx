@@ -5,7 +5,7 @@ import Image from "next/image"
 import { Hanken_Grotesk, Source_Serif_4, Spline_Sans_Mono } from "next/font/google"
 import { UltrosLogo } from "@/components/landing/Logo"
 
-// Landing implements docs/design/Ultros Landing.dc.html — dark green
+// Landing implements docs/design/Ultros Landing.dc.html, dark green
 // (#0B0F0D / #4FB286), serif display, mono data accents.
 const sans = Hanken_Grotesk({ subsets: ["latin"], weight: ["400", "500", "600", "700"] })
 const serif = Source_Serif_4({ subsets: ["latin"], weight: ["400", "500", "600"] })
@@ -36,7 +36,7 @@ const demoMetrics = (row: (typeof demoRows)[number]) => [
 const features = [
   {
     title: "Runs are first-class",
-    body: "Every execution is versioned, tracked, and comparable — prompt, model, parameters, and dataset pinned together. Nothing is a one-off.",
+    body: "Every execution is versioned, tracked, and comparable. Prompt, model, parameters, and dataset are pinned together. Nothing is a one-off.",
     icon: (
       <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#7FD6AE" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
         <circle cx="12" cy="12" r="3.5" />
@@ -47,7 +47,7 @@ const features = [
   },
   {
     title: "Judges you can trust",
-    body: "AI-as-judge with rubrics you define, mixed with deterministic matchers — so a score of 8.7 means the same thing next month.",
+    body: "AI-as-judge with rubrics you define, mixed with deterministic matchers, so a score of 8.7 means the same thing next month.",
     icon: (
       <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#7FD6AE" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
         <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
@@ -109,7 +109,7 @@ export default async function HomePage() {
         <p className="text-[19px] leading-[1.65] text-[#9FAFA4] max-w-[620px] text-pretty">
           Ultros is an evaluation platform for teams building on LLMs. It runs every prompt
           version across your datasets and models, scores each output, and shows exactly what
-          regressed — before your users do.
+          regressed, before your users do.
         </p>
         <div className="flex items-center gap-3.5 mt-2">
           <Link
@@ -210,7 +210,7 @@ export default async function HomePage() {
             </h2>
             <p className="text-[17px] leading-[1.65] text-[#9FAFA4] text-pretty">
               Point Ultros at a prompt and a dataset. It fans out across models, scores every
-              output, and reports the delta against your last version — win matrix,
+              output, and reports the delta against your last version, win matrix,
               per-criterion breakdown, and per-row drill-down included.
             </p>
             <Link
@@ -276,7 +276,7 @@ export default async function HomePage() {
             </div>
           </div>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-sm text-[#76867B]">
-            <span>An AI evaluation platform — every run scored, every regression caught.</span>
+            <span>An AI evaluation platform. Every run scored, every regression caught.</span>
             <span>
               Built by{" "}
               <a

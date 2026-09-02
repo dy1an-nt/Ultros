@@ -95,7 +95,7 @@ export default function DatasetDetailPage({ params }: { params: Promise<{ id: st
           <div className="text-sm text-red-400">Failed to load runs: {runs.error.message}</div>
         ) : !runs.data || runs.data.length === 0 ? (
           <div className="text-center py-16 text-gray-600 text-sm">
-            No runs yet — hit “Run prompt” to batch-test against this dataset.
+            No runs yet. Hit “Run prompt” to batch-test against this dataset.
           </div>
         ) : (
           <div className="flex flex-col gap-4">

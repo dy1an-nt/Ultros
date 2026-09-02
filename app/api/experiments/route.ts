@@ -56,9 +56,9 @@ export async function POST(req: NextRequest) {
     return errorResponse("INVALID_JSON")
   }
 
-  // Cost multiplies by cell count — launches must be deliberate, never a default.
+  // Cost multiplies by cell count. Launches must be deliberate, never a default.
   if (body.confirm !== true) {
-    return errorResponse("VALIDATION_ERROR", "confirm: true is required — review the cost estimate first")
+    return errorResponse("VALIDATION_ERROR", "confirm: true is required. Review the cost estimate first")
   }
 
   const name = typeof body.name === "string" ? body.name.trim() : ""
@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
     return errorResponse("VALIDATION_ERROR", "datasetId is required")
   }
   const dataset = await prisma.dataset.findUnique({ where: { id: body.datasetId } })
-  // 400 not 404/403 — does not leak whether another user's id exists.
+  // 400 not 404/403. Does not leak whether another user's id exists.
   if (!dataset || dataset.userId !== user.id) {
     return errorResponse("VALIDATION_ERROR", "invalid datasetId")
   }
@@ -135,7 +135,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Variants of one prompt can declare different {{vars}}; each must map onto
-  // the dataset's columns (identity mapping — the contract carries no mapping
+  // the dataset's columns (identity mapping. The contract carries no mapping
   // object for experiments).
   const variableMappings: Record<string, Record<string, string>> = {}
   for (const version of versions) {
