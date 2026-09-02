@@ -6,6 +6,26 @@ AI evaluation and prompt experimentation platform. Developers test prompts again
 
 **Positioning:** Not a prompt-sharing community. An AI evaluation platform — think LangSmith / HumanLoop / PromptLayer. Pairs with RestaurantIQ in the portfolio to demonstrate both traditional full-stack SaaS and modern AI infrastructure engineering.
 
+## Skills
+
+Procedures live as skills in `.claude/skills/`, invoked rather than recalled from memory. Codex discovers thin wrappers in `.agents/skills/` that point back at the canonical files, so the two copies do not drift.
+
+Repo procedures:
+
+- `/sprint` — the full sprint protocol: role order, required artifacts, gates between steps, and when spawning agents is worth it.
+- `/migrate` — author and apply a Prisma migration; the sharp edges around `DIRECT_URL`, destructive SQL, and production order.
+- `/qa-sweep` — the pre-done spot-check for inline changes: convention greps, typecheck, and the narrowest real test run.
+
+Ported from [pstack](https://github.com/cursor/plugins/tree/main/pstack) (MIT, by Lauren Tan) and adapted to this repo. Optional tools, not gates:
+
+- `/blast-radius` — before shipping a change you don't fully trust, find what it breaks elsewhere and prove the one fact it's safe because of.
+- `/how` — trace how a subsystem works before changing it, and optionally critique its architecture. The teaching agent still owns committed docs.
+- `/why` — reconstruct design rationale from git, `gh`, and `docs/`, with explicit confidence tiers.
+- `/tdd` — failing-test-first bug fixing, when a cheap Vitest target exists.
+- `/unslop` — cut AI tells from prose before it ships. The only one Claude may invoke on its own; the other four are user-invoked.
+
+The upstream license text is preserved in [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
+
 ## Operating Rules (lead session)
 
 This project runs on a usage-limited plan, and the lead session may be any Claude model (Opus is the usual). These rules define how the lead operates — follow them over default habits.
@@ -318,11 +338,11 @@ NEXT_PUBLIC_APP_URL=
 
 ## Agent Team System
 
-Six specialized roles per sprint, each owning a clear vertical slice. **Default: the lead plays every role itself, inline, in workflow order** — on a usage-limited plan, subagent spawns are the expensive path (each starts cold and re-buys context the lead already has). The roles also exist as subagents in `.claude/agents/` (backend-agent, frontend-agent, security-agent, qa-agent, teaching-agent; each pinned to `model: sonnet`) for when the user asks for agents, or when the backend and frontend slices are both big enough that parallel building beats two cold starts. Inline or spawned, every role's mandatory output is identical and required.
+Seven specialized roles per sprint, each owning a clear vertical slice. Run them with `/sprint`, which carries the protocol, the gates, and the required artifacts. **Default: the lead plays every role itself, inline, in workflow order** — on a usage-limited plan, subagent spawns are the expensive path (each starts cold and re-buys context the lead already has). The roles also exist as subagents in `.claude/agents/` (architect-agent, backend-agent, frontend-agent, security-agent, qa-agent, devops-agent, teaching-agent; all pinned to `model: sonnet` except the architect, which is `opus` because a wrong contract makes every later role wrong) for when the user asks for agents, or when the backend and frontend slices are both big enough that parallel building beats two cold starts. Inline or spawned, every role's mandatory output is identical and required.
 
 ### Agent Roles
 
-**Architect Agent** (`claude` / lead)
+**Architect Agent** (`architect-agent`, or the lead inline)
 - Goal format: "We are building [feature]. Produce the sprint plan: requirements, DB changes, API contract, edge cases, auth/isolation risks, scaling concerns, and success criteria."
 - Owns: sprint design, API contract definition, risk identification
 - Runs FIRST — backend and frontend must not start until architect output is written
@@ -359,6 +379,13 @@ Six specialized roles per sprint, each owning a clear vertical slice. **Default:
 - Runs after Security Agent clears — and BEFORE the sprint commit lands
 - Test cases required: happy path, invalid input, unauthorized user, wrong user's data, empty data, edge-case data (large dataset, 0-score rubric, 100% pass rate)
 - Mandatory output: `docs/sprint-summary/sprint-N-qa.md` — cases exercised, pass/fail per case, defects found (with repro). Read-only: reports defects, never applies fixes itself
+
+**DevOps Agent** (`devops-agent`)
+- Goal format: "Produce the deployment checklist for this sprint."
+- Owns: deployment impact — env vars, migrations, Vercel steps, smoke tests, rollback
+- Runs after QA clears, before the teaching summary. Skip it for a sprint that adds no env var, no migration, and no job-consumer route change; say so rather than skipping silently
+- Mandatory output: what changed, new env vars (name + where + scope), migrations required (yes/no + exact command), numbered deployment steps, rollback plan
+- Read-only: writes no application code
 
 **Teaching Agent** (`teaching-agent`)
 - Goal format: "After all agents finish, summarize the sprint. Explain it like I'm a CS student who wants to understand it deeply."
@@ -401,6 +428,9 @@ Inline by default: one lead session, switching roles in this order and producing
 6. Fix + commit
    → apply security/QA findings, then land multiple scoped commits
      (feat/fix/test per slice), never one monolith
+
+6b. DevOps role (only if env vars, migrations, or job routes changed)
+   → deployment checklist: env vars, migrate deploy, Vercel steps, rollback
 
 7. Teaching role
    → write docs/sprint-summary/sprint-N.md
