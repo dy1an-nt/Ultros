@@ -451,6 +451,7 @@ When spawning the agents instead (user asked, or true parallelism pays): the arc
 - No em dashes in any prose this repo owns: docs, README, commit messages, PR descriptions, code comments, and user-facing copy. Use a period or a comma; a colon is fine before a list or a definition. Parentheses are not a substitute, they just trade one tell for another. `/unslop` carries the full rule set
 - Tailwind + shadcn/ui only, no custom CSS files
 - Recharts for all data visualizations
+- Component and hook tests live beside the code as `*.test.tsx` with a `// @vitest-environment jsdom` docblock; `lib` tests stay in the node environment. Test behavior a user depends on, not markup
 - No `console.log` in committed code. Use `lib/logger.ts` (structured, secret-scrubbed; `logger.exception` in catch blocks)
 - Model pricing constants live in `lib/ai/pricing.ts` with a `// verified as of YYYY-MM-DD` comment, update when models change
 - Direct providers (Anthropic, OpenAI, Gemini) for default/high-volume paths where prompt caching and batch API matter; OpenRouter only for long-tail models not available direct

@@ -144,10 +144,14 @@ In development, batch jobs run in-process (sequential `after()` loop) because QS
 CI gates every push: lint, typecheck, unit tests, integration tests against a fresh Postgres (migration check included), and a production build.
 
 ```bash
-npm test                  # ~90 unit tests over the pure core (lib/eval, lib/experiments, lib/regression)
+npm test                  # 127 unit tests: the pure core (lib/**) plus component and hook suites in jsdom
 npm run test:integration  # 222 route-level integration tests against local Postgres
 npm run typecheck
 ```
+
+Component and hook suites sit next to what they cover (`components/**/*.test.tsx`,
+`hooks/**/*.test.tsx`) and opt into jsdom per file, so the `lib` suites keep the
+faster node environment.
 
 ## Conventions
 

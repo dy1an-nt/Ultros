@@ -14,9 +14,16 @@ export default defineConfig({
     globals: true,
     setupFiles: ["./tests/setup.ts"],
     // Unit + integration suites live next to the code (lib) and under tests/.
-    // App route/component files are excluded, they pull in Next runtime and
-    // are exercised through the integration suite, not as bare imports.
-    include: ["lib/**/*.test.ts", "tests/**/*.test.ts"],
+    // Component and hook suites sit next to what they cover and opt into jsdom
+    // with a `@vitest-environment jsdom` docblock, so lib tests keep the
+    // faster node environment. Route files stay excluded, they pull in the
+    // Next runtime and are exercised through the integration suite instead.
+    include: [
+      "lib/**/*.test.ts",
+      "tests/**/*.test.ts",
+      "components/**/*.test.tsx",
+      "hooks/**/*.test.tsx",
+    ],
     // Integration suites need a real Postgres; they run via
     // vitest.integration.config.ts (`npm run test:integration`).
     exclude: [...configDefaults.exclude, "tests/integration/**"],
