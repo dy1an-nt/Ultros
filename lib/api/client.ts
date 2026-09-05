@@ -33,11 +33,14 @@ type RequestOptions = Omit<RequestInit, "body"> & {
 
 export async function apiFetch<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const { json, headers, ...init } = options
+  const requestHeaders = new Headers(headers)
+  if (json !== undefined && !requestHeaders.has("Content-Type")) {
+    requestHeaders.set("Content-Type", "application/json")
+  }
 
   const res = await fetch(path, {
     ...init,
-    headers:
-      json === undefined ? headers : { "Content-Type": "application/json", ...headers },
+    headers: requestHeaders,
     body: json === undefined ? undefined : JSON.stringify(json),
   })
 
@@ -45,7 +48,7 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
   try {
     body = await res.json()
   } catch {
-    // A non-JSON body is only a problem when it was also the error itself.
+    // Validity is checked below after preserving any HTTP error status.
   }
 
   if (!res.ok || body?.error) {
@@ -56,5 +59,9 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
     )
   }
 
-  return body?.data as T
+  if (typeof body !== "object" || body === null || !Object.hasOwn(body, "data")) {
+    throw new ApiRequestError(`Invalid API response (${res.status})`, null, res.status)
+  }
+
+  return body.data as T
 }

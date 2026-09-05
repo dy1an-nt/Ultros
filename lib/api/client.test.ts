@@ -35,7 +35,7 @@ describe("apiFetch", () => {
     const [, init] = vi.mocked(fetch).mock.calls[0]
     expect(init?.method).toBe("POST")
     expect(init?.body).toBe('{"name":"R"}')
-    expect(init?.headers).toMatchObject({ "Content-Type": "application/json" })
+    expect(new Headers(init?.headers).get("Content-Type")).toBe("application/json")
 
     respondWith({ data: null, error: null })
     await apiFetch("/api/rubrics")
@@ -67,6 +67,33 @@ describe("apiFetch", () => {
     // Null code marks a failure that never reached a route handler.
     expect(err.code).toBeNull()
     expect(err.status).toBe(502)
+  })
+
+  it("rejects a successful response that is not the API envelope", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response("<html>sign-in</html>", { status: 200 }))
+    )
+
+    const err = await failureOf(apiFetch("/api/prompts"))
+    expect(err.message).toBe("Invalid API response (200)")
+    expect(err.code).toBeNull()
+    expect(err.status).toBe(200)
+  })
+
+  it("preserves a Headers instance when adding the JSON content type", async () => {
+    respondWith({ data: { ok: true }, error: null })
+
+    await apiFetch("/api/prompts", {
+      method: "POST",
+      headers: new Headers({ Authorization: "Bearer token" }),
+      json: {},
+    })
+
+    const [, init] = vi.mocked(fetch).mock.calls[0]
+    const sentHeaders = new Headers(init?.headers)
+    expect(sentHeaders.get("Authorization")).toBe("Bearer token")
+    expect(sentHeaders.get("Content-Type")).toBe("application/json")
   })
 
   it("identifies a status so callers can treat one as a normal state", async () => {
