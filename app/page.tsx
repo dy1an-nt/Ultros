@@ -20,11 +20,13 @@ const warnBadge =
 const failBadge =
   "inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[13px] font-semibold bg-[#D26A5D]/10 border border-[#D26A5D]/40 text-[#E0938A]"
 
+// Illustrative figures, but only over models the catalog can actually run, and
+// on the 0 to 1 scale the scoring engine actually uses.
 const demoRows = [
-  { model: "claude-sonnet-4-6", exact: "0.94", score: "8.7 / 10", delta: "+0.06", deltaClass: "text-[#7FD6AE]", badge: passBadge, dot: "#4FB286", status: "Pass" },
-  { model: "gpt-5.1", exact: "0.91", score: "8.4 / 10", delta: "+0.03", deltaClass: "text-[#7FD6AE]", badge: passBadge, dot: "#4FB286", status: "Pass" },
-  { model: "gemini-3-pro", exact: "0.83", score: "7.1 / 10", delta: "−0.01", deltaClass: "text-[#E4BC7A]", badge: warnBadge, dot: "#D9A24E", status: "Warn" },
-  { model: "llama-4-maverick", exact: "0.76", score: "6.2 / 10", delta: "−0.08", deltaClass: "text-[#E0938A]", badge: failBadge, dot: "#D26A5D", status: "Regressed" },
+  { model: "claude-sonnet-5", exact: "0.94", score: "0.87", delta: "+0.06", deltaClass: "text-[#7FD6AE]", badge: passBadge, dot: "#4FB286", status: "Pass" },
+  { model: "gpt-4.1", exact: "0.91", score: "0.84", delta: "+0.03", deltaClass: "text-[#7FD6AE]", badge: passBadge, dot: "#4FB286", status: "Pass" },
+  { model: "gemini-2.5-pro", exact: "0.83", score: "0.71", delta: "−0.01", deltaClass: "text-[#E4BC7A]", badge: warnBadge, dot: "#D9A24E", status: "Warn" },
+  { model: "llama-3.3-70b", exact: "0.76", score: "0.62", delta: "−0.08", deltaClass: "text-[#E0938A]", badge: failBadge, dot: "#D26A5D", status: "Regressed" },
 ]
 
 const demoMetrics = (row: (typeof demoRows)[number]) => [
@@ -47,7 +49,7 @@ const features = [
   },
   {
     title: "Judges you can trust",
-    body: "AI-as-judge with rubrics you define, mixed with deterministic matchers, so a score of 8.7 means the same thing next month.",
+    body: "AI-as-judge with rubrics you define, mixed with deterministic matchers, so a score of 0.87 means the same thing next month.",
     icon: (
       <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#7FD6AE" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
         <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
