@@ -219,7 +219,8 @@ ultros/
 │   └── ui/                     # shadcn/ui base components
 ├── lib/
 │   ├── ai/                     # Vercel AI SDK wrappers, direct providers + OpenRouter
-│   │   └── pricing.ts          # Token cost constants per model (verified date in comment)
+│   │   ├── models.ts           # Catalog: ids, context, prices, capability flags (verified date in comment)
+│   │   └── pricing.ts          # Cost arithmetic over the catalog
 │   ├── api/                    # Error envelope helpers (ApiError, errorResponse, jsonOk)
 │   │                           # handler.ts: the withUser route boundary
 │   │                           # client.ts + queryKeys.ts: the browser half
@@ -301,6 +302,13 @@ Done when: CI gates every push; routes are covered by integration tests; errors 
 - QStash idempotency fix (leased claim on `Evaluation.startedAt`). Done
 - Route-level integration suites against local Postgres (`npm run test:integration`). Done, all user-facing routes covered
 - Structured error envelope `{ code, message }` across every route, in lockstep with frontend `json.error?.message` reads. Done
+
+**Sprint 8: Public truth & model currency**
+Done when: every public claim is demonstrably true, and the Anthropic catalog matches what the API actually serves.
+- `/docs` rewritten against the code. The fabricated Python SDK, CLI, API-token, and per-account provider-key sections are gone; what remains unbuilt is labelled on a Roadmap page. Done
+- Anthropic catalog refreshed against a live `GET /v1/models`: Opus 5, Sonnet 5, Fable 5.1 added, Opus 4.7 repriced from $15/$75 to $5/$25, Sonnet 4.6 and Opus 4.7 context corrected from 200K to 1M. Done
+- Capability handling: `supportsSampling` and `thinksByDefault` on every catalog entry, sampling parameters dropped for models that reject them, thinking headroom added so reasoning does not truncate the answer. Done
+- `/docs` model table renders from `MODEL_CATALOG`, so a price shown to the public cannot drift from the price charged. Done
 
 ## Environment Variables
 
@@ -461,7 +469,9 @@ When spawning the agents instead (user asked, or true parallelism pays): the arc
 - Recharts for all data visualizations
 - Component and hook tests live beside the code as `*.test.tsx` with a `// @vitest-environment jsdom` docblock; `lib` tests stay in the node environment. Test behavior a user depends on, not markup
 - No `console.log` in committed code. Use `lib/logger.ts` (structured, secret-scrubbed; `logger.exception` in catch blocks)
-- Model pricing constants live in `lib/ai/pricing.ts` with a `// verified as of YYYY-MM-DD` comment, update when models change
+- The model catalog is `lib/ai/models.ts`: ids, context windows, prices, and capability flags, with a `// verified as of YYYY-MM-DD` comment. `lib/ai/pricing.ts` only does the arithmetic. Verify a change against `GET /v1/models` rather than memory, and update the date
+- Provider capability flags are per model, never inferred from the id at a call site. `supportsSampling` false means the run sends no temperature or topP at all, and the UI control is disabled; `thinksByDefault` true adds `THINKING_TOKEN_HEADROOM` to the output ceiling so reasoning tokens do not eat the answer
+- A number shown on a public page is rendered from the constant the runtime reads, never retyped into prose
 - Direct providers (Anthropic, OpenAI, Gemini) for default/high-volume paths where prompt caching and batch API matter; OpenRouter only for long-tail models not available direct
 - Streaming responses via Vercel AI SDK `streamText`, never buffer a full response before sending
 - Eval jobs (AI-judge) always go through QStash, never run synchronously in a request handler
