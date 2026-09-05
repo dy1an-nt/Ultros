@@ -1,7 +1,7 @@
 import { generateObject } from "ai"
 import { z } from "zod"
 import { resolveProvider } from "@/lib/ai/router"
-import { isModelAvailable } from "@/lib/ai/models"
+import { isModelAvailable, supportsSampling } from "@/lib/ai/models"
 import { calculateCost } from "@/lib/ai/pricing"
 import type { AiJudgeConfig, Criterion, CriterionScore } from "@/types/eval"
 
@@ -40,7 +40,9 @@ function clamp01(n: number): number {
 }
 
 // One generateObject call covering all ai_judge criteria, cheaper than one
-// call per criterion and internally consistent. temperature pinned to 0.
+// call per criterion and internally consistent. temperature pinned to 0 on
+// models that still take one; the rest reject it, and JUDGE_MODEL can name
+// either kind.
 export async function judgeCriteria(criteria: Criterion[], responseText: string): Promise<JudgeResult> {
   const model = getJudgeModel()
 
@@ -54,7 +56,7 @@ export async function judgeCriteria(criteria: Criterion[], responseText: string)
   const { object, usage } = await generateObject({
     model: resolveProvider(model),
     schema: judgeOutputSchema,
-    temperature: 0,
+    temperature: supportsSampling(model) ? 0 : undefined,
     system:
       "You are a strict evaluation judge. Score an AI response against each criterion. " +
       "For every criterion return its exact name, a score between 0 and 1 (inclusive), " +

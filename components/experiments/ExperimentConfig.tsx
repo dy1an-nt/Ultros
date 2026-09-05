@@ -49,6 +49,12 @@ export function ExperimentConfig() {
     return list.length >= max ? list : [...list, id]
   }
 
+  // Temperature is shared across every cell, but some models reject it. Name
+  // the ones that will run without it instead of implying it applied to all.
+  const unsampledModels = (models.data ?? [])
+    .filter((m) => modelIds.includes(m.id) && !m.supportsSampling)
+    .map((m) => m.displayName)
+
   const cells = variantIds.length * modelIds.length
   const ready =
     name.trim().length > 0 && variantIds.length > 0 && modelIds.length > 0 && datasetId !== "" && rubricId !== ""
@@ -183,9 +189,15 @@ export function ExperimentConfig() {
           <input
             type="number" min={0} max={2} step={0.1} value={temperature}
             onChange={(e) => setTemperature(Number(e.target.value))}
-            className="w-16 bg-gray-800 text-white rounded px-2 py-1 outline-none"
+            disabled={unsampledModels.length === modelIds.length && modelIds.length > 0}
+            className="w-16 bg-gray-800 text-white rounded px-2 py-1 outline-none disabled:opacity-40"
           />
         </label>
+        {unsampledModels.length > 0 && (
+          <span className="text-xs text-gray-500">
+            no temperature on {unsampledModels.join(", ")}
+          </span>
+        )}
         <label className="flex items-center gap-1">
           maxTokens
           <input

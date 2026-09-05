@@ -41,6 +41,10 @@ export function RunConfigDialog({
   const [mapping, setMapping] = useState<Record<string, string>>({})
   const [confirmed, setConfirmed] = useState(false)
 
+  // Models that removed the sampling parameters run without a temperature,
+  // so the field is disabled rather than silently ignored.
+  const sampled = models.data?.find((m) => m.id === model)?.supportsSampling ?? true
+
   const version = versions.data?.find((v) => v.id === versionId)
   const templateVars = useMemo(
     () => (version ? extractVars(version.systemPrompt, version.userPrompt) : []),
@@ -121,7 +125,9 @@ export function RunConfigDialog({
           <input
             type="number" min={0} max={2} step={0.1} value={temperature}
             onChange={(e) => setTemperature(Number(e.target.value))}
-            className="w-16 bg-gray-800 text-white rounded px-2 py-1 outline-none"
+            disabled={!sampled}
+            title={sampled ? undefined : "This model does not accept a temperature"}
+            className="w-16 bg-gray-800 text-white rounded px-2 py-1 outline-none disabled:opacity-40"
           />
         </label>
         <label className="flex items-center gap-1">

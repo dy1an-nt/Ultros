@@ -30,6 +30,9 @@ export function RunControls({ onRun, onSaveVersion }: Props) {
   // The catalog is filtered to configured providers, so the hardcoded default
   // may not exist, fall back to the first available model.
   const effectiveModel = models.some((m) => m.id === model) ? model : models[0]?.id ?? model
+  // Newer Claude models removed the sampling parameters. The run drops
+  // temperature for them, so showing a live slider would be a lie.
+  const sampled = models.find((m) => m.id === effectiveModel)?.supportsSampling ?? true
 
   const grouped = models.reduce<Record<string, typeof models>>((acc, m) => {
     ;(acc[m.provider] ??= []).push(m)
@@ -84,7 +87,9 @@ export function RunControls({ onRun, onSaveVersion }: Props) {
           </select>
         </div>
         <div>
-          <label className="block text-xs text-gray-500 mb-1">Temp: {temperature.toFixed(1)}</label>
+          <label className="block text-xs text-gray-500 mb-1">
+            {sampled ? `Temp: ${temperature.toFixed(1)}` : "Temp: n/a"}
+          </label>
           <input
             type="range"
             min={0}
@@ -92,7 +97,9 @@ export function RunControls({ onRun, onSaveVersion }: Props) {
             step={0.1}
             value={temperature}
             onChange={(e) => setTemperature(parseFloat(e.target.value))}
-            className="w-28"
+            disabled={!sampled}
+            title={sampled ? undefined : "This model does not accept a temperature"}
+            className="w-28 disabled:opacity-40"
           />
         </div>
         <div>

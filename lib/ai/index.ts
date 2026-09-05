@@ -1,6 +1,6 @@
 import { streamText } from "ai"
 import { resolveProvider } from "./router"
-import { getAvailableModels, type ModelInfo } from "./models"
+import { getAvailableModels, outputTokenBudget, supportsSampling, type ModelInfo } from "./models"
 
 export type { ModelInfo }
 
@@ -19,13 +19,16 @@ export type RunParams = {
 }
 
 export function runStream(params: RunParams) {
+  // Models that dropped the sampling parameters reject them outright, so the
+  // knob is omitted rather than sent and refused.
+  const sampled = supportsSampling(params.model)
   return streamText({
     model: resolveProvider(params.model),
     system: params.systemPrompt || undefined,
     prompt: params.userPrompt,
-    temperature: params.temperature,
-    maxOutputTokens: params.maxOutputTokens,
-    topP: params.topP,
+    temperature: sampled ? params.temperature : undefined,
+    maxOutputTokens: outputTokenBudget(params.model, params.maxOutputTokens),
+    topP: sampled ? params.topP : undefined,
     abortSignal: params.abortSignal,
     onChunk: params.onTextDelta
       ? ({ chunk }) => {

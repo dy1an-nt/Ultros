@@ -9,6 +9,10 @@ export type ModelInfo = {
   contextWindow: number
   inputPerMillion: number
   outputPerMillion: number
+  // False on models that removed temperature/top_p; the run sends no sampling
+  // parameters at all, so the UI must not offer a knob for them.
+  supportsSampling: boolean
+  thinksByDefault: boolean
 }
 
 export type RunStats = {

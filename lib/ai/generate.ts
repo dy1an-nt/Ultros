@@ -1,6 +1,6 @@
 import { generateText } from "ai"
 import { resolveProvider } from "./router"
-import { getModelInfo } from "./models"
+import { getModelInfo, outputTokenBudget, supportsSampling } from "./models"
 import { calculateCost } from "./pricing"
 
 export type GenerateParams = {
@@ -29,8 +29,8 @@ export async function generate(params: GenerateParams): Promise<GenerateResult> 
     model: resolveProvider(params.model),
     system: params.systemPrompt || undefined,
     prompt: params.userPrompt,
-    temperature: params.temperature,
-    maxOutputTokens: params.maxOutputTokens,
+    temperature: supportsSampling(params.model) ? params.temperature : undefined,
+    maxOutputTokens: outputTokenBudget(params.model, params.maxOutputTokens),
   })
   const latencyMs = Date.now() - start
   const inputTokens = result.usage.inputTokens ?? 0
