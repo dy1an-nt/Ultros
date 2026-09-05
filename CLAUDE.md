@@ -221,6 +221,8 @@ ultros/
 │   ├── ai/                     # Vercel AI SDK wrappers, direct providers + OpenRouter
 │   │   └── pricing.ts          # Token cost constants per model (verified date in comment)
 │   ├── api/                    # Error envelope helpers (ApiError, errorResponse, jsonOk)
+│   │                           # plus handler.ts: the withUser route boundary
+│   ├── db/                     # repos.ts: user-scoped data access, ownership verdicts
 │   ├── eval/                   # Scoring engine: AI-judge + exact/regex/json/contains
 │   ├── experiments/            # Experiment runner, aggregation, statistics
 │   ├── jobs/                   # QStash job publishers/consumers
@@ -447,7 +449,8 @@ When spawning the agents instead (user asked, or true parallelism pays): the arc
 - All costs stored and computed in USD as a float named `costUsd`, not cents, since AI pricing is sub-cent
 - Token counts are integers; latency is milliseconds (integer)
 - API responses: `{ data: ..., error: null }` or `{ data: null, error: { code, message } }`, build with `jsonOk` / `errorResponse` / `toErrorResponse` from `lib/api/errors.ts`, never hand-rolled. Frontend reads `json.error?.message` for display and can branch on `json.error?.code`.
-- `userId` (from Clerk) always required on protected routes, no cross-user data leakage
+- Protected routes are wrapped in `withUser` from `lib/api/handler.ts`, never hand-rolled. It resolves the Clerk session, loads the DB user, applies the rate limit class, and converts a thrown `ApiError` into the standard envelope. Handlers signal failure by throwing `ApiError`, and read the body with `readJson`
+- `userId` (from Clerk) always required on protected routes, no cross-user data leakage. Ownership is resolved by the scope `withUser` hands the handler as `ctx.db` (`lib/db/repos.ts`), which carries three verdicts: `require` (404 missing, 403 foreign), `requireHidden` (404 either way), `requireRef` (400 `invalid <field>`, for ids that arrive in a request body). A query too shaped for a repo method spreads `...db.scope` into its own `where`; a bare `userId:` filter in a route is a bug
 - No em dashes in any prose this repo owns: docs, README, commit messages, PR descriptions, code comments, and user-facing copy. Use a period or a comma; a colon is fine before a list or a definition. Parentheses are not a substitute, they just trade one tell for another. `/unslop` carries the full rule set
 - Tailwind + shadcn/ui only, no custom CSS files
 - Recharts for all data visualizations
