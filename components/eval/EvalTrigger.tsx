@@ -5,6 +5,7 @@ import Link from "next/link"
 import { useRubrics } from "@/hooks/useRubrics"
 import { useEval, useTriggerEval, isTerminalEvalStatus } from "@/hooks/useEval"
 import { EvalResult } from "@/components/eval/EvalResult"
+import { queryKeys } from "@/lib/api/queryKeys"
 
 type Props = {
   runId: string
@@ -25,8 +26,8 @@ export function EvalTrigger({ runId, promptId }: Props) {
   const status = evaluation?.status
   useEffect(() => {
     if (isTerminalEvalStatus(status)) {
-      queryClient.invalidateQueries({ queryKey: ["evals", promptId] })
-      queryClient.invalidateQueries({ queryKey: ["leaderboard", promptId] })
+      queryClient.invalidateQueries({ queryKey: queryKeys.evals(promptId) })
+      queryClient.invalidateQueries({ queryKey: queryKeys.leaderboard(promptId) })
     }
   }, [status, promptId, queryClient])
 

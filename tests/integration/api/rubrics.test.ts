@@ -7,7 +7,7 @@ import { jsonRequest, rawRequest } from "../helpers/request"
 
 describe("GET /api/rubrics", () => {
   it("returns 401 when signed out", async () => {
-    expect((await GET()).status).toBe(401)
+    expect((await GET(jsonRequest("GET", "/api/rubrics"))).status).toBe(401)
   })
 
   it("returns only the caller's rubrics", async () => {
@@ -17,7 +17,7 @@ describe("GET /api/rubrics", () => {
     await createRubric(other.id, { name: "Theirs" })
 
     signInAs(me.clerkId)
-    const { data } = await (await GET()).json()
+    const { data } = await (await GET(jsonRequest("GET", "/api/rubrics"))).json()
     expect(data).toHaveLength(1)
     expect(data[0].id).toBe(mine.id)
   })

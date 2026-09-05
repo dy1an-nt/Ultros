@@ -1,16 +1,12 @@
 import { useQuery } from "@tanstack/react-query"
 import type { ModelInfo } from "@/types/models"
+import { apiFetch } from "@/lib/api/client"
+import { queryKeys } from "@/lib/api/queryKeys"
 
 export function useModels() {
   return useQuery<ModelInfo[]>({
-    queryKey: ["models"],
-    queryFn: async () => {
-      const res = await fetch("/api/models")
-      if (!res.ok) throw new Error("Failed to load models")
-      const json = await res.json()
-      if (json.error || !Array.isArray(json.data)) throw new Error(json.error?.message ?? "Failed to load models")
-      return json.data
-    },
+    queryKey: queryKeys.models(),
+    queryFn: () => apiFetch<ModelInfo[]>("/api/models"),
     staleTime: Infinity,
   })
 }

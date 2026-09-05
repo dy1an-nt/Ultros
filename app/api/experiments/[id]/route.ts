@@ -1,27 +1,15 @@
-import { auth } from "@clerk/nextjs/server"
-import { NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
 import type { DatasetRunStatus } from "@/types/dataset"
 import type { ExperimentDetailDto } from "@/types/experiment"
-import { errorResponse, jsonOk } from "@/lib/api/errors"
+import { withUser } from "@/lib/api/handler"
+import { jsonOk } from "@/lib/api/errors"
 
-export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params
-  const { userId: clerkId } = await auth()
-  if (!clerkId) return errorResponse("UNAUTHORIZED")
-
-  const user = await prisma.user.findUnique({ where: { clerkId } })
-  if (!user) return errorResponse("NOT_FOUND", "User not found")
-
-  const experiment = await prisma.experiment.findUnique({ where: { id } })
-  if (!experiment) return errorResponse("NOT_FOUND")
-  if (experiment.userId !== user.id) {
-    return errorResponse("FORBIDDEN")
-  }
+export const GET = withUser<{ id: string }>(async ({ params, db }) => {
+  const experiment = await db.experiment.require(params.id)
 
   const [cellRuns, dataset, rubric, versions] = await Promise.all([
     prisma.datasetRun.findMany({
-      where: { experimentId: id },
+      where: { experimentId: experiment.id },
       select: {
         id: true,
         promptVersionId: true,
@@ -59,4 +47,4 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     versions,
   }
   return jsonOk(data)
-}
+})

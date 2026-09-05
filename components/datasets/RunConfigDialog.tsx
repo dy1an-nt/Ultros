@@ -1,20 +1,11 @@
 "use client"
 import { useMemo, useState } from "react"
-import { useQuery } from "@tanstack/react-query"
 import { useModels } from "@/hooks/useModels"
+import { usePromptList, usePromptVersions } from "@/hooks/usePrompts"
 import { useRubrics } from "@/hooks/useRubrics"
 import { useRunEstimate, useLaunchDatasetRun } from "@/hooks/useDatasetRun"
 import { useBudgetGate } from "@/hooks/useSettings"
 import type { DatasetDto, DatasetRunDto } from "@/types/dataset"
-
-type PromptListItem = { id: string; title: string }
-type VersionListItem = { id: string; versionNumber: number; label: string | null; systemPrompt: string; userPrompt: string }
-
-async function unwrap<T>(res: Response): Promise<T> {
-  const json = await res.json()
-  if (!res.ok || json.error) throw new Error(json.error?.message ?? `Request failed (${res.status})`)
-  return json.data as T
-}
 
 function extractVars(systemPrompt: string, userPrompt: string): string[] {
   const found = new Set<string>()
@@ -37,17 +28,10 @@ export function RunConfigDialog({
   const launch = useLaunchDatasetRun(dataset.id)
   const budget = useBudgetGate()
 
-  const prompts = useQuery<PromptListItem[]>({
-    queryKey: ["prompts"],
-    queryFn: async () => unwrap<PromptListItem[]>(await fetch("/api/prompts")),
-  })
+  const prompts = usePromptList()
 
   const [promptId, setPromptId] = useState("")
-  const versions = useQuery<VersionListItem[]>({
-    queryKey: ["versions", promptId],
-    enabled: promptId !== "",
-    queryFn: async () => unwrap<VersionListItem[]>(await fetch(`/api/prompts/${promptId}/versions`)),
-  })
+  const versions = usePromptVersions(promptId)
 
   const [versionId, setVersionId] = useState("")
   const [model, setModel] = useState("")

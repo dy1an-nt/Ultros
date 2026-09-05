@@ -1,16 +1,15 @@
 import { useQuery } from "@tanstack/react-query"
 import type { LeaderboardRow } from "@/types/eval"
+import { apiFetch } from "@/lib/api/client"
+import { queryKeys } from "@/lib/api/queryKeys"
 
 /** GET /api/prompts/:id/leaderboard?rubricId=optional, version leaderboard (complete evals only). */
 export function useLeaderboard(promptId: string, rubricId?: string) {
   return useQuery<LeaderboardRow[]>({
-    queryKey: ["leaderboard", promptId, rubricId ?? "all"],
-    queryFn: async () => {
+    queryKey: queryKeys.leaderboardFor(promptId, rubricId),
+    queryFn: () => {
       const qs = rubricId ? `?rubricId=${encodeURIComponent(rubricId)}` : ""
-      const res = await fetch(`/api/prompts/${promptId}/leaderboard${qs}`)
-      const json = await res.json()
-      if (!res.ok || json.error) throw new Error(json.error?.message ?? `Request failed (${res.status})`)
-      return json.data as LeaderboardRow[]
+      return apiFetch<LeaderboardRow[]>(`/api/prompts/${promptId}/leaderboard${qs}`)
     },
   })
 }

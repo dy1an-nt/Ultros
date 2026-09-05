@@ -11,14 +11,14 @@ function patch(body: unknown) {
 
 describe("GET /api/settings", () => {
   it("returns 401 when signed out", async () => {
-    const res = await GET()
+    const res = await GET(jsonRequest("GET", "/api/settings"))
     expect(res.status).toBe(401)
   })
 
   it("defaults to no budget and zero spend", async () => {
     const user = await createUser()
     signInAs(user.clerkId)
-    const res = await GET()
+    const res = await GET(jsonRequest("GET", "/api/settings"))
     expect(res.status).toBe(200)
     const { data } = await res.json()
     expect(data.monthlyBudgetUsd).toBeNull()
@@ -40,7 +40,7 @@ describe("GET /api/settings", () => {
     })
 
     signInAs(me.clerkId)
-    const { data } = await (await GET()).json()
+    const { data } = await (await GET(jsonRequest("GET", "/api/settings"))).json()
     expect(data.monthSpendUsd).toBeCloseTo(1.25)
   })
 })

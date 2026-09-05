@@ -1,7 +1,6 @@
-import { auth } from "@clerk/nextjs/server"
-import { NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { errorResponse } from "@/lib/api/errors"
+import { withUser } from "@/lib/api/handler"
+import { ApiError } from "@/lib/api/errors"
 
 // Spreadsheet formula-injection guard, same rule as the dataset-run export.
 function guardCell(value: string): string {
@@ -17,22 +16,16 @@ function parseDay(value: string | null): Date | null | undefined {
   return Number.isNaN(d.getTime()) ? null : d
 }
 
-export async function GET(req: NextRequest) {
-  const { userId: clerkId } = await auth()
-  if (!clerkId) return errorResponse("UNAUTHORIZED")
-
-  const user = await prisma.user.findUnique({ where: { clerkId } })
-  if (!user) return errorResponse("NOT_FOUND", "User not found")
-
+export const GET = withUser(async ({ req, db }) => {
   const from = parseDay(req.nextUrl.searchParams.get("from"))
   const to = parseDay(req.nextUrl.searchParams.get("to"))
   if (from === null || to === null) {
-    return errorResponse("VALIDATION_ERROR", "from/to must be YYYY-MM-DD")
+    throw new ApiError("VALIDATION_ERROR", "from/to must be YYYY-MM-DD")
   }
 
   const rows = await prisma.usageSummary.findMany({
     where: {
-      userId: user.id,
+      ...db.scope,
       ...(from || to ? { date: { ...(from && { gte: from }), ...(to && { lte: to }) } } : {}),
     },
     orderBy: { date: "asc" },
@@ -58,4 +51,4 @@ export async function GET(req: NextRequest) {
       "Content-Disposition": `attachment; filename="ultros-usage.csv"`,
     },
   })
-}
+})

@@ -1,25 +1,14 @@
-import { auth } from "@clerk/nextjs/server"
-import { NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit"
 import { validateRunParams, type ValidatedRunParams } from "@/lib/ai/validate"
 import { DATASET_RUN_MAX_TOKENS } from "@/lib/datasets/runRequest"
 import { extractTemplateVariables, validateMapping } from "@/lib/datasets/estimate"
 import { launchExperiment, MAX_MODELS, MAX_VARIANTS } from "@/lib/experiments/runner"
 import type { ExperimentListItem } from "@/types/experiment"
-import { errorResponse, jsonOk } from "@/lib/api/errors"
+import { withUser, readJson } from "@/lib/api/handler"
+import { ApiError, jsonOk } from "@/lib/api/errors"
 
-export async function GET() {
-  const { userId: clerkId } = await auth()
-  if (!clerkId) return errorResponse("UNAUTHORIZED")
-
-  const user = await prisma.user.findUnique({ where: { clerkId } })
-  if (!user) return errorResponse("NOT_FOUND", "User not found")
-
-  const experiments = await prisma.experiment.findMany({
-    where: { userId: user.id },
-    orderBy: { createdAt: "desc" },
-  })
+export const GET = withUser(async ({ db }) => {
+  const experiments = await db.experiment.list()
   const cells = await prisma.datasetRun.findMany({
     where: { experimentId: { in: experiments.map((e) => e.id) } },
     select: { experimentId: true, status: true },
@@ -37,52 +26,32 @@ export async function GET() {
     }
   })
   return jsonOk(data)
-}
+})
 
-export async function POST(req: NextRequest) {
-  const { userId: clerkId } = await auth()
-  if (!clerkId) return errorResponse("UNAUTHORIZED")
-
-  const user = await prisma.user.findUnique({ where: { clerkId } })
-  if (!user) return errorResponse("NOT_FOUND", "User not found")
-
-  const limited = await checkRateLimit("launch", user.id)
-  if (!limited.ok) return rateLimitResponse(limited)
-
-  let body: Record<string, unknown>
-  try {
-    body = await req.json()
-  } catch {
-    return errorResponse("INVALID_JSON")
-  }
+export const POST = withUser({ rateLimit: "launch" }, async ({ req, user, db }) => {
+  const body = await readJson(req)
 
   // Cost multiplies by cell count. Launches must be deliberate, never a default.
   if (body.confirm !== true) {
-    return errorResponse("VALIDATION_ERROR", "confirm: true is required. Review the cost estimate first")
+    throw new ApiError("VALIDATION_ERROR", "confirm: true is required. Review the cost estimate first")
   }
 
   const name = typeof body.name === "string" ? body.name.trim() : ""
   if (name.length < 1 || name.length > 100) {
-    return errorResponse("VALIDATION_ERROR", "name must be 1–100 characters")
+    throw new ApiError("VALIDATION_ERROR", "name must be 1–100 characters")
   }
 
   if (typeof body.datasetId !== "string" || !body.datasetId) {
-    return errorResponse("VALIDATION_ERROR", "datasetId is required")
+    throw new ApiError("VALIDATION_ERROR", "datasetId is required")
   }
-  const dataset = await prisma.dataset.findUnique({ where: { id: body.datasetId } })
   // 400 not 404/403. Does not leak whether another user's id exists.
-  if (!dataset || dataset.userId !== user.id) {
-    return errorResponse("VALIDATION_ERROR", "invalid datasetId")
-  }
+  const dataset = await db.dataset.requireRef(body.datasetId, "datasetId")
 
   // Rubric is required: comparing variants without scores is meaningless.
   if (typeof body.rubricId !== "string" || !body.rubricId) {
-    return errorResponse("VALIDATION_ERROR", "rubricId is required for experiments")
+    throw new ApiError("VALIDATION_ERROR", "rubricId is required for experiments")
   }
-  const rubric = await prisma.rubric.findUnique({ where: { id: body.rubricId } })
-  if (!rubric || rubric.userId !== user.id) {
-    return errorResponse("VALIDATION_ERROR", "invalid rubricId")
-  }
+  const rubric = await db.rubric.requireRef(body.rubricId, "rubricId")
 
   const variantVersionIds = body.variantVersionIds
   if (
@@ -91,20 +60,22 @@ export async function POST(req: NextRequest) {
     variantVersionIds.length > MAX_VARIANTS ||
     variantVersionIds.some((v) => typeof v !== "string")
   ) {
-    return errorResponse("VALIDATION_ERROR", `variantVersionIds must be 1–${MAX_VARIANTS} version ids`)
+    throw new ApiError("VALIDATION_ERROR", `variantVersionIds must be 1–${MAX_VARIANTS} version ids`)
   }
   if (new Set(variantVersionIds).size !== variantVersionIds.length) {
-    return errorResponse("VALIDATION_ERROR", "variantVersionIds contains duplicates")
+    throw new ApiError("VALIDATION_ERROR", "variantVersionIds contains duplicates")
   }
   const versions = await prisma.promptVersion.findMany({
     where: { id: { in: variantVersionIds as string[] } },
     include: { prompt: { select: { id: true, userId: true } } },
   })
-  if (versions.length !== variantVersionIds.length || versions.some((v) => v.prompt.userId !== user.id)) {
-    return errorResponse("VALIDATION_ERROR", "invalid variantVersionIds")
+  // Ownership on a set of ids, so it cannot go through a single-row repo
+  // lookup; the scope still comes from `db`, never from a hand-written filter.
+  if (versions.length !== variantVersionIds.length || versions.some((v) => v.prompt.userId !== db.scope.userId)) {
+    throw new ApiError("VALIDATION_ERROR", "invalid variantVersionIds")
   }
   if (new Set(versions.map((v) => v.prompt.id)).size !== 1) {
-    return errorResponse("VALIDATION_ERROR", "all variant versions must belong to the same prompt")
+    throw new ApiError("VALIDATION_ERROR", "all variant versions must belong to the same prompt")
   }
 
   const models = body.models
@@ -114,10 +85,10 @@ export async function POST(req: NextRequest) {
     models.length > MAX_MODELS ||
     models.some((m) => typeof m !== "string")
   ) {
-    return errorResponse("VALIDATION_ERROR", `models must be 1–${MAX_MODELS} model ids`)
+    throw new ApiError("VALIDATION_ERROR", `models must be 1–${MAX_MODELS} model ids`)
   }
   if (new Set(models).size !== models.length) {
-    return errorResponse("VALIDATION_ERROR", "models contains duplicates")
+    throw new ApiError("VALIDATION_ERROR", "models contains duplicates")
   }
   let runParams: ValidatedRunParams | null = null
   for (const model of models as string[]) {
@@ -126,12 +97,12 @@ export async function POST(req: NextRequest) {
       temperature: body.temperature,
       maxTokens: body.maxTokens,
     })
-    if (params === null) return errorResponse("VALIDATION_ERROR", error)
+    if (params === null) throw new ApiError("VALIDATION_ERROR", error)
     runParams = params
   }
-  if (runParams === null) return errorResponse("VALIDATION_ERROR", "models is required")
+  if (runParams === null) throw new ApiError("VALIDATION_ERROR", "models is required")
   if (runParams.maxTokens > DATASET_RUN_MAX_TOKENS) {
-    return errorResponse("VALIDATION_ERROR", `maxTokens must be at most ${DATASET_RUN_MAX_TOKENS} for dataset runs`)
+    throw new ApiError("VALIDATION_ERROR", `maxTokens must be at most ${DATASET_RUN_MAX_TOKENS} for dataset runs`)
   }
 
   // Variants of one prompt can declare different {{vars}}; each must map onto
@@ -145,7 +116,7 @@ export async function POST(req: NextRequest) {
     )
     const mappingError = validateMapping(templateVars, mapping, dataset.columns)
     if (mappingError) {
-      return errorResponse("VALIDATION_ERROR", `version ${version.versionNumber}: ${mappingError}`)
+      throw new ApiError("VALIDATION_ERROR", `version ${version.versionNumber}: ${mappingError}`)
     }
     variableMappings[version.id] = mapping
   }
@@ -164,4 +135,4 @@ export async function POST(req: NextRequest) {
   })
 
   return jsonOk({ ...experiment, cells }, 202)
-}
+})

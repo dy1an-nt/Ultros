@@ -3,6 +3,8 @@ import { useParams } from "next/navigation"
 import { useQuery } from "@tanstack/react-query"
 import Link from "next/link"
 import { CompareView } from "@/components/compare/CompareView"
+import { apiFetch } from "@/lib/api/client"
+import { queryKeys } from "@/lib/api/queryKeys"
 
 type PromptVersion = {
   id: string
@@ -20,13 +22,8 @@ export default function ComparePage() {
   const { id } = useParams<{ id: string }>()
 
   const { data: prompt, isLoading, error } = useQuery<PromptData>({
-    queryKey: ["prompt", id],
-    queryFn: async () => {
-      const res = await fetch(`/api/prompts/${id}`)
-      const json = await res.json()
-      if (json.error) throw new Error(json.error.message)
-      return json.data
-    },
+    queryKey: queryKeys.prompt(id),
+    queryFn: () => apiFetch<PromptData>(`/api/prompts/${id}`),
   })
 
   if (isLoading) {

@@ -1,5 +1,7 @@
 "use client"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { apiFetch } from "@/lib/api/client"
+import { queryKeys } from "@/lib/api/queryKeys"
 
 type ShareItem = {
   id: string
@@ -8,12 +10,6 @@ type ShareItem = {
   resourceType: string
   resourceId: string
   createdAt: string
-}
-
-async function unwrap<T>(res: Response): Promise<T> {
-  const json = await res.json()
-  if (!res.ok || json.error) throw new Error(json.error?.message ?? `Request failed (${res.status})`)
-  return json.data as T
 }
 
 const TYPE_LABELS: Record<string, string> = {
@@ -25,13 +21,12 @@ const TYPE_LABELS: Record<string, string> = {
 export function ShareList() {
   const queryClient = useQueryClient()
   const shares = useQuery<ShareItem[]>({
-    queryKey: ["shares"],
-    queryFn: async () => unwrap<ShareItem[]>(await fetch("/api/share")),
+    queryKey: queryKeys.shares(),
+    queryFn: () => apiFetch<ShareItem[]>("/api/share"),
   })
   const revoke = useMutation<{ token: string }, Error, string>({
-    mutationFn: async (token) =>
-      unwrap<{ token: string }>(await fetch(`/api/share/${token}`, { method: "DELETE" })),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["shares"] }),
+    mutationFn: (token) => apiFetch<{ token: string }>(`/api/share/${token}`, { method: "DELETE" }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.shares() }),
   })
 
   if (shares.isLoading) return <div className="h-20 bg-gray-800 rounded-lg animate-pulse" />

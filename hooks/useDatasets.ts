@@ -1,24 +1,19 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import type { DatasetDto, DatasetDetailDto } from "@/types/dataset"
-
-async function unwrap<T>(res: Response): Promise<T> {
-  const json = await res.json()
-  if (!res.ok || json.error) throw new Error(json.error?.message ?? `Request failed (${res.status})`)
-  return json.data as T
-}
+import { apiFetch } from "@/lib/api/client"
+import { queryKeys } from "@/lib/api/queryKeys"
 
 export function useDatasets() {
   return useQuery<DatasetDto[]>({
-    queryKey: ["datasets"],
-    queryFn: async () => unwrap<DatasetDto[]>(await fetch("/api/datasets")),
+    queryKey: queryKeys.datasets(),
+    queryFn: () => apiFetch<DatasetDto[]>("/api/datasets"),
   })
 }
 
 export function useDataset(id: string, offset: number, limit: number) {
   return useQuery<DatasetDetailDto>({
-    queryKey: ["dataset", id, offset, limit],
-    queryFn: async () =>
-      unwrap<DatasetDetailDto>(await fetch(`/api/datasets/${id}?offset=${offset}&limit=${limit}`)),
+    queryKey: queryKeys.dataset(id, offset, limit),
+    queryFn: () => apiFetch<DatasetDetailDto>(`/api/datasets/${id}?offset=${offset}&limit=${limit}`),
   })
 }
 
@@ -32,16 +27,9 @@ export type CreateDatasetInput = {
 export function useCreateDataset() {
   const queryClient = useQueryClient()
   return useMutation<DatasetDto, Error, CreateDatasetInput>({
-    mutationFn: async (input) => {
-      const res = await fetch("/api/datasets", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(input),
-      })
-      return unwrap<DatasetDto>(res)
-    },
+    mutationFn: (input) => apiFetch<DatasetDto>("/api/datasets", { method: "POST", json: input }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["datasets"] })
+      queryClient.invalidateQueries({ queryKey: queryKeys.datasets() })
     },
   })
 }
@@ -49,12 +37,9 @@ export function useCreateDataset() {
 export function useDeleteDataset() {
   const queryClient = useQueryClient()
   return useMutation<{ id: string }, Error, string>({
-    mutationFn: async (id) => {
-      const res = await fetch(`/api/datasets/${id}`, { method: "DELETE" })
-      return unwrap<{ id: string }>(res)
-    },
+    mutationFn: (id) => apiFetch<{ id: string }>(`/api/datasets/${id}`, { method: "DELETE" }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["datasets"] })
+      queryClient.invalidateQueries({ queryKey: queryKeys.datasets() })
     },
   })
 }

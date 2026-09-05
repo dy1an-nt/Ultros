@@ -8,6 +8,14 @@ import type {
   JsonSchemaConfig,
   RegexConfig,
 } from "@/types/eval"
+import {
+  ALLOWED_REGEX_FLAGS,
+  MAX_CRITERION_NAME_LENGTH,
+  MAX_EXPECTED_LENGTH,
+  MAX_INSTRUCTIONS_LENGTH,
+  MAX_REGEX_PATTERN_LENGTH,
+  MAX_SCHEMA_BYTES,
+} from "@/lib/eval/limits"
 
 // Local editing shape: flat so fields survive type switches and the JSON-schema
 // textarea can hold not-yet-valid JSON. Converted to the shared `Criterion`
@@ -70,11 +78,16 @@ export function criterionToDraft(criterion: Criterion): CriterionDraft {
   }
 }
 
-// Mirrors server-side validation limits from the sprint-3 architect contract.
+const FLAGS_PATTERN = new RegExp(`^[${ALLOWED_REGEX_FLAGS}]*$`)
+
+// Same limits the server enforces, imported rather than copied, with messages
+// written for someone filling in the form instead of reading an API response.
 export function validateCriterionDraft(draft: CriterionDraft): string | null {
   const name = draft.name.trim()
   if (!name) return "Name is required"
-  if (name.length > 100) return "Name must be at most 100 characters"
+  if (name.length > MAX_CRITERION_NAME_LENGTH) {
+    return `Name must be at most ${MAX_CRITERION_NAME_LENGTH} characters`
+  }
   const weight = Number(draft.weight)
   if (!Number.isFinite(weight) || weight <= 0 || weight > 100) {
     return "Weight must be greater than 0 and at most 100"
@@ -82,16 +95,24 @@ export function validateCriterionDraft(draft: CriterionDraft): string | null {
   switch (draft.type) {
     case "ai_judge":
       if (!draft.instructions.trim()) return "Judge instructions are required"
-      if (draft.instructions.length > 2000) return "Instructions must be at most 2000 characters"
+      if (draft.instructions.length > MAX_INSTRUCTIONS_LENGTH) {
+        return `Instructions must be at most ${MAX_INSTRUCTIONS_LENGTH} characters`
+      }
       return null
     case "exact":
       if (draft.expected.length < 1) return "Expected value is required"
-      if (draft.expected.length > 10000) return "Expected value must be at most 10000 characters"
+      if (draft.expected.length > MAX_EXPECTED_LENGTH) {
+        return `Expected value must be at most ${MAX_EXPECTED_LENGTH} characters`
+      }
       return null
     case "regex": {
       if (!draft.pattern) return "Pattern is required"
-      if (draft.pattern.length > 500) return "Pattern must be at most 500 characters"
-      if (!/^[imsu]*$/.test(draft.flags)) return "Flags may only include i, m, s, u"
+      if (draft.pattern.length > MAX_REGEX_PATTERN_LENGTH) {
+        return `Pattern must be at most ${MAX_REGEX_PATTERN_LENGTH} characters`
+      }
+      if (!FLAGS_PATTERN.test(draft.flags)) {
+        return `Flags may only include ${[...ALLOWED_REGEX_FLAGS].join(", ")}`
+      }
       try {
         new RegExp(draft.pattern, draft.flags)
       } catch {
@@ -100,7 +121,7 @@ export function validateCriterionDraft(draft: CriterionDraft): string | null {
       return null
     }
     case "json_schema": {
-      if (draft.schemaText.length > 10240) return "Schema must be at most 10 KB"
+      if (draft.schemaText.length > MAX_SCHEMA_BYTES) return "Schema must be at most 10 KB"
       let parsed: unknown
       try {
         parsed = JSON.parse(draft.schemaText)
@@ -114,7 +135,9 @@ export function validateCriterionDraft(draft: CriterionDraft): string | null {
     }
     case "contains":
       if (draft.substring.length < 1) return "Substring is required"
-      if (draft.substring.length > 10000) return "Substring must be at most 10000 characters"
+      if (draft.substring.length > MAX_EXPECTED_LENGTH) {
+        return `Substring must be at most ${MAX_EXPECTED_LENGTH} characters`
+      }
       return null
   }
 }

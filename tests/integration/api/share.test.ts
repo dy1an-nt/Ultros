@@ -11,7 +11,7 @@ function post(body: unknown) {
 
 describe("GET /api/share", () => {
   it("returns 401 when signed out", async () => {
-    expect((await GET()).status).toBe(401)
+    expect((await GET(jsonRequest("GET", "/api/share"))).status).toBe(401)
   })
 
   it("lists only the caller's live shares", async () => {
@@ -25,7 +25,7 @@ describe("GET /api/share", () => {
     await createShare(other.id, "promptRun", theirs.run.id)
 
     signInAs(me.clerkId)
-    const { data } = await (await GET()).json()
+    const { data } = await (await GET(jsonRequest("GET", "/api/share"))).json()
     expect(data).toHaveLength(1)
     expect(data[0].token).toBe(live.token)
     expect(data[0].url).toContain(`/share/${live.token}`)

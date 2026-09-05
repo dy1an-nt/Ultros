@@ -1,4 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { apiFetch } from "@/lib/api/client"
+import { queryKeys } from "@/lib/api/queryKeys"
 
 export type BudgetStatus = {
   monthlyBudgetUsd: number | null
@@ -6,31 +8,19 @@ export type BudgetStatus = {
   monthStart: string
 }
 
-async function unwrap<T>(res: Response): Promise<T> {
-  const json = await res.json()
-  if (!res.ok || json.error) throw new Error(json.error?.message ?? `Request failed (${res.status})`)
-  return json.data as T
-}
-
 export function useSettings() {
   return useQuery<BudgetStatus>({
-    queryKey: ["settings"],
-    queryFn: async () => unwrap<BudgetStatus>(await fetch("/api/settings")),
+    queryKey: queryKeys.settings(),
+    queryFn: () => apiFetch<BudgetStatus>("/api/settings"),
   })
 }
 
 export function useUpdateBudget() {
   const queryClient = useQueryClient()
   return useMutation<BudgetStatus, Error, number | null>({
-    mutationFn: async (monthlyBudgetUsd) => {
-      const res = await fetch("/api/settings", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ monthlyBudgetUsd }),
-      })
-      return unwrap<BudgetStatus>(res)
-    },
-    onSuccess: (status) => queryClient.setQueryData(["settings"], status),
+    mutationFn: (monthlyBudgetUsd) =>
+      apiFetch<BudgetStatus>("/api/settings", { method: "PATCH", json: { monthlyBudgetUsd } }),
+    onSuccess: (status) => queryClient.setQueryData(queryKeys.settings(), status),
   })
 }
 

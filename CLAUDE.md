@@ -221,7 +221,11 @@ ultros/
 │   ├── ai/                     # Vercel AI SDK wrappers, direct providers + OpenRouter
 │   │   └── pricing.ts          # Token cost constants per model (verified date in comment)
 │   ├── api/                    # Error envelope helpers (ApiError, errorResponse, jsonOk)
+│   │                           # handler.ts: the withUser route boundary
+│   │                           # client.ts + queryKeys.ts: the browser half
+│   ├── db/                     # repos.ts: user-scoped data access, ownership verdicts
 │   ├── eval/                   # Scoring engine: AI-judge + exact/regex/json/contains
+│   │                           # criterionTypes.ts: per-type validate + score registry
 │   ├── experiments/            # Experiment runner, aggregation, statistics
 │   ├── jobs/                   # QStash job publishers/consumers
 │   ├── regression/             # Baseline comparison, regression detection
@@ -447,8 +451,12 @@ When spawning the agents instead (user asked, or true parallelism pays): the arc
 - All costs stored and computed in USD as a float named `costUsd`, not cents, since AI pricing is sub-cent
 - Token counts are integers; latency is milliseconds (integer)
 - API responses: `{ data: ..., error: null }` or `{ data: null, error: { code, message } }`, build with `jsonOk` / `errorResponse` / `toErrorResponse` from `lib/api/errors.ts`, never hand-rolled. Frontend reads `json.error?.message` for display and can branch on `json.error?.code`.
-- `userId` (from Clerk) always required on protected routes, no cross-user data leakage
+- Protected routes are wrapped in `withUser` from `lib/api/handler.ts`, never hand-rolled. It resolves the Clerk session, loads the DB user, applies the rate limit class, and converts a thrown `ApiError` into the standard envelope. Handlers signal failure by throwing `ApiError`, and read the body with `readJson`
+- `userId` (from Clerk) always required on protected routes, no cross-user data leakage. Ownership is resolved by the scope `withUser` hands the handler as `ctx.db` (`lib/db/repos.ts`), which carries three verdicts: `require` (404 missing, 403 foreign), `requireHidden` (404 either way), `requireRef` (400 `invalid <field>`, for ids that arrive in a request body). A query too shaped for a repo method spreads `...db.scope` into its own `where`; a bare `userId:` filter in a route is a bug
 - No em dashes in any prose this repo owns: docs, README, commit messages, PR descriptions, code comments, and user-facing copy. Use a period or a comma; a colon is fine before a list or a definition. Parentheses are not a substitute, they just trade one tell for another. `/unslop` carries the full rule set
+- Browser data access goes through `apiFetch` from `lib/api/client.ts`, never a hand-rolled `fetch` + envelope unwrap. It returns `data` and throws `ApiRequestError` carrying the route's `code` and `status`. The exceptions are the streaming endpoints (`/api/run`, `/api/compare`), which read `res.body` and have no envelope until the stream ends
+- Every TanStack Query key comes from `queryKeys` in `lib/api/queryKeys.ts`, never an inline string array. Keys that are prefixes of others are built by spreading, because that is what makes prefix invalidation work
+- A criterion type is one entry in `CRITERION_HANDLERS` (`lib/eval/criterionTypes.ts`), carrying its config validator and, unless a judge model settles it, its scorer. Shared validation limits live in `lib/eval/limits.ts`, which has no dependencies so the client can import them instead of repeating the numbers
 - Tailwind + shadcn/ui only, no custom CSS files
 - Recharts for all data visualizations
 - Component and hook tests live beside the code as `*.test.tsx` with a `// @vitest-environment jsdom` docblock; `lib` tests stay in the node environment. Test behavior a user depends on, not markup

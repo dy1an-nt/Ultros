@@ -1,29 +1,19 @@
-import { auth } from "@clerk/nextjs/server"
-import { NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
 import type { LeaderboardRow } from "@/types/eval"
-import { errorResponse, jsonOk } from "@/lib/api/errors"
+import { withUser } from "@/lib/api/handler"
+import { jsonOk } from "@/lib/api/errors"
 
-export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params
-  const { userId: clerkId } = await auth()
-  if (!clerkId) return errorResponse("UNAUTHORIZED")
-
-  const user = await prisma.user.findUnique({ where: { clerkId } })
-  if (!user) return errorResponse("NOT_FOUND", "User not found")
-
-  const prompt = await prisma.prompt.findUnique({ where: { id } })
-  if (!prompt || prompt.deletedAt !== null) return errorResponse("NOT_FOUND")
-  if (prompt.userId !== user.id) return errorResponse("FORBIDDEN")
+export const GET = withUser<{ id: string }>(async ({ req, params, db }) => {
+  const prompt = await db.prompt.require(params.id)
 
   const rubricId = req.nextUrl.searchParams.get("rubricId") ?? undefined
 
   const evaluations = await prisma.evaluation.findMany({
     where: {
-      userId: user.id,
+      ...db.scope,
       status: "complete",
       ...(rubricId ? { rubricId } : {}),
-      promptRun: { promptId: id },
+      promptRun: { promptId: prompt.id },
     },
     select: {
       totalScore: true,
@@ -69,4 +59,4 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     .sort((a, b) => b.avgScore - a.avgScore)
 
   return jsonOk(data)
-}
+})

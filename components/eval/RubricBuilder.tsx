@@ -10,8 +10,7 @@ import {
   validateCriterionDraft,
   type CriterionDraft,
 } from "@/components/eval/CriterionEditor"
-
-const MAX_CRITERIA = 20
+import { MAX_CRITERIA } from "@/lib/eval/limits"
 
 type Props = {
   initial?: RubricDto // present → edit mode, absent → create mode

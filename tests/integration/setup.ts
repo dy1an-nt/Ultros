@@ -11,10 +11,11 @@ vi.mock("@clerk/nextjs/server", () => ({
     authState.clerkId ? { id: authState.clerkId } : null,
 }))
 
-// lib/rateLimit imports Sentry at module load; stub it so a fail-open report
-// never attempts network IO from a test run.
+// lib/rateLimit and the withUser boundary import Sentry at module load; stub
+// it so a report never attempts network IO from a test run. A spy, not a
+// no-op, so tests can assert that a failure was actually reported.
 vi.mock("@sentry/nextjs", () => ({
-  captureException: () => undefined,
+  captureException: vi.fn(),
 }))
 
 // Dev-mode dataset-run fan-out defers row jobs via after(), which throws

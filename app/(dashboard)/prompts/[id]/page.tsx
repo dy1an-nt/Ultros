@@ -7,6 +7,8 @@ import { SystemPromptPanel } from "@/components/editor/SystemPromptPanel"
 import { RunControls } from "@/components/editor/RunControls"
 import { StreamingOutput } from "@/components/editor/StreamingOutput"
 import { RunHistory } from "@/components/runs/RunHistory"
+import { apiFetch } from "@/lib/api/client"
+import { queryKeys } from "@/lib/api/queryKeys"
 import { EvalHistory } from "@/components/eval/EvalHistory"
 import { EvalTrigger } from "@/components/eval/EvalTrigger"
 import { Leaderboard } from "@/components/eval/Leaderboard"
@@ -51,9 +53,9 @@ export default function PromptDetailPage() {
   const restoreVersionId = searchParams.get("version")
   const queryClient = useQueryClient()
 
-  const { data, isLoading } = useQuery<{ data: PromptDetail; error: null }>({
-    queryKey: ["prompt", id],
-    queryFn: () => fetch(`/api/prompts/${id}`).then((r) => r.json()),
+  const { data: prompt, isLoading, error } = useQuery<PromptDetail>({
+    queryKey: queryKeys.prompt(id),
+    queryFn: () => apiFetch<PromptDetail>(`/api/prompts/${id}`),
   })
 
   const [systemPrompt, setSystemPrompt] = useState("")
@@ -66,18 +68,13 @@ export default function PromptDetailPage() {
   const [saveError, setSaveError] = useState<string | null>(null)
 
   // Runs for the Evals tab. Same query key/shape as RunHistory so the cache is shared.
-  const runsQuery = useQuery<{ data: RunRow[] }>({
-    queryKey: ["runs", id],
-    queryFn: async () => {
-      const res = await fetch(`/api/prompts/${id}/runs`)
-      const json = await res.json()
-      if (!res.ok || json.error) throw new Error(json.error?.message ?? `Request failed (${res.status})`)
-      return json
-    },
+  const runsQuery = useQuery<RunRow[]>({
+    queryKey: queryKeys.runs(id),
+    queryFn: () => apiFetch<RunRow[]>(`/api/prompts/${id}/runs`),
     enabled: activeTab === "evals",
   })
 
-  const versions = data?.data?.versions ?? []
+  const versions = prompt?.versions ?? []
   const latestVersion = versions[0]
 
   useEffect(() => {
@@ -98,6 +95,7 @@ export default function PromptDetailPage() {
     setActiveTab("output")
 
     try {
+      // Raw fetch, not apiFetch: /api/run streams text, there is no envelope.
       const res = await fetch("/api/run", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -122,7 +120,7 @@ export default function PromptDetailPage() {
       }
 
       setRunOutput({ text: fullText, done: true })
-      queryClient.invalidateQueries({ queryKey: ["runs", id] })
+      queryClient.invalidateQueries({ queryKey: queryKeys.runs(id) })
     } catch {
       setRunOutput({ text: "Run failed due to a network error.", done: true })
     }
@@ -131,20 +129,17 @@ export default function PromptDetailPage() {
   async function handleSaveVersion() {
     setSaveError(null)
     try {
-      const res = await fetch(`/api/prompts/${id}/versions`, {
+      const version = await apiFetch<{ id: string }>(`/api/prompts/${id}/versions`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ systemPrompt, userPrompt }),
+        json: { systemPrompt, userPrompt },
       })
-      const json = await res.json()
-      if (json.error) {
-        setSaveError(json.error.message)
-      } else {
-        setActiveVersionId(json.data.id)
-        queryClient.invalidateQueries({ queryKey: ["prompt", id] })
-      }
-    } catch {
-      setSaveError("Failed to save. Check your connection and try again.")
+      setActiveVersionId(version.id)
+      queryClient.invalidateQueries({ queryKey: queryKeys.prompt(id) })
+      queryClient.invalidateQueries({ queryKey: queryKeys.versions(id) })
+    } catch (err) {
+      setSaveError(
+        err instanceof Error ? err.message : "Failed to save. Check your connection and try again."
+      )
     }
   }
 
@@ -157,11 +152,12 @@ export default function PromptDetailPage() {
     )
   }
 
-  if (!data?.data) {
+  if (error) {
+    return <div className="p-8 text-red-400">Failed to load prompt: {error.message}</div>
+  }
+  if (!prompt) {
     return <div className="p-8 text-red-400">Prompt not found</div>
   }
-
-  const prompt = data.data
 
   return (
     <div className="flex flex-col h-screen">
@@ -257,13 +253,13 @@ export default function PromptDetailPage() {
                     </div>
                   ) : runsQuery.error ? (
                     <div className="text-sm text-red-400 py-4">Failed to load runs.</div>
-                  ) : !runsQuery.data?.data?.length ? (
+                  ) : !runsQuery.data?.length ? (
                     <div className="text-center py-8 text-gray-600 text-sm">
                       No runs yet. Hit Run first, then evaluate the output here.
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      {runsQuery.data.data.map((run) => (
+                      {runsQuery.data.map((run) => (
                         <div
                           key={run.id}
                           className="bg-gray-900 border border-gray-800 rounded-lg p-3 space-y-2"

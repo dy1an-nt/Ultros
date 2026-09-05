@@ -1,19 +1,12 @@
-import { auth } from "@clerk/nextjs/server"
-import { NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { errorResponse, jsonOk } from "@/lib/api/errors"
+import { withUser } from "@/lib/api/handler"
+import { ApiError, jsonOk } from "@/lib/api/errors"
 
-export async function GET(req: NextRequest) {
-  const { userId: clerkId } = await auth()
-  if (!clerkId) return errorResponse("UNAUTHORIZED")
-
-  const user = await prisma.user.findUnique({ where: { clerkId } })
-  if (!user) return errorResponse("NOT_FOUND", "User not found")
-
+export const GET = withUser(async ({ req, db }) => {
   const daysParam = req.nextUrl.searchParams.get("days")
   const days = daysParam ? parseInt(daysParam, 10) : 30
   if (isNaN(days) || days < 1 || days > 90) {
-    return errorResponse("VALIDATION_ERROR", "days must be between 1 and 90")
+    throw new ApiError("VALIDATION_ERROR", "days must be between 1 and 90")
   }
 
   // days=1 means "today only", so look back days-1 from today's UTC midnight
@@ -22,7 +15,7 @@ export async function GET(req: NextRequest) {
   since.setUTCHours(0, 0, 0, 0)
 
   const rows = await prisma.usageSummary.findMany({
-    where: { userId: user.id, date: { gte: since } },
+    where: { ...db.scope, date: { gte: since } },
     orderBy: { date: "desc" },
   })
 
@@ -45,4 +38,4 @@ export async function GET(req: NextRequest) {
   }))
 
   return jsonOk({ summary, daily })
-}
+})

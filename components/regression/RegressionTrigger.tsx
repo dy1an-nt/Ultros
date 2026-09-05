@@ -1,18 +1,11 @@
 "use client"
 import { useEffect, useState } from "react"
-import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { useQueryClient } from "@tanstack/react-query"
 import { useDatasetRun } from "@/hooks/useDatasetRun"
+import { usePromptVersions } from "@/hooks/usePrompts"
 import { useRunRegression } from "@/hooks/useRegression"
 import { useBudgetGate } from "@/hooks/useSettings"
 import type { BaselineDto } from "@/types/experiment"
-
-type VersionListItem = { id: string; versionNumber: number; label: string | null }
-
-async function unwrap<T>(res: Response): Promise<T> {
-  const json = await res.json()
-  if (!res.ok || json.error) throw new Error(json.error?.message ?? `Request failed (${res.status})`)
-  return json.data as T
-}
 
 // Launch a new version against the baseline; the baseline run's model is
 // reused (regression compares prompts, not models).
@@ -21,10 +14,7 @@ export function RegressionTrigger({ promptId, baseline }: { promptId: string; ba
   const runRegression = useRunRegression(promptId)
   const budget = useBudgetGate()
 
-  const versions = useQuery<VersionListItem[]>({
-    queryKey: ["versions", promptId],
-    queryFn: async () => unwrap<VersionListItem[]>(await fetch(`/api/prompts/${promptId}/versions`)),
-  })
+  const versions = usePromptVersions(promptId)
 
   const [versionId, setVersionId] = useState("")
   const [threshold, setThreshold] = useState(0.05)

@@ -1,4 +1,6 @@
 import { useQuery } from "@tanstack/react-query"
+import { apiFetch } from "@/lib/api/client"
+import { queryKeys } from "@/lib/api/queryKeys"
 
 type DailySummary = {
   date: string
@@ -20,12 +22,7 @@ type UsageData = {
 
 export function useUsage(days = 30) {
   return useQuery<UsageData>({
-    queryKey: ["usage", days],
-    queryFn: async () => {
-      const res = await fetch(`/api/usage?days=${days}`)
-      const json = await res.json()
-      if (json.error) throw new Error(json.error.message)
-      return json.data
-    },
+    queryKey: queryKeys.usage(days),
+    queryFn: () => apiFetch<UsageData>(`/api/usage?days=${days}`),
   })
 }
