@@ -37,7 +37,9 @@ export const GET = withUser<{ id: string }>(async ({ params, db }) => {
     if (!cell) continue
     const scores = (evaluation.criteriaScores ?? []) as CriterionScore[]
     for (const cs of scores) {
-      const key = `${cell.promptVersionId} ${cell.model} ${cs.name}`
+      // NUL separator, not a space: criterion names are user-supplied and may
+      // contain anything a space would let collide across cells.
+      const key = `${cell.promptVersionId}\0${cell.model}\0${cs.name}`
       const entry = grouped.get(key) ?? {
         promptVersionId: cell.promptVersionId,
         model: cell.model,
