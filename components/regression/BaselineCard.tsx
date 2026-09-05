@@ -1,17 +1,9 @@
 "use client"
 import { useState } from "react"
-import { useQuery } from "@tanstack/react-query"
 import { useDatasets } from "@/hooks/useDatasets"
+import { usePromptVersions } from "@/hooks/usePrompts"
 import { useDatasetRuns } from "@/hooks/useDatasetRun"
 import { useBaseline, useSetBaseline, useDeleteBaseline } from "@/hooks/useRegression"
-
-type VersionListItem = { id: string; versionNumber: number; label: string | null }
-
-async function unwrap<T>(res: Response): Promise<T> {
-  const json = await res.json()
-  if (!res.ok || json.error) throw new Error(json.error?.message ?? `Request failed (${res.status})`)
-  return json.data as T
-}
 
 // Set a baseline by pointing at an existing complete, scored DatasetRun of a
 // version. The user blesses numbers they have already seen.
@@ -19,10 +11,7 @@ function SetBaselineForm({ promptId, onDone }: { promptId: string; onDone: () =>
   const datasets = useDatasets()
   const setBaseline = useSetBaseline(promptId)
 
-  const versions = useQuery<VersionListItem[]>({
-    queryKey: ["versions", promptId],
-    queryFn: async () => unwrap<VersionListItem[]>(await fetch(`/api/prompts/${promptId}/versions`)),
-  })
+  const versions = usePromptVersions(promptId)
 
   const [versionId, setVersionId] = useState("")
   const [datasetId, setDatasetId] = useState("")

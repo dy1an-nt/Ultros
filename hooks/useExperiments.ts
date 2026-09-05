@@ -5,34 +5,32 @@ import type {
   ExperimentResultsDto,
 } from "@/types/experiment"
 import type { DatasetRunRowItem } from "@/types/dataset"
+import { apiFetch } from "@/lib/api/client"
+import { queryKeys } from "@/lib/api/queryKeys"
 
-async function unwrap<T>(res: Response): Promise<T> {
-  const json = await res.json()
-  if (!res.ok || json.error) throw new Error(json.error?.message ?? `Request failed (${res.status})`)
-  return json.data as T
-}
+type RowPage = { rows: DatasetRunRowItem[]; total: number }
 
 export function useExperiments() {
   return useQuery<ExperimentListItem[]>({
-    queryKey: ["experiments"],
-    queryFn: async () => unwrap<ExperimentListItem[]>(await fetch("/api/experiments")),
+    queryKey: queryKeys.experiments(),
+    queryFn: () => apiFetch<ExperimentListItem[]>("/api/experiments"),
   })
 }
 
 // Poll while cells are in flight; "complete" is the only terminal status.
 export function useExperiment(id: string) {
   return useQuery<ExperimentDetailDto>({
-    queryKey: ["experiment", id],
-    queryFn: async () => unwrap<ExperimentDetailDto>(await fetch(`/api/experiments/${id}`)),
+    queryKey: queryKeys.experiment(id),
+    queryFn: () => apiFetch<ExperimentDetailDto>(`/api/experiments/${id}`),
     refetchInterval: (query) => (query.state.data?.status === "complete" ? false : 2000),
   })
 }
 
 export function useExperimentResults(id: string, enabled: boolean) {
   return useQuery<ExperimentResultsDto>({
-    queryKey: ["experimentResults", id],
+    queryKey: queryKeys.experimentResults(id),
     enabled,
-    queryFn: async () => unwrap<ExperimentResultsDto>(await fetch(`/api/experiments/${id}/results`)),
+    queryFn: () => apiFetch<ExperimentResultsDto>(`/api/experiments/${id}/results`),
   })
 }
 
@@ -42,12 +40,12 @@ export function useExperimentCellRows(
   offset: number,
   limit: number
 ) {
-  return useQuery<{ rows: DatasetRunRowItem[]; total: number }>({
-    queryKey: ["experimentCellRows", experimentId, cellId, offset, limit],
+  return useQuery<RowPage>({
+    queryKey: queryKeys.experimentCellRows(experimentId, cellId, offset, limit),
     enabled: cellId !== null,
-    queryFn: async () =>
-      unwrap<{ rows: DatasetRunRowItem[]; total: number }>(
-        await fetch(`/api/experiments/${experimentId}/rows?cell=${cellId}&offset=${offset}&limit=${limit}`)
+    queryFn: () =>
+      apiFetch<RowPage>(
+        `/api/experiments/${experimentId}/rows?cell=${cellId}&offset=${offset}&limit=${limit}`
       ),
   })
 }
@@ -65,16 +63,13 @@ export type CreateExperimentInput = {
 export function useCreateExperiment() {
   const queryClient = useQueryClient()
   return useMutation<ExperimentDetailDto, Error, CreateExperimentInput>({
-    mutationFn: async (input) => {
-      const res = await fetch("/api/experiments", {
+    mutationFn: (input) =>
+      apiFetch<ExperimentDetailDto>("/api/experiments", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...input, confirm: true }),
-      })
-      return unwrap<ExperimentDetailDto>(res)
-    },
+        json: { ...input, confirm: true },
+      }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["experiments"] })
+      queryClient.invalidateQueries({ queryKey: queryKeys.experiments() })
     },
   })
 }

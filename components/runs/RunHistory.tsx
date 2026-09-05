@@ -2,6 +2,8 @@
 import { useQuery } from "@tanstack/react-query"
 import { useState } from "react"
 import { ShareButton } from "@/components/share/ShareButton"
+import { apiFetch } from "@/lib/api/client"
+import { queryKeys } from "@/lib/api/queryKeys"
 
 type RunData = {
   id: string
@@ -16,9 +18,9 @@ type RunData = {
 }
 
 export function RunHistory({ promptId }: { promptId: string }) {
-  const { data, isLoading } = useQuery<{ data: RunData[] }>({
-    queryKey: ["runs", promptId],
-    queryFn: () => fetch(`/api/prompts/${promptId}/runs`).then((r) => r.json()),
+  const { data, isLoading, error } = useQuery<RunData[]>({
+    queryKey: queryKeys.runs(promptId),
+    queryFn: () => apiFetch<RunData[]>(`/api/prompts/${promptId}/runs`),
     refetchInterval: 3000,
   })
   const [expanded, setExpanded] = useState<string | null>(null)
@@ -33,7 +35,11 @@ export function RunHistory({ promptId }: { promptId: string }) {
     )
   }
 
-  const runs = data?.data ?? []
+  if (error) {
+    return <p className="text-center py-8 text-sm text-red-400">Failed to load runs: {error.message}</p>
+  }
+
+  const runs = data ?? []
 
   if (!runs.length) {
     return (

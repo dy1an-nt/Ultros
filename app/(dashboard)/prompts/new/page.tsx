@@ -1,6 +1,7 @@
 "use client"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { apiFetch } from "@/lib/api/client"
 
 export default function NewPromptPage() {
   const router = useRouter()
@@ -21,25 +22,19 @@ export default function NewPromptPage() {
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch("/api/prompts", {
+      const prompt = await apiFetch<{ id: string }>("/api/prompts", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+        json: {
           title: title.trim(),
           description: description.trim() || undefined,
           tags: tags ? tags.split(",").map((t) => t.trim()).filter(Boolean) : [],
           systemPrompt,
           userPrompt,
-        }),
+        },
       })
-      const json = await res.json()
-      if (json.error) {
-        setError(json.error.message)
-        return
-      }
-      router.push(`/prompts/${json.data.id}`)
-    } catch {
-      setError("Something went wrong. Please try again.")
+      router.push(`/prompts/${prompt.id}`)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong. Please try again.")
     } finally {
       setLoading(false)
     }

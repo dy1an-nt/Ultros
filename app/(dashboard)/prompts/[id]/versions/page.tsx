@@ -1,25 +1,13 @@
 "use client"
 import { useParams, useRouter } from "next/navigation"
-import { useQuery } from "@tanstack/react-query"
 import { useState } from "react"
-
-type Version = {
-  id: string
-  versionNumber: number
-  label: string | null
-  systemPrompt: string
-  userPrompt: string
-  createdAt: string
-}
+import { usePromptVersions } from "@/hooks/usePrompts"
 
 export default function VersionsPage() {
   const { id } = useParams<{ id: string }>()
   const router = useRouter()
 
-  const { data, isLoading } = useQuery<{ data: Version[] }>({
-    queryKey: ["versions", id],
-    queryFn: () => fetch(`/api/prompts/${id}/versions`).then((r) => r.json()),
-  })
+  const { data, isLoading, error } = usePromptVersions(id)
 
   const [diffAId, setDiffAId] = useState<string>("")
   const [diffBId, setDiffBId] = useState<string>("")
@@ -37,7 +25,11 @@ export default function VersionsPage() {
     )
   }
 
-  const versions = data?.data ?? []
+  if (error) {
+    return <div className="p-8 text-red-400">Failed to load versions: {error.message}</div>
+  }
+
+  const versions = data ?? []
 
   const versionA = versions.find((v) => v.id === diffAId)
   const versionB = versions.find((v) => v.id === diffBId)

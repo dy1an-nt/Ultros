@@ -20,6 +20,8 @@ export function useCompareRun() {
     params.slots.forEach(({ slot }) => store.setSlotStatus(slot, "streaming"))
 
     try {
+      // Raw fetch, not apiFetch: this reads res.body as an NDJSON stream, so
+      // there is no envelope to unwrap until the stream is done.
       const res = await fetch("/api/compare", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

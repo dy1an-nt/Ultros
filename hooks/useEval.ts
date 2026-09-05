@@ -1,11 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import type { EvaluationDto } from "@/types/eval"
-
-async function unwrap<T>(res: Response): Promise<T> {
-  const json = await res.json()
-  if (!res.ok || json.error) throw new Error(json.error?.message ?? `Request failed (${res.status})`)
-  return json.data as T
-}
+import { apiFetch } from "@/lib/api/client"
+import { queryKeys } from "@/lib/api/queryKeys"
 
 export function isTerminalEvalStatus(status: string | undefined): boolean {
   return status === "complete" || status === "failed"
@@ -19,17 +15,11 @@ export function isTerminalEvalStatus(status: string | undefined): boolean {
 export function useTriggerEval() {
   const queryClient = useQueryClient()
   return useMutation<EvaluationDto, Error, { runId: string; rubricId: string; promptId: string }>({
-    mutationFn: async ({ runId, rubricId }) => {
-      const res = await fetch(`/api/runs/${runId}/eval`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rubricId }),
-      })
-      return unwrap<EvaluationDto>(res)
-    },
+    mutationFn: ({ runId, rubricId }) =>
+      apiFetch<EvaluationDto>(`/api/runs/${runId}/eval`, { method: "POST", json: { rubricId } }),
     onSuccess: (evaluation, { promptId }) => {
-      queryClient.setQueryData(["eval", evaluation.id], evaluation)
-      queryClient.invalidateQueries({ queryKey: ["evals", promptId] })
+      queryClient.setQueryData(queryKeys.evaluation(evaluation.id), evaluation)
+      queryClient.invalidateQueries({ queryKey: queryKeys.evals(promptId) })
     },
   })
 }
@@ -40,12 +30,9 @@ export function useTriggerEval() {
  */
 export function useEval(evalId: string | null) {
   return useQuery<EvaluationDto>({
-    queryKey: ["eval", evalId],
+    queryKey: queryKeys.evaluation(evalId),
     enabled: !!evalId,
-    queryFn: async () => {
-      const res = await fetch(`/api/evals/${evalId}`)
-      return unwrap<EvaluationDto>(res)
-    },
+    queryFn: () => apiFetch<EvaluationDto>(`/api/evals/${evalId}`),
     refetchInterval: (query) =>
       isTerminalEvalStatus(query.state.data?.status) ? false : 2000,
   })

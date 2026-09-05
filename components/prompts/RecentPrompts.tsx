@@ -1,21 +1,9 @@
 "use client"
-import { useQuery } from "@tanstack/react-query"
 import Link from "next/link"
-
-type PromptSummary = {
-  id: string
-  title: string
-  description: string | null
-  tags: string[]
-  createdAt: string
-  _count: { versions: number; runs: number }
-}
+import { usePromptList } from "@/hooks/usePrompts"
 
 export function RecentPrompts() {
-  const { data, isLoading } = useQuery<{ data: PromptSummary[]; error: null }>({
-    queryKey: ["prompts"],
-    queryFn: () => fetch("/api/prompts").then((r) => r.json()),
-  })
+  const { data, isLoading, error } = usePromptList()
 
   if (isLoading) {
     return (
@@ -27,7 +15,11 @@ export function RecentPrompts() {
     )
   }
 
-  const prompts = data?.data ?? []
+  if (error) {
+    return <p className="text-sm text-red-400">Failed to load prompts: {error.message}</p>
+  }
+
+  const prompts = data ?? []
 
   if (!prompts.length) {
     return (

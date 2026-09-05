@@ -1,25 +1,17 @@
 "use client"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { useQuery } from "@tanstack/react-query"
 import { useModels } from "@/hooks/useModels"
+import { usePromptList, usePromptVersions } from "@/hooks/usePrompts"
 import { useRubrics } from "@/hooks/useRubrics"
 import { useDatasets } from "@/hooks/useDatasets"
 import { useCreateExperiment } from "@/hooks/useExperiments"
 import { useBudgetGate } from "@/hooks/useSettings"
+import { apiFetch } from "@/lib/api/client"
 import type { RunEstimate } from "@/types/dataset"
 
 const MAX_VARIANTS = 4
 const MAX_MODELS = 3
-
-type PromptListItem = { id: string; title: string }
-type VersionListItem = { id: string; versionNumber: number; label: string | null }
-
-async function unwrap<T>(res: Response): Promise<T> {
-  const json = await res.json()
-  if (!res.ok || json.error) throw new Error(json.error?.message ?? `Request failed (${res.status})`)
-  return json.data as T
-}
 
 export function ExperimentConfig() {
   const router = useRouter()
@@ -29,18 +21,11 @@ export function ExperimentConfig() {
   const create = useCreateExperiment()
   const budget = useBudgetGate()
 
-  const prompts = useQuery<PromptListItem[]>({
-    queryKey: ["prompts"],
-    queryFn: async () => unwrap<PromptListItem[]>(await fetch("/api/prompts")),
-  })
+  const prompts = usePromptList()
 
   const [name, setName] = useState("")
   const [promptId, setPromptId] = useState("")
-  const versions = useQuery<VersionListItem[]>({
-    queryKey: ["versions", promptId],
-    enabled: promptId !== "",
-    queryFn: async () => unwrap<VersionListItem[]>(await fetch(`/api/prompts/${promptId}/versions`)),
-  })
+  const versions = usePromptVersions(promptId)
 
   const [variantIds, setVariantIds] = useState<string[]>([])
   const [modelIds, setModelIds] = useState<string[]>([])
@@ -77,12 +62,10 @@ export function ExperimentConfig() {
     try {
       let perVariantUsd = 0
       for (const model of modelIds) {
-        const res = await fetch(`/api/datasets/${datasetId}/run-estimate`, {
+        const data = await apiFetch<RunEstimate>(`/api/datasets/${datasetId}/run-estimate`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ promptVersionId: variantIds[0], model, maxTokens }),
+          json: { promptVersionId: variantIds[0], model, maxTokens },
         })
-        const data = await unwrap<RunEstimate>(res)
         perVariantUsd += data.estimatedCostUsd
       }
       setEstimate({ totalUsd: perVariantUsd * variantIds.length, cells })

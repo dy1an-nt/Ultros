@@ -1,5 +1,6 @@
 "use client"
 import { useState } from "react"
+import { apiFetch } from "@/lib/api/client"
 
 type ShareResult = { token: string; url: string; createdAt: string }
 
@@ -19,14 +20,10 @@ export function ShareButton({
     setState("working")
     setError(null)
     try {
-      const res = await fetch("/api/share", {
+      const data = await apiFetch<ShareResult>("/api/share", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ resourceType, resourceId }),
+        json: { resourceType, resourceId },
       })
-      const json = await res.json()
-      if (!res.ok || json.error) throw new Error(json.error?.message ?? `Request failed (${res.status})`)
-      const data = json.data as ShareResult
       setUrl(data.url)
       try {
         await navigator.clipboard.writeText(data.url)
