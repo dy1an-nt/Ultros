@@ -1,8 +1,6 @@
-import { auth } from "@clerk/nextjs/server"
-import { NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit"
-import { errorResponse, jsonOk } from "@/lib/api/errors"
+import { withUser, readJson } from "@/lib/api/handler"
+import { ApiError, jsonOk } from "@/lib/api/errors"
 
 const MAX_BUDGET_USD = 100000
 
@@ -28,32 +26,12 @@ async function budgetStatus(userId: string) {
   }
 }
 
-export async function GET() {
-  const { userId: clerkId } = await auth()
-  if (!clerkId) return errorResponse("UNAUTHORIZED")
-
-  const user = await prisma.user.findUnique({ where: { clerkId } })
-  if (!user) return errorResponse("NOT_FOUND", "User not found")
-
+export const GET = withUser(async ({ user }) => {
   return jsonOk(await budgetStatus(user.id))
-}
+})
 
-export async function PATCH(req: NextRequest) {
-  const { userId: clerkId } = await auth()
-  if (!clerkId) return errorResponse("UNAUTHORIZED")
-
-  const user = await prisma.user.findUnique({ where: { clerkId } })
-  if (!user) return errorResponse("NOT_FOUND", "User not found")
-
-  const limited = await checkRateLimit("mutation", user.id)
-  if (!limited.ok) return rateLimitResponse(limited)
-
-  let body: Record<string, unknown>
-  try {
-    body = await req.json()
-  } catch {
-    return errorResponse("INVALID_JSON")
-  }
+export const PATCH = withUser({ rateLimit: "mutation" }, async ({ req, user }) => {
+  const body = await readJson(req)
 
   const { monthlyBudgetUsd } = body
   if (monthlyBudgetUsd !== null) {
@@ -63,7 +41,10 @@ export async function PATCH(req: NextRequest) {
       monthlyBudgetUsd <= 0 ||
       monthlyBudgetUsd > MAX_BUDGET_USD
     ) {
-      return errorResponse("VALIDATION_ERROR", `monthlyBudgetUsd must be null or a positive number up to ${MAX_BUDGET_USD}`)
+      throw new ApiError(
+        "VALIDATION_ERROR",
+        `monthlyBudgetUsd must be null or a positive number up to ${MAX_BUDGET_USD}`
+      )
     }
   }
 
@@ -74,4 +55,4 @@ export async function PATCH(req: NextRequest) {
   })
 
   return jsonOk(await budgetStatus(user.id))
-}
+})

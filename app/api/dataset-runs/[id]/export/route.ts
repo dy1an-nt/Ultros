@@ -1,8 +1,6 @@
-import { auth } from "@clerk/nextjs/server"
-import { NextRequest } from "next/server"
 import Papa from "papaparse"
 import { prisma } from "@/lib/prisma"
-import { errorResponse } from "@/lib/api/errors"
+import { withUser } from "@/lib/api/handler"
 
 // Cells starting with = + - @ execute as formulas when the CSV is opened in a
 // spreadsheet, prefix them with ' so they render as text.
@@ -10,23 +8,11 @@ function guardCell(value: string): string {
   return /^[=+\-@]/.test(value) ? `'${value}` : value
 }
 
-export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params
-  const { userId: clerkId } = await auth()
-  if (!clerkId) return errorResponse("UNAUTHORIZED")
-
-  const user = await prisma.user.findUnique({ where: { clerkId } })
-  if (!user) return errorResponse("NOT_FOUND", "User not found")
-
-  const run = await prisma.datasetRun.findUnique({
-    where: { id },
-    include: { dataset: { select: { columns: true } } },
-  })
-  if (!run) return errorResponse("NOT_FOUND")
-  if (run.userId !== user.id) return errorResponse("FORBIDDEN")
+export const GET = withUser<{ id: string }>(async ({ params, db }) => {
+  const run = await db.datasetRun.requireWithColumns(params.id)
 
   const promptRuns = await prisma.promptRun.findMany({
-    where: { datasetRunId: id },
+    where: { datasetRunId: run.id },
     orderBy: { datasetRow: { rowIndex: "asc" } },
     select: {
       responseText: true,
@@ -76,7 +62,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   return new Response(csv, {
     headers: {
       "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": `attachment; filename="dataset-run-${id}.csv"`,
+      "Content-Disposition": `attachment; filename="dataset-run-${run.id}.csv"`,
     },
   })
-}
+})

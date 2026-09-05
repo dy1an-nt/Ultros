@@ -1,46 +1,14 @@
-import { auth } from "@clerk/nextjs/server"
-import { NextRequest } from "next/server"
-import { prisma } from "@/lib/prisma"
-import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit"
 import type { PrismaClient } from "@/app/generated/prisma/client"
-import { errorResponse, jsonOk } from "@/lib/api/errors"
+import { prisma } from "@/lib/prisma"
+import { withUser, readJson } from "@/lib/api/handler"
+import { ApiError, jsonOk } from "@/lib/api/errors"
 
-async function getDbUser(clerkId: string) {
-  return prisma.user.findUnique({ where: { clerkId } })
-}
+export const GET = withUser(async ({ db }) => {
+  return jsonOk(await db.prompt.list())
+})
 
-export async function GET() {
-  const { userId: clerkId } = await auth()
-  if (!clerkId) return errorResponse("UNAUTHORIZED")
-
-  const user = await getDbUser(clerkId)
-  if (!user) return errorResponse("NOT_FOUND", "User not found")
-
-  const prompts = await prisma.prompt.findMany({
-    where: { userId: user.id, deletedAt: null },
-    orderBy: { createdAt: "desc" },
-    include: { _count: { select: { versions: true, runs: true } } },
-  })
-
-  return jsonOk(prompts)
-}
-
-export async function POST(req: NextRequest) {
-  const { userId: clerkId } = await auth()
-  if (!clerkId) return errorResponse("UNAUTHORIZED")
-
-  const user = await getDbUser(clerkId)
-  if (!user) return errorResponse("NOT_FOUND", "User not found")
-
-  const limited = await checkRateLimit("mutation", user.id)
-  if (!limited.ok) return rateLimitResponse(limited)
-
-  let body: Record<string, unknown>
-  try {
-    body = await req.json()
-  } catch {
-    return errorResponse("INVALID_JSON")
-  }
+export const POST = withUser({ rateLimit: "mutation" }, async ({ req, user }) => {
+  const body = await readJson(req)
   const { title, description, tags, systemPrompt, userPrompt } = body as {
     title?: string
     description?: string | null
@@ -49,8 +17,8 @@ export async function POST(req: NextRequest) {
     userPrompt?: string
   }
 
-  if (!title?.trim()) return errorResponse("VALIDATION_ERROR", "title is required")
-  if (!userPrompt?.trim()) return errorResponse("VALIDATION_ERROR", "userPrompt is required")
+  if (!title?.trim()) throw new ApiError("VALIDATION_ERROR", "title is required")
+  if (!userPrompt?.trim()) throw new ApiError("VALIDATION_ERROR", "userPrompt is required")
 
   const prompt = await prisma.$transaction(async (tx: Omit<PrismaClient, "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends">) => {
     const p = await tx.prompt.create({
@@ -76,4 +44,4 @@ export async function POST(req: NextRequest) {
   })
 
   return jsonOk(prompt, 201)
-}
+})

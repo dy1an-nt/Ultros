@@ -7,7 +7,7 @@ import { jsonRequest, rawRequest } from "../helpers/request"
 
 describe("GET /api/prompts", () => {
   it("returns 401 when signed out", async () => {
-    const res = await GET()
+    const res = await GET(jsonRequest("GET", "/api/prompts"))
     expect(res.status).toBe(401)
     const json = await res.json()
     expect(json).toEqual({ data: null, error: { code: "UNAUTHORIZED", message: "Authentication required" } })
@@ -15,7 +15,7 @@ describe("GET /api/prompts", () => {
 
   it("returns 404 when the Clerk user has no DB row (webhook not yet synced)", async () => {
     signInAs("clerk_never_synced")
-    const res = await GET()
+    const res = await GET(jsonRequest("GET", "/api/prompts"))
     expect(res.status).toBe(404)
     expect((await res.json()).error.message).toBe("User not found")
   })
@@ -23,7 +23,7 @@ describe("GET /api/prompts", () => {
   it("returns an empty list for a user with no prompts", async () => {
     const user = await createUser()
     signInAs(user.clerkId)
-    const res = await GET()
+    const res = await GET(jsonRequest("GET", "/api/prompts"))
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({ data: [], error: null })
   })
@@ -36,7 +36,7 @@ describe("GET /api/prompts", () => {
     await createPrompt(other.id, { title: "Someone else's" })
 
     signInAs(me.clerkId)
-    const res = await GET()
+    const res = await GET(jsonRequest("GET", "/api/prompts"))
     const { data } = await res.json()
 
     expect(data).toHaveLength(1)

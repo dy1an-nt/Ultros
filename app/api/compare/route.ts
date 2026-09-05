@@ -1,51 +1,35 @@
-import { auth } from "@clerk/nextjs/server"
-import { NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit"
 import { runStream, interpolateVariables } from "@/lib/ai"
 import { getModelInfo } from "@/lib/ai/models"
 import { validateRunParams, validateVariables, type ValidatedRunParams } from "@/lib/ai/validate"
 import { calculateCost } from "@/lib/ai/pricing"
-import { errorResponse } from "@/lib/api/errors"
+import { withUser, readJson } from "@/lib/api/handler"
+import { ApiError } from "@/lib/api/errors"
 import { logger } from "@/lib/logger"
 
 type CompareSlot = { slot: 0 | 1 | 2; model: string }
 
-export async function POST(req: NextRequest) {
-  const { userId: clerkId } = await auth()
-  if (!clerkId) return errorResponse("UNAUTHORIZED")
-
-  const user = await prisma.user.findUnique({ where: { clerkId } })
-  if (!user) return errorResponse("NOT_FOUND", "User not found")
-
-  const limited = await checkRateLimit("run", user.id)
-  if (!limited.ok) return rateLimitResponse(limited)
-
-  let body: Record<string, unknown>
-  try {
-    body = await req.json()
-  } catch {
-    return errorResponse("INVALID_JSON")
-  }
+export const POST = withUser({ rateLimit: "run" }, async ({ req, user, db }) => {
+  const body = await readJson(req)
   const { promptVersionId, slots, temperature, maxTokens, topP, variables } = body
 
   if (!promptVersionId || typeof promptVersionId !== "string") {
-    return errorResponse("VALIDATION_ERROR", "promptVersionId is required")
+    throw new ApiError("VALIDATION_ERROR", "promptVersionId is required")
   }
   if (!Array.isArray(slots) || slots.length === 0 || slots.length > 3) {
-    return errorResponse("VALIDATION_ERROR", "slots must be an array of 1-3 items")
+    throw new ApiError("VALIDATION_ERROR", "slots must be an array of 1-3 items")
   }
 
   const seenSlots = new Set<number>()
   let runParams: ValidatedRunParams | null = null
   for (const s of slots as CompareSlot[]) {
     if (!Number.isInteger(s?.slot) || s.slot < 0 || s.slot > 2 || seenSlots.has(s.slot)) {
-      return errorResponse("VALIDATION_ERROR", "slot indices must be unique values 0-2")
+      throw new ApiError("VALIDATION_ERROR", "slot indices must be unique values 0-2")
     }
     seenSlots.add(s.slot)
     const { params, error } = validateRunParams({ model: s.model, temperature, maxTokens, topP })
     if (!params) {
-      return errorResponse("VALIDATION_ERROR", error)
+      throw new ApiError("VALIDATION_ERROR", error)
     }
     runParams = params
   }
@@ -53,18 +37,10 @@ export async function POST(req: NextRequest) {
 
   const vars = validateVariables(variables)
   if (vars === null) {
-    return errorResponse("VALIDATION_ERROR", "variables must be an object of string values")
+    throw new ApiError("VALIDATION_ERROR", "variables must be an object of string values")
   }
 
-  const version = await prisma.promptVersion.findUnique({
-    where: { id: promptVersionId },
-    include: { prompt: true },
-  })
-
-  if (!version) return errorResponse("NOT_FOUND")
-  if (version.prompt.userId !== user.id) {
-    return errorResponse("FORBIDDEN")
-  }
+  const version = await db.promptVersion.require(promptVersionId)
 
   const resolvedSystem = interpolateVariables(version.systemPrompt, vars)
   const resolvedUser = interpolateVariables(version.userPrompt, vars)
@@ -178,4 +154,4 @@ export async function POST(req: NextRequest) {
   return new Response(stream, {
     headers: { "Content-Type": "application/x-ndjson; charset=utf-8", "Cache-Control": "no-cache" },
   })
-}
+})

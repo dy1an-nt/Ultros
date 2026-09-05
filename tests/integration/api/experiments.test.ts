@@ -38,7 +38,7 @@ function validBody(f: Awaited<ReturnType<typeof launchFixtures>>) {
 
 describe("GET /api/experiments", () => {
   it("returns 401 when signed out", async () => {
-    expect((await GET()).status).toBe(401)
+    expect((await GET(jsonRequest("GET", "/api/experiments"))).status).toBe(401)
   })
 
   it("lists only the caller's experiments with cell progress counts", async () => {
@@ -52,7 +52,7 @@ describe("GET /api/experiments", () => {
     await prisma.datasetRun.update({ where: { id: cell.id }, data: { experimentId: experiment.id } })
 
     signInAs(me.clerkId)
-    const { data } = await (await GET()).json()
+    const { data } = await (await GET(jsonRequest("GET", "/api/experiments"))).json()
     expect(data).toHaveLength(1)
     expect(data[0].id).toBe(experiment.id)
     expect(data[0].cellsTotal).toBe(4)

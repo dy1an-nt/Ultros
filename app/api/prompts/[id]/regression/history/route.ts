@@ -1,29 +1,18 @@
-import { auth } from "@clerk/nextjs/server"
-import { NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { finalizeRegressionIfPending } from "@/lib/regression/finalize"
 import { toBaselineDto } from "@/lib/regression/baseline"
 import type { RegressionHistoryDto, RegressionRunDto } from "@/types/experiment"
-import { errorResponse, jsonOk } from "@/lib/api/errors"
+import { withUser } from "@/lib/api/handler"
+import { jsonOk } from "@/lib/api/errors"
 
 // Score-over-time feed: the current baseline plus its RegressionRuns,
 // newest-first. Pending rows whose DatasetRun already went terminal are
 // finalized lazily here, so a lost finalize hook can never wedge a run in
 // "pending" forever.
-export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params
-  const { userId: clerkId } = await auth()
-  if (!clerkId) return errorResponse("UNAUTHORIZED")
+export const GET = withUser<{ id: string }>(async ({ params, db }) => {
+  const prompt = await db.prompt.requireHidden(params.id)
 
-  const user = await prisma.user.findUnique({ where: { clerkId } })
-  if (!user) return errorResponse("NOT_FOUND", "User not found")
-
-  const prompt = await prisma.prompt.findUnique({ where: { id } })
-  if (!prompt || prompt.deletedAt !== null || prompt.userId !== user.id) {
-    return errorResponse("NOT_FOUND")
-  }
-
-  const baseline = await prisma.baseline.findUnique({ where: { promptId: id } })
+  const baseline = await prisma.baseline.findUnique({ where: { promptId: prompt.id } })
   if (!baseline) {
     const empty: RegressionHistoryDto = { baseline: null, runs: [] }
     return jsonOk(empty)
@@ -69,4 +58,4 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     ),
   }
   return jsonOk(data)
-}
+})

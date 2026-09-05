@@ -1,10 +1,8 @@
-import { auth } from "@clerk/nextjs/server"
-import { NextRequest } from "next/server"
 import { nanoid } from "nanoid"
 import { prisma } from "@/lib/prisma"
-import { checkRateLimit, rateLimitResponse } from "@/lib/rateLimit"
 import { resourceBelongsToUser } from "@/lib/share/resolve"
-import { errorResponse, jsonOk } from "@/lib/api/errors"
+import { withUser, readJson } from "@/lib/api/handler"
+import { ApiError, jsonOk } from "@/lib/api/errors"
 
 const RESOURCE_TYPES = ["promptRun", "datasetRun", "experiment"] as const
 
@@ -13,17 +11,8 @@ function shareUrl(token: string): string {
   return `${base.replace(/\/$/, "")}/share/${token}`
 }
 
-export async function GET() {
-  const { userId: clerkId } = await auth()
-  if (!clerkId) return errorResponse("UNAUTHORIZED")
-
-  const user = await prisma.user.findUnique({ where: { clerkId } })
-  if (!user) return errorResponse("NOT_FOUND", "User not found")
-
-  const shares = await prisma.share.findMany({
-    where: { userId: user.id, revokedAt: null },
-    orderBy: { createdAt: "desc" },
-  })
+export const GET = withUser(async ({ db }) => {
+  const shares = await db.share.listLive()
   return jsonOk(
     shares.map((s) => ({
       id: s.id,
@@ -34,37 +23,23 @@ export async function GET() {
       createdAt: s.createdAt.toISOString(),
     }))
   )
-}
+})
 
 // Idempotent per (user, resource): re-POST returns the existing live link.
 // A revoked share gets a NEW token. The old URL must stay dead forever.
-export async function POST(req: NextRequest) {
-  const { userId: clerkId } = await auth()
-  if (!clerkId) return errorResponse("UNAUTHORIZED")
-
-  const user = await prisma.user.findUnique({ where: { clerkId } })
-  if (!user) return errorResponse("NOT_FOUND", "User not found")
-
-  const limited = await checkRateLimit("mutation", user.id)
-  if (!limited.ok) return rateLimitResponse(limited)
-
-  let body: Record<string, unknown>
-  try {
-    body = await req.json()
-  } catch {
-    return errorResponse("INVALID_JSON")
-  }
+export const POST = withUser({ rateLimit: "mutation" }, async ({ req, user }) => {
+  const body = await readJson(req)
 
   const { resourceType, resourceId } = body
   if (typeof resourceType !== "string" || !(RESOURCE_TYPES as readonly string[]).includes(resourceType)) {
-    return errorResponse("VALIDATION_ERROR", `resourceType must be one of: ${RESOURCE_TYPES.join(", ")}`)
+    throw new ApiError("VALIDATION_ERROR", `resourceType must be one of: ${RESOURCE_TYPES.join(", ")}`)
   }
   if (typeof resourceId !== "string" || !resourceId) {
-    return errorResponse("VALIDATION_ERROR", "resourceId is required")
+    throw new ApiError("VALIDATION_ERROR", "resourceId is required")
   }
 
   if (!(await resourceBelongsToUser(resourceType, resourceId, user.id))) {
-    return errorResponse("NOT_FOUND")
+    throw new ApiError("NOT_FOUND")
   }
 
   const existing = await prisma.share.findUnique({
@@ -88,4 +63,4 @@ export async function POST(req: NextRequest) {
       })
 
   return jsonOk({ token: share.token, url: shareUrl(share.token), createdAt: share.createdAt.toISOString() }, 201)
-}
+})

@@ -1,19 +1,6 @@
-import { auth } from "@clerk/nextjs/server"
-import { NextRequest } from "next/server"
-import { prisma } from "@/lib/prisma"
-import { errorResponse, jsonOk } from "@/lib/api/errors"
+import { withUser } from "@/lib/api/handler"
+import { jsonOk } from "@/lib/api/errors"
 
-export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params
-  const { userId: clerkId } = await auth()
-  if (!clerkId) return errorResponse("UNAUTHORIZED")
-
-  const user = await prisma.user.findUnique({ where: { clerkId } })
-  if (!user) return errorResponse("NOT_FOUND", "User not found")
-
-  const run = await prisma.datasetRun.findUnique({ where: { id } })
-  if (!run) return errorResponse("NOT_FOUND")
-  if (run.userId !== user.id) return errorResponse("FORBIDDEN")
-
-  return jsonOk(run)
-}
+export const GET = withUser<{ id: string }>(async ({ params, db }) => {
+  return jsonOk(await db.datasetRun.require(params.id))
+})
