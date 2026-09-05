@@ -4,28 +4,29 @@ import { useState } from "react"
 import Link from "next/link"
 import { Hanken_Grotesk, Source_Serif_4, Spline_Sans_Mono } from "next/font/google"
 import { UltrosLogo } from "@/components/landing/Logo"
+import { MODEL_CATALOG } from "@/lib/ai/models"
 
 const sans = Hanken_Grotesk({ subsets: ["latin"], weight: ["400", "500", "600", "700"] })
 const serif = Source_Serif_4({ subsets: ["latin"], weight: ["400", "500", "600"] })
 const mono = Spline_Sans_Mono({ subsets: ["latin"], weight: ["400", "500", "600"] })
 
 type Section =
-  | "installation"
+  | "overview"
   | "quickstart"
   | "core-concepts"
   | "datasets"
   | "judges-rubrics"
   | "calibration"
-  | "regression-gates"
-  | "python-sdk"
-  | "cli"
+  | "regression"
+  | "models"
   | "rest-api"
+  | "roadmap"
 
 const sidebarGroups = [
   {
     label: "Getting started",
     items: [
-      { id: "installation" as Section, label: "Installation" },
+      { id: "overview" as Section, label: "Overview" },
       { id: "quickstart" as Section, label: "Quickstart" },
       { id: "core-concepts" as Section, label: "Core concepts" },
     ],
@@ -36,15 +37,15 @@ const sidebarGroups = [
       { id: "datasets" as Section, label: "Datasets" },
       { id: "judges-rubrics" as Section, label: "Judges & rubrics" },
       { id: "calibration" as Section, label: "Calibration" },
-      { id: "regression-gates" as Section, label: "Regression gates" },
+      { id: "regression" as Section, label: "Regression testing" },
     ],
   },
   {
     label: "Reference",
     items: [
-      { id: "python-sdk" as Section, label: "Python SDK" },
-      { id: "cli" as Section, label: "CLI" },
+      { id: "models" as Section, label: "Models & pricing" },
       { id: "rest-api" as Section, label: "REST API" },
+      { id: "roadmap" as Section, label: "Roadmap" },
     ],
   },
 ]
@@ -72,12 +73,26 @@ function Callout({ children }: { children: React.ReactNode }) {
         strokeLinecap="round"
         strokeLinejoin="round"
         className="shrink-0 mt-0.5"
+        aria-hidden="true"
       >
         <circle cx="12" cy="12" r="9" />
         <line x1="12" y1="8" x2="12" y2="12" />
         <circle cx="12" cy="15.5" r="0.5" />
       </svg>
       <p className="text-[14.5px] leading-[1.6] text-[#9FAFA4]">{children}</p>
+    </div>
+  )
+}
+
+// Marks a capability that is described but not built, so a reader never has to
+// guess which parts of this page they can actually use today.
+function NotBuilt({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="bg-[#D9A24E]/[0.08] border border-[#D9A24E]/30 rounded-[10px] p-4 flex flex-col gap-1.5">
+      <span className={`${mono.className} text-[12px] tracking-[0.1em] uppercase text-[#E4BC7A]`}>
+        Not built yet
+      </span>
+      <p className="m-0 text-[14.5px] leading-[1.6] text-[#9FAFA4]">{children}</p>
     </div>
   )
 }
@@ -106,81 +121,85 @@ function NavCard({ title, desc, onClick }: { title: string; desc: string; onClic
   )
 }
 
-function Installation({ go }: { go: (s: Section) => void }) {
+function PageHeader({ eyebrow, title, children }: { eyebrow: string; title: string; children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col gap-3.5">
+      <span className={`${mono.className} text-[13px] tracking-[0.1em] uppercase text-[#7FD6AE]`}>
+        {eyebrow}
+      </span>
+      <h1 className={`${serif.className} m-0 text-[32px] sm:text-[44px] font-medium tracking-tight leading-[1.12]`}>
+        {title}
+      </h1>
+      <p className="m-0 text-[17px] leading-[1.65] text-[#9FAFA4]">{children}</p>
+    </div>
+  )
+}
+
+function Overview({ go }: { go: (s: Section) => void }) {
   return (
     <div className="flex flex-col gap-9">
-      <div className="flex flex-col gap-3.5">
-        <span className={`${mono.className} text-[13px] tracking-[0.1em] uppercase text-[#7FD6AE]`}>
-          Getting started
-        </span>
-        <h1 className={`${serif.className} m-0 text-[44px] font-medium tracking-tight leading-[1.12]`}>
-          Installation
-        </h1>
-        <p className="m-0 text-[17px] leading-[1.65] text-[#9FAFA4]">
-          Ultros runs as a web app, no install required for the UI. The Python SDK is optional and
-          adds programmatic access for CI pipelines and notebook workflows.
-        </p>
-      </div>
+      <PageHeader eyebrow="Getting started" title="Overview">
+        Ultros is a web app for evaluating prompts. There is nothing to install and no client
+        library to add. You write a prompt in the browser, run it against a model, and every run is
+        stored with its tokens, latency, cost, and score.
+      </PageHeader>
 
       <Step n={1} title="Create an account">
         <p className="text-base leading-[1.65] text-[#9FAFA4]">
           Sign up at{" "}
           <Link href="/sign-up" className="text-[#7FD6AE] underline underline-offset-2">
-            ultros.app
-          </Link>{" "}
-          with GitHub, Google, or email. Your account is the container for prompts, datasets,
-          experiments, and usage history.
+            /sign-up
+          </Link>
+          . Your account owns your prompts, datasets, rubrics, experiments, and usage history, and
+          every query is scoped to it. No other account can read your data.
         </p>
       </Step>
 
-      <Step n={2} title="Add your model keys">
+      <Step n={2} title="See which models you can reach">
         <p className="text-base leading-[1.65] text-[#9FAFA4]">
-          Ultros calls model providers with your own API keys. You pay them directly at their list
-          price. Keys are encrypted at rest and never logged.
+          Model access is configured once, on the server, by whoever runs the deployment. The model
+          picker lists exactly the models whose provider is configured, so anything you can select
+          is something the app can actually call. Nothing is advertised that would fail at run time.
         </p>
-        <p className="text-sm text-[#7E8C82]">
-          Go to{" "}
-          <Link href="/settings" className="text-[#7FD6AE]">
-            Settings → API Keys
-          </Link>{" "}
-          and add keys for the providers you want to test against.
+        <Callout>
+          There is no per-account key management. You cannot add your own provider key from
+          Settings, and Ultros never asks you for one. See{" "}
+          <button onClick={() => go("roadmap")} className="text-[#7FD6AE] underline underline-offset-2">
+            Roadmap
+          </button>{" "}
+          for what that means today.
+        </Callout>
+      </Step>
+
+      <Step n={3} title="Know the limits">
+        <p className="text-base leading-[1.65] text-[#9FAFA4]">
+          Requests are rate limited per account, in a sliding 60 second window. Exceeding a limit
+          returns HTTP 429 with a <span className={`${mono.className} text-[#7FD6AE]`}>Retry-After</span>{" "}
+          header rather than silently dropping work.
         </p>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="bg-[#121815] border border-[#243029] rounded-[10px] overflow-hidden">
           {[
-            { label: "Anthropic", key: "ANTHROPIC_API_KEY" },
-            { label: "OpenAI", key: "OPENAI_API_KEY" },
-            { label: "Google", key: "GOOGLE_API_KEY" },
-          ].map((p) => (
+            ["Single runs and comparisons", "30 / min"],
+            ["Manual eval triggers", "60 / min"],
+            ["Batch launches (dataset, experiment, regression)", "5 / min"],
+            ["Create, update, delete", "60 / min"],
+            ["Public share views", "60 / min per IP"],
+          ].map(([what, limit]) => (
             <div
-              key={p.label}
-              className="bg-[#121815] border border-[#243029] rounded-lg p-3.5 flex flex-col gap-1"
+              key={what}
+              className="grid grid-cols-[1fr_auto] gap-4 px-5 py-3 border-b border-[#1B231F] last:border-b-0 text-[14.5px]"
             >
-              <span className="text-sm font-semibold text-[#ECF1ED]">{p.label}</span>
-              <span className={`${mono.className} text-xs text-[#7E8C82]`}>{p.key}</span>
+              <span className="text-[#9FAFA4]">{what}</span>
+              <span className={`${mono.className} text-[#7FD6AE]`}>{limit}</span>
             </div>
           ))}
         </div>
       </Step>
 
-      <Step n={3} title="Install the Python SDK (optional)">
-        <p className="text-base leading-[1.65] text-[#9FAFA4]">
-          For CI integration or notebook-based workflows, install the SDK. Python 3.9+ required.
-        </p>
-        <CodeBlock>
-          <div>
-            <span className="text-[#7E8C82]">$ </span>pip install ultros
-          </div>
-          <div>
-            <span className="text-[#7E8C82]">$ </span>ultros auth login{" "}
-            <span className="text-[#7E8C82]"># opens browser, stores token</span>
-          </div>
-        </CodeBlock>
-      </Step>
-
-      <div className="grid grid-cols-2 gap-3.5 mt-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 mt-2">
         <NavCard
           title="Quickstart"
-          desc="Run your first scored evaluation in 5 minutes."
+          desc="Run your first scored evaluation."
           onClick={() => go("quickstart")}
         />
         <NavCard
@@ -196,102 +215,84 @@ function Installation({ go }: { go: (s: Section) => void }) {
 function Quickstart({ go }: { go: (s: Section) => void }) {
   return (
     <div className="flex flex-col gap-9">
-      <div className="flex flex-col gap-3.5">
-        <span className={`${mono.className} text-[13px] tracking-[0.1em] uppercase text-[#7FD6AE]`}>
-          Getting started
-        </span>
-        <h1 className={`${serif.className} m-0 text-[44px] font-medium tracking-tight leading-[1.12]`}>
-          Quickstart
-        </h1>
-        <p className="m-0 text-[17px] leading-[1.65] text-[#9FAFA4]">
-          Run your first scored evaluation in about five minutes. You&apos;ll need an account and an
-          API key from at least one model provider.
-        </p>
-      </div>
+      <PageHeader eyebrow="Getting started" title="Quickstart">
+        From an empty account to a scored batch run, entirely in the browser. Each step below is a
+        page in the app.
+      </PageHeader>
 
-      <Step n={1} title="Install the SDK">
-        <CodeBlock>
-          <span className="text-[#7E8C82]">$ </span>pip install ultros
-        </CodeBlock>
-      </Step>
-
-      <Step n={2} title="Connect your keys">
+      <Step n={1} title="Write a prompt">
         <p className="text-base leading-[1.65] text-[#9FAFA4]">
-          Ultros calls providers with your own keys. You pay them directly. Set the ones you plan
-          to test against.
+          Go to{" "}
+          <Link href="/prompts/new" className="text-[#7FD6AE] underline underline-offset-2">
+            /prompts/new
+          </Link>
+          . A prompt has a system prompt and a user prompt, both edited in CodeMirror. Anywhere you
+          write <span className={`${mono.className} text-[#7FD6AE]`}>{"{{name}}"}</span> becomes a
+          variable you can fill from a dataset column later.
         </p>
-        <CodeBlock>
-          <div>
-            <span className="text-[#7E8C82]">$ </span>ultros auth login
-          </div>
-          <div>
-            <span className="text-[#7E8C82]">$ </span>ultros keys add anthropic{" "}
-            <span className="text-[#7FD6AE]">sk-ant-…</span>
-          </div>
-        </CodeBlock>
       </Step>
 
-      <Step n={3} title="Register a prompt and a dataset">
-        <CodeBlock>
-          <div>
-            <span className="text-[#9C7DD4]">import</span> ultros
-          </div>
-          <div>&nbsp;</div>
-          <div>
-            ultros.prompts.push(<span className="text-[#7FD6AE]">&quot;support-triage&quot;</span>,
-            file=<span className="text-[#7FD6AE]">&quot;triage.md&quot;</span>)
-          </div>
-          <div>
-            ultros.datasets.push(<span className="text-[#7FD6AE]">&quot;tickets-1k&quot;</span>,
-            file=<span className="text-[#7FD6AE]">&quot;tickets.jsonl&quot;</span>)
-          </div>
-        </CodeBlock>
+      <Step n={2} title="Run it">
+        <p className="text-base leading-[1.65] text-[#9FAFA4]">
+          Pick a model, set max output tokens, and run. The response streams into the page as it
+          arrives. When it finishes, the run is saved with its input and output token counts,
+          latency, and cost in USD, and it appears in the run history under the prompt.
+        </p>
         <Callout>
-          Pushing the same name again creates a new version, {" "}
-          <span className={`${mono.className} text-[#7FD6AE]`}>support-triage@v2</span>, never an
-          overwrite. Old runs stay reproducible.
+          Temperature is disabled for models that no longer accept one. Rather than sending a value
+          the provider would reject, Ultros omits it and the control greys out. See{" "}
+          <button onClick={() => go("models")} className="text-[#7FD6AE] underline underline-offset-2">
+            Models &amp; pricing
+          </button>
+          .
         </Callout>
       </Step>
 
-      <Step n={4} title="Run the evaluation">
-        <CodeBlock>
-          <div>run = ultros.evaluate(</div>
-          <div className="pl-6">
-            prompt=<span className="text-[#7FD6AE]">&quot;support-triage@latest&quot;</span>,
-          </div>
-          <div className="pl-6">
-            dataset=<span className="text-[#7FD6AE]">&quot;tickets-1k&quot;</span>,
-          </div>
-          <div className="pl-6">
-            models=[<span className="text-[#7FD6AE]">&quot;claude-sonnet-4-6&quot;</span>,{" "}
-            <span className="text-[#7FD6AE]">&quot;gpt-4o&quot;</span>],
-          </div>
-          <div className="pl-6">
-            judge=<span className="text-[#7FD6AE]">&quot;rubric:helpfulness-v2&quot;</span>,
-          </div>
-          <div>)</div>
-          <div>&nbsp;</div>
-          <div>
-            <span className="text-[#9C7DD4]">print</span>(run.summary()){" "}
-            <span className="text-[#7E8C82]"># accuracy, rubric scores, Δ vs previous version</span>
-          </div>
-        </CodeBlock>
+      <Step n={3} title="Save a version">
         <p className="text-base leading-[1.65] text-[#9FAFA4]">
-          The run appears in your dashboard as it executes, every row scored, every output stored,
-          every delta computed against the last version of the prompt.
+          Saving snapshots the current text as version 1, then 2, then 3. Versions are immutable and
+          numbered per prompt. Every run records the version it came from, so a result stays
+          traceable to the exact text that produced it. The version list diffs the user prompt
+          between any two versions, and restoring loads an older version back into the editor, where
+          saving it creates a new version rather than rewriting history.
         </p>
       </Step>
 
-      <div className="grid grid-cols-2 gap-3.5 mt-2">
+      <Step n={4} title="Define a rubric">
+        <p className="text-base leading-[1.65] text-[#9FAFA4]">
+          At{" "}
+          <Link href="/rubrics" className="text-[#7FD6AE] underline underline-offset-2">
+            /rubrics
+          </Link>
+          , build a scoring definition: up to 20 criteria, each with a weight and a method. Scores
+          are on a 0 to 1 scale, and a run passes when its weighted score meets the rubric&apos;s
+          pass threshold.
+        </p>
+      </Step>
+
+      <Step n={5} title="Run across a dataset">
+        <p className="text-base leading-[1.65] text-[#9FAFA4]">
+          Upload a CSV or JSON dataset at{" "}
+          <Link href="/datasets" className="text-[#7FD6AE] underline underline-offset-2">
+            /datasets
+          </Link>
+          , map its columns to your prompt variables, and launch. Ultros shows a cost estimate and
+          asks you to confirm before spending anything. Rows are queued and run in the background,
+          each one scored against the rubric, with live progress, aggregate metrics, per-row
+          drill-down, and CSV export.
+        </p>
+      </Step>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 mt-2">
         <NavCard
-          title="Judges & rubrics →"
-          desc="Define what &quot;good&quot; means for your task."
+          title="Judges & rubrics"
+          desc="Define what good means for your task."
           onClick={() => go("judges-rubrics")}
         />
         <NavCard
-          title="Regression gates →"
-          desc="Fail the build when scores drop."
-          onClick={() => go("regression-gates")}
+          title="Regression testing"
+          desc="Catch the version that made things worse."
+          onClick={() => go("regression")}
         />
       </div>
     </div>
@@ -302,52 +303,47 @@ function CoreConcepts({ go }: { go: (s: Section) => void }) {
   const concepts = [
     {
       term: "Prompt",
-      def: "A named, versioned unit of text stored in Ultros: a system prompt plus a user message template. Each save creates a new version; nothing is ever overwritten.",
+      def: "A named, versioned unit of text: a system prompt plus a user prompt template. Each save creates a new version; nothing is overwritten.",
     },
     {
       term: "Version",
-      def: "An immutable snapshot of a prompt at a point in time. Referenced as name@v3 or name@latest. All runs are tied to a specific version so results stay reproducible.",
+      def: "An immutable snapshot of a prompt, numbered from 1 within that prompt and optionally labelled. Every run stores the version it ran, so results stay reproducible.",
     },
     {
       term: "Dataset",
-      def: "A collection of rows, each a map of column→value pairs. Rows drive batch evaluation. {{variables}} in the prompt template are filled from dataset columns.",
+      def: "Up to 500 rows, each a map of column to value, plus an optional expected output. Rows drive batch evaluation and fill the {{variables}} in a prompt. Datasets are immutable once created.",
     },
     {
       term: "Rubric",
-      def: "A scoring definition: a list of criteria, each with a weight and a method (AI judge, exact match, regex, JSON schema, or contains). Rubrics are reusable across prompts.",
+      def: "A reusable scoring definition: up to 20 criteria, each with a weight and a method (AI judge, exact, regex, JSON schema, or contains), plus a pass threshold between 0 and 1.",
     },
     {
       term: "Run",
-      def: "A single prompt execution against one model. Stores the input, output, token counts, latency, cost, and evaluation score. Runs are the atom of the system.",
+      def: "A single prompt execution against one model. Stores the response, input and output token counts, latency, and cost in USD. Runs are the atom of the system.",
     },
     {
       term: "Experiment",
-      def: "A comparison across prompt variants × models × a dataset, all scored by the same rubric. Produces a win matrix and per-criterion breakdown.",
+      def: "Prompt variants crossed with up to 3 models over one dataset, all scored by the same rubric. Produces a win matrix and a per-criterion breakdown.",
     },
     {
       term: "Baseline",
-      def: "A pinned (version, dataset, rubric) triple that defines expected performance. Regression runs compare against this to detect score drops.",
+      def: "A pinned prompt version, dataset, and rubric that together define expected performance. Regression runs re-run that combination and compare.",
     },
   ]
 
   return (
     <div className="flex flex-col gap-9">
-      <div className="flex flex-col gap-3.5">
-        <span className={`${mono.className} text-[13px] tracking-[0.1em] uppercase text-[#7FD6AE]`}>
-          Getting started
-        </span>
-        <h1 className={`${serif.className} m-0 text-[44px] font-medium tracking-tight leading-[1.12]`}>
-          Core concepts
-        </h1>
-        <p className="m-0 text-[17px] leading-[1.65] text-[#9FAFA4]">
-          Seven ideas that everything else builds on. Understanding these makes the rest of the
-          documentation obvious.
-        </p>
-      </div>
+      <PageHeader eyebrow="Getting started" title="Core concepts">
+        Seven ideas that everything else builds on. Understanding these makes the rest of the
+        documentation obvious.
+      </PageHeader>
 
       <div className="flex flex-col gap-0 divide-y divide-[#1B231F]">
         {concepts.map((c) => (
-          <div key={c.term} className="py-5 grid grid-cols-[200px_1fr] gap-8 items-baseline">
+          <div
+            key={c.term}
+            className="py-5 grid grid-cols-1 sm:grid-cols-[180px_1fr] gap-2 sm:gap-8 items-baseline"
+          >
             <span className={`${mono.className} text-[14px] text-[#7FD6AE] font-medium`}>
               {c.term}
             </span>
@@ -356,14 +352,14 @@ function CoreConcepts({ go }: { go: (s: Section) => void }) {
         ))}
       </div>
 
-      <div className="grid grid-cols-2 gap-3.5 mt-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 mt-2">
         <NavCard
-          title="Datasets →"
-          desc="Upload CSV or JSON and map columns to prompt variables."
+          title="Datasets"
+          desc="Upload CSV or JSON and map columns to variables."
           onClick={() => go("datasets")}
         />
         <NavCard
-          title="Judges & rubrics →"
+          title="Judges & rubrics"
           desc="Define what a good output looks like."
           onClick={() => go("judges-rubrics")}
         />
@@ -375,45 +371,68 @@ function CoreConcepts({ go }: { go: (s: Section) => void }) {
 function Datasets({ go }: { go: (s: Section) => void }) {
   return (
     <div className="flex flex-col gap-9">
-      <div className="flex flex-col gap-3.5">
-        <span className={`${mono.className} text-[13px] tracking-[0.1em] uppercase text-[#7FD6AE]`}>
-          Evaluation
-        </span>
-        <h1 className={`${serif.className} m-0 text-[44px] font-medium tracking-tight leading-[1.12]`}>
-          Datasets
-        </h1>
-        <p className="m-0 text-[17px] leading-[1.65] text-[#9FAFA4]">
-          A dataset is a list of rows that drive batch evaluation. Each row fills the{" "}
-          <span className={`${mono.className} text-[#7FD6AE]`}>{"{{variables}}"}</span> in your
-          prompt template at run time.
-        </p>
-      </div>
+      <PageHeader eyebrow="Evaluation" title="Datasets">
+        A dataset is a list of rows that drive batch evaluation. Each row fills the{" "}
+        <span className={`${mono.className} text-[#7FD6AE]`}>{"{{variables}}"}</span> in your prompt
+        template at run time.
+      </PageHeader>
 
       <div className="flex flex-col gap-4">
         <h2 className="m-0 text-[22px] font-semibold tracking-tight">Supported formats</h2>
         <p className="text-base leading-[1.65] text-[#9FAFA4]">
-          Upload a <strong className="text-[#ECF1ED] font-semibold">CSV</strong> or{" "}
-          <strong className="text-[#ECF1ED] font-semibold">JSON Lines</strong> file from the
-          Datasets page, or push programmatically with the SDK.
+          Paste or upload <strong className="text-[#ECF1ED] font-semibold">CSV</strong> with a header
+          row, or a <strong className="text-[#ECF1ED] font-semibold">JSON array of objects</strong>.
+          Newline-delimited JSON is not parsed; wrap your objects in an array.
         </p>
         <CodeBlock>
           <div className="text-[#7E8C82]"># CSV. First row is the header</div>
-          <div>input,expected_output</div>
+          <div>input,expectedOutput</div>
           <div>
             <span className="text-[#7FD6AE]">&quot;Summarise this ticket…&quot;</span>,
             <span className="text-[#7FD6AE]">&quot;Billing issue, high priority&quot;</span>
           </div>
           <div>&nbsp;</div>
-          <div className="text-[#7E8C82]"># JSON Lines, one object per line</div>
-          <div>
-            {'{'}
+          <div className="text-[#7E8C82]"># JSON. An array of flat objects</div>
+          <div>[</div>
+          <div className="pl-4">
+            {"{"}
             <span className="text-[#7FD6AE]">&quot;input&quot;</span>:{" "}
             <span className="text-[#7FD6AE]">&quot;Summarise…&quot;</span>,{" "}
-            <span className="text-[#7FD6AE]">&quot;expected_output&quot;</span>:{" "}
+            <span className="text-[#7FD6AE]">&quot;expectedOutput&quot;</span>:{" "}
             <span className="text-[#7FD6AE]">&quot;Billing…&quot;</span>
-            {'}'}
+            {"}"}
           </div>
+          <div>]</div>
         </CodeBlock>
+        <Callout>
+          <span className={`${mono.className} text-[#7FD6AE]`}>expectedOutput</span> is a reserved
+          column name, spelled exactly that way. It is stored beside the row rather than as a
+          template variable, and it is what per-row comparison reads.
+        </Callout>
+      </div>
+
+      <div className="flex flex-col gap-4">
+        <h2 className="m-0 text-[22px] font-semibold tracking-tight">Limits</h2>
+        <div className="bg-[#121815] border border-[#243029] rounded-[10px] overflow-hidden">
+          {[
+            ["Rows", "500"],
+            ["Columns, not counting expectedOutput", "20"],
+            ["Column name length", "1 to 50 characters"],
+            ["Column name characters", "letters, digits, underscore, space, hyphen"],
+          ].map(([what, limit]) => (
+            <div
+              key={what}
+              className="grid grid-cols-[1fr_auto] gap-4 px-5 py-3 border-b border-[#1B231F] last:border-b-0 text-[14.5px]"
+            >
+              <span className="text-[#9FAFA4]">{what}</span>
+              <span className={`${mono.className} text-[#7FD6AE] text-right`}>{limit}</span>
+            </div>
+          ))}
+        </div>
+        <p className="text-base leading-[1.65] text-[#9FAFA4]">
+          Duplicate column names are rejected rather than silently renamed, and a row whose field
+          count does not match the header fails the upload with the offending row number.
+        </p>
       </div>
 
       <div className="flex flex-col gap-4">
@@ -422,61 +441,30 @@ function Datasets({ go }: { go: (s: Section) => void }) {
           Column names become template variables. A column named{" "}
           <span className={`${mono.className} text-[#7FD6AE]`}>input</span> fills{" "}
           <span className={`${mono.className} text-[#7FD6AE]`}>{"{{input}}"}</span> in your prompt.
-          Variable mapping is shown on the dataset detail page before you run.
+          The mapping is shown in the run dialog before you launch, so you can see which variable
+          each column feeds. A variable with no matching column resolves to an empty string.
         </p>
-        <div className="bg-[#121815] border border-[#243029] rounded-[10px] overflow-hidden">
-          <div className="grid grid-cols-2 gap-4 px-5 py-3 border-b border-[#1B231F] text-xs font-semibold tracking-[0.08em] uppercase text-[#7E8C82]">
-            <span>Dataset column</span>
-            <span>Prompt variable</span>
-          </div>
-          {[
-            ["input", "{{input}}"],
-            ["expected_output", "{{expected_output}}"],
-            ["context", "{{context}}"],
-          ].map(([col, v]) => (
-            <div
-              key={col}
-              className="grid grid-cols-2 gap-4 px-5 py-3 border-t border-[#1B231F] text-[14.5px]"
-            >
-              <span className={`${mono.className} text-[#9FAFA4]`}>{col}</span>
-              <span className={`${mono.className} text-[#7FD6AE]`}>{v}</span>
-            </div>
-          ))}
-        </div>
       </div>
 
       <div className="flex flex-col gap-4">
-        <h2 className="m-0 text-[22px] font-semibold tracking-tight">SDK upload</h2>
-        <CodeBlock>
-          <div>
-            ultros.datasets.push(
-          </div>
-          <div className="pl-6">
-            <span className="text-[#7FD6AE]">&quot;tickets-1k&quot;</span>,
-          </div>
-          <div className="pl-6">
-            file=<span className="text-[#7FD6AE]">&quot;tickets.jsonl&quot;</span>,
-          </div>
-          <div className="pl-6">
-            description=<span className="text-[#7FD6AE]">&quot;Support ticket sample, June 2026&quot;</span>,
-          </div>
-          <div>)</div>
-        </CodeBlock>
-        <Callout>
-          Uploading a dataset with the same name creates a new version of it. Existing runs that
-          reference the old version are unaffected.
-        </Callout>
+        <h2 className="m-0 text-[22px] font-semibold tracking-tight">Immutability</h2>
+        <p className="text-base leading-[1.65] text-[#9FAFA4]">
+          A dataset cannot be edited after it is created, and rows keep their original index. That
+          is what lets a regression run match rows one to one against a baseline months later.
+          Uploading a corrected file creates a separate dataset rather than a new version of the
+          existing one. A dataset cannot be deleted while runs still reference it.
+        </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3.5 mt-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 mt-2">
         <NavCard
-          title="Judges & rubrics →"
+          title="Judges & rubrics"
           desc="Score each row's output automatically."
           onClick={() => go("judges-rubrics")}
         />
         <NavCard
-          title="REST API →"
-          desc="Upload and query datasets over HTTP."
+          title="REST API"
+          desc="The exact request body the upload uses."
           onClick={() => go("rest-api")}
         />
       </div>
@@ -489,43 +477,51 @@ function JudgesRubrics({ go }: { go: (s: Section) => void }) {
     {
       name: "ai_judge",
       label: "AI judge",
-      desc: "A separate model reads the prompt, output, and your criterion description, then scores 0–10. Best for open-ended quality criteria.",
+      desc: "A judge model reads the response and your criterion instructions, then returns a score between 0 and 1 with a one-sentence reason. Best for open-ended quality criteria. Config: instructions, up to 2000 characters.",
     },
     {
       name: "exact",
       label: "Exact match",
-      desc: "Output must equal the expected_output column value (case-insensitive). Fast and cheap. Use for classification or fixed-answer tasks.",
+      desc: "The response must equal a literal string you supply. Case-sensitive unless you turn that off, with optional trimming. Scores 1 or 0. Config: expected, caseSensitive, trim.",
     },
     {
       name: "regex",
       label: "Regex",
-      desc: "Output must match a regular expression you supply. Good for structured outputs like dates, IDs, or formatted numbers.",
+      desc: "The response must match a regular expression. Only the i, m, s, and u flags are allowed, and only the first 100 KB of the response is tested. Scores 1 or 0. Config: pattern, flags.",
     },
     {
       name: "json_schema",
       label: "JSON schema",
-      desc: "Output is parsed as JSON and validated against a schema. Any schema validation error scores 0.",
+      desc: "The response is parsed as JSON and validated against your schema. Unparseable JSON or any validation error scores 0. Config: schema, up to 10 KB serialized.",
     },
     {
       name: "contains",
       label: "Contains",
-      desc: 'Output must contain a literal string. Useful for checking that required disclaimers or phrases appear.',
+      desc: "The response must contain a literal substring. Useful for checking that a required disclaimer appears. Scores 1 or 0. Config: substring, caseSensitive.",
     },
   ]
 
   return (
     <div className="flex flex-col gap-9">
-      <div className="flex flex-col gap-3.5">
-        <span className={`${mono.className} text-[13px] tracking-[0.1em] uppercase text-[#7FD6AE]`}>
-          Evaluation
-        </span>
-        <h1 className={`${serif.className} m-0 text-[44px] font-medium tracking-tight leading-[1.12]`}>
-          Judges & rubrics
-        </h1>
-        <p className="m-0 text-[17px] leading-[1.65] text-[#9FAFA4]">
-          A rubric is a reusable scoring definition: a list of criteria with weights and an overall
-          pass threshold. Every run is scored against a rubric automatically.
+      <PageHeader eyebrow="Evaluation" title="Judges & rubrics">
+        A rubric is a reusable scoring definition: a list of criteria with weights and a pass
+        threshold. Attach one to a run and the run is scored automatically.
+      </PageHeader>
+
+      <div className="flex flex-col gap-4">
+        <h2 className="m-0 text-[22px] font-semibold tracking-tight">The scale</h2>
+        <p className="text-base leading-[1.65] text-[#9FAFA4]">
+          Every score in Ultros is a number between 0 and 1. Deterministic criteria return exactly 0
+          or 1. AI judge criteria return anything in between. The total is the weighted mean,{" "}
+          <span className={`${mono.className} text-[#7FD6AE]`}>Σ(weightᵢ × scoreᵢ) / Σ(weightᵢ)</span>
+          , so weights are relative and do not need to add up to anything in particular. A weight of
+          2 simply counts twice as much as a weight of 1.
         </p>
+        <Callout>
+          A run passes when its total score is at or above the rubric&apos;s{" "}
+          <span className={`${mono.className} text-[#7FD6AE]`}>passThreshold</span>, itself a number
+          between 0 and 1.
+        </Callout>
       </div>
 
       <div className="flex flex-col gap-4">
@@ -533,8 +529,10 @@ function JudgesRubrics({ go }: { go: (s: Section) => void }) {
         <div className="flex flex-col gap-0 divide-y divide-[#1B231F]">
           {methods.map((m) => (
             <div key={m.name} className="py-4 flex flex-col gap-1.5">
-              <div className="flex items-center gap-3">
-                <span className={`${mono.className} text-[13px] text-[#7FD6AE] bg-[#4FB286]/10 border border-[#4FB286]/25 rounded-md px-2 py-0.5`}>
+              <div className="flex items-center gap-3 flex-wrap">
+                <span
+                  className={`${mono.className} text-[13px] text-[#7FD6AE] bg-[#4FB286]/10 border border-[#4FB286]/25 rounded-md px-2 py-0.5`}
+                >
                   {m.name}
                 </span>
                 <span className="text-base font-semibold">{m.label}</span>
@@ -543,69 +541,92 @@ function JudgesRubrics({ go }: { go: (s: Section) => void }) {
             </div>
           ))}
         </div>
-      </div>
-
-      <div className="flex flex-col gap-4">
-        <h2 className="m-0 text-[22px] font-semibold tracking-tight">Example rubric (SDK)</h2>
-        <CodeBlock>
-          <div>rubric = ultros.rubrics.create(</div>
-          <div className="pl-6">
-            name=<span className="text-[#7FD6AE]">&quot;helpfulness-v2&quot;</span>,
-          </div>
-          <div className="pl-6">pass_threshold=<span className="text-[#9C7DD4]">7.5</span>,</div>
-          <div className="pl-6">criteria=[</div>
-          <div className="pl-12">
-            {"{"}
-            <span className="text-[#7FD6AE]">&quot;name&quot;</span>:{" "}
-            <span className="text-[#7FD6AE]">&quot;correctness&quot;</span>,{" "}
-            <span className="text-[#7FD6AE]">&quot;weight&quot;</span>:{" "}
-            <span className="text-[#9C7DD4]">0.5</span>,{" "}
-            <span className="text-[#7FD6AE]">&quot;type&quot;</span>:{" "}
-            <span className="text-[#7FD6AE]">&quot;ai_judge&quot;</span>
-            {"}"},
-          </div>
-          <div className="pl-12">
-            {"{"}
-            <span className="text-[#7FD6AE]">&quot;name&quot;</span>:{" "}
-            <span className="text-[#7FD6AE]">&quot;conciseness&quot;</span>,{" "}
-            <span className="text-[#7FD6AE]">&quot;weight&quot;</span>:{" "}
-            <span className="text-[#9C7DD4]">0.3</span>,{" "}
-            <span className="text-[#7FD6AE]">&quot;type&quot;</span>:{" "}
-            <span className="text-[#7FD6AE]">&quot;ai_judge&quot;</span>
-            {"}"},
-          </div>
-          <div className="pl-12">
-            {"{"}
-            <span className="text-[#7FD6AE]">&quot;name&quot;</span>:{" "}
-            <span className="text-[#7FD6AE]">&quot;has_disclaimer&quot;</span>,{" "}
-            <span className="text-[#7FD6AE]">&quot;weight&quot;</span>:{" "}
-            <span className="text-[#9C7DD4]">0.2</span>,{" "}
-            <span className="text-[#7FD6AE]">&quot;type&quot;</span>:{" "}
-            <span className="text-[#7FD6AE]">&quot;contains&quot;</span>,{" "}
-            <span className="text-[#7FD6AE]">&quot;value&quot;</span>:{" "}
-            <span className="text-[#7FD6AE]">&quot;consult a professional&quot;</span>
-            {"}"},
-          </div>
-          <div className="pl-6">],</div>
-          <div>)</div>
-        </CodeBlock>
         <Callout>
-          Weights must sum to 1.0. The final score is the weighted average across all criteria,
-          scaled to 0–10. A run passes if the score meets or exceeds{" "}
-          <span className={`${mono.className} text-[#7FD6AE]`}>pass_threshold</span>.
+          Deterministic criteria compare against a literal you put in the criterion, not against the
+          dataset&apos;s{" "}
+          <span className={`${mono.className} text-[#7FD6AE]`}>expectedOutput</span> column. A rubric
+          is reusable across datasets, so it carries its own expectations.
         </Callout>
       </div>
 
-      <div className="grid grid-cols-2 gap-3.5 mt-2">
+      <div className="flex flex-col gap-4">
+        <h2 className="m-0 text-[22px] font-semibold tracking-tight">Example rubric</h2>
+        <p className="text-base leading-[1.65] text-[#9FAFA4]">
+          Built in the rubric builder, or posted to{" "}
+          <span className={`${mono.className} text-[#7FD6AE]`}>/api/rubrics</span> as this body.
+          Every criterion has a name, a type, a weight, and a{" "}
+          <span className={`${mono.className} text-[#7FD6AE]`}>config</span> object whose shape
+          depends on the type.
+        </p>
+        <CodeBlock>
+          <div>{"{"}</div>
+          <div className="pl-4">
+            <span className="text-[#7FD6AE]">&quot;name&quot;</span>:{" "}
+            <span className="text-[#7FD6AE]">&quot;helpfulness&quot;</span>,
+          </div>
+          <div className="pl-4">
+            <span className="text-[#7FD6AE]">&quot;passThreshold&quot;</span>:{" "}
+            <span className="text-[#9C7DD4]">0.75</span>,
+          </div>
+          <div className="pl-4">
+            <span className="text-[#7FD6AE]">&quot;criteria&quot;</span>: [
+          </div>
+          <div className="pl-8">
+            {"{ "}
+            <span className="text-[#7FD6AE]">&quot;name&quot;</span>:{" "}
+            <span className="text-[#7FD6AE]">&quot;correctness&quot;</span>,{" "}
+            <span className="text-[#7FD6AE]">&quot;type&quot;</span>:{" "}
+            <span className="text-[#7FD6AE]">&quot;ai_judge&quot;</span>,{" "}
+            <span className="text-[#7FD6AE]">&quot;weight&quot;</span>:{" "}
+            <span className="text-[#9C7DD4]">5</span>,
+          </div>
+          <div className="pl-10">
+            <span className="text-[#7FD6AE]">&quot;config&quot;</span>: {"{ "}
+            <span className="text-[#7FD6AE]">&quot;instructions&quot;</span>:{" "}
+            <span className="text-[#7FD6AE]">&quot;Is the ticket category right?&quot;</span>
+            {" }"} {"}"},
+          </div>
+          <div className="pl-8">
+            {"{ "}
+            <span className="text-[#7FD6AE]">&quot;name&quot;</span>:{" "}
+            <span className="text-[#7FD6AE]">&quot;has_disclaimer&quot;</span>,{" "}
+            <span className="text-[#7FD6AE]">&quot;type&quot;</span>:{" "}
+            <span className="text-[#7FD6AE]">&quot;contains&quot;</span>,{" "}
+            <span className="text-[#7FD6AE]">&quot;weight&quot;</span>:{" "}
+            <span className="text-[#9C7DD4]">2</span>,
+          </div>
+          <div className="pl-10">
+            <span className="text-[#7FD6AE]">&quot;config&quot;</span>: {"{ "}
+            <span className="text-[#7FD6AE]">&quot;substring&quot;</span>:{" "}
+            <span className="text-[#7FD6AE]">&quot;consult a professional&quot;</span>
+            {" }"} {"}"}
+          </div>
+          <div className="pl-4">]</div>
+          <div>{"}"}</div>
+        </CodeBlock>
+      </div>
+
+      <div className="flex flex-col gap-4">
+        <h2 className="m-0 text-[22px] font-semibold tracking-tight">How judging runs</h2>
+        <p className="text-base leading-[1.65] text-[#9FAFA4]">
+          Deterministic criteria are scored inline. AI judge criteria are queued as a background job
+          and never block a request, so a batch of 500 rows does not hold a connection open. All the
+          AI judge criteria in one rubric are scored in a single judge call, which keeps them
+          internally consistent and cheaper than one call each. The judge call is billed like any
+          other run and shows up in your usage.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 mt-2">
         <NavCard
-          title="Calibration →"
-          desc="Verify your AI judge scores what you think it scores."
+          title="Calibration"
+          desc="Check your judge scores what you think it scores."
           onClick={() => go("calibration")}
         />
         <NavCard
-          title="Regression gates →"
-          desc="Block deploys when rubric scores drop."
-          onClick={() => go("regression-gates")}
+          title="Regression testing"
+          desc="Detect when a new version scores worse."
+          onClick={() => go("regression")}
         />
       </div>
     </div>
@@ -615,19 +636,16 @@ function JudgesRubrics({ go }: { go: (s: Section) => void }) {
 function Calibration({ go }: { go: (s: Section) => void }) {
   return (
     <div className="flex flex-col gap-9">
-      <div className="flex flex-col gap-3.5">
-        <span className={`${mono.className} text-[13px] tracking-[0.1em] uppercase text-[#7FD6AE]`}>
-          Evaluation
-        </span>
-        <h1 className={`${serif.className} m-0 text-[44px] font-medium tracking-tight leading-[1.12]`}>
-          Calibration
-        </h1>
-        <p className="m-0 text-[17px] leading-[1.65] text-[#9FAFA4]">
-          An AI judge is only useful if it scores consistently. Calibration is the process of
-          verifying that your rubric measures what you intend before you rely on it for regression
-          detection.
-        </p>
-      </div>
+      <PageHeader eyebrow="Evaluation" title="Calibration">
+        An AI judge is only useful if it scores consistently. Calibration is the practice of
+        checking that a rubric measures what you intend before you rely on it to gate a change.
+      </PageHeader>
+
+      <NotBuilt>
+        Calibration is a method you carry out with the features described below, not a button. There
+        is no calibration command and no automatic correlation report. Everything on this page is
+        something you do by running the app and reading the numbers it already produces.
+      </NotBuilt>
 
       <div className="flex flex-col gap-4">
         <h2 className="m-0 text-[22px] font-semibold tracking-tight">What to check</h2>
@@ -635,19 +653,19 @@ function Calibration({ go }: { go: (s: Section) => void }) {
           {[
             {
               title: "Score distribution",
-              desc: "A well-calibrated rubric uses the full 0–10 range across a diverse dataset. If every row scores 7.8–8.2, your criteria are too coarse to detect regressions.",
+              desc: "Run your rubric over a varied dataset and look at the per-row scores in the drill-down. A rubric whose rows all land between 0.78 and 0.82 is too coarse to detect a regression, because a real drop will not clear the threshold.",
             },
             {
-              title: "Agreement with human labels",
-              desc: "Score 20–30 rows yourself, then compare. If the AI judge's ranking matches your intuition on ~80% of pairs, it's reliable enough for gating.",
+              title: "Agreement with your own judgement",
+              desc: "Score 20 to 30 rows yourself, then export the run to CSV and compare. What matters is whether the judge ranks the same rows better and worse than you do, not whether it picks the same number.",
             },
             {
               title: "Stability across re-runs",
-              desc: "Run the same dataset twice with the same rubric. Variance in AI-judge scores should be under ±0.3 on most rows. High variance means the criterion prompt is ambiguous.",
+              desc: "Launch the same dataset, prompt version, and rubric twice. The aggregate view reports sample variance across rows, and a per-row score that moves noticeably between identical runs usually means the criterion instructions are ambiguous.",
             },
             {
-              title: "Sensitivity to known changes",
-              desc: "Create a deliberately worse prompt version (e.g., remove key instructions). The rubric should score it measurably lower. If it doesn't, the criterion is not capturing that dimension.",
+              title: "Sensitivity to a known change",
+              desc: "Save a deliberately worse version, for example with a key instruction removed, and run it against the same rubric. If the score does not drop, the rubric is not measuring the dimension you changed, and it will not catch a real regression either.",
             },
           ].map((item) => (
             <div key={item.title} className="py-4 flex flex-col gap-1">
@@ -659,151 +677,106 @@ function Calibration({ go }: { go: (s: Section) => void }) {
       </div>
 
       <div className="flex flex-col gap-4">
-        <h2 className="m-0 text-[22px] font-semibold tracking-tight">Calibration run (SDK)</h2>
-        <CodeBlock>
-          <div className="text-[#7E8C82]"># Score a small gold set with your rubric</div>
-          <div>cal = ultros.calibrate(</div>
-          <div className="pl-6">
-            rubric=<span className="text-[#7FD6AE]">&quot;helpfulness-v2&quot;</span>,
-          </div>
-          <div className="pl-6">
-            gold_set=<span className="text-[#7FD6AE]">&quot;gold-50.jsonl&quot;</span>,
-            <span className="text-[#7E8C82]"> # rows with human_score column</span>
-          </div>
-          <div>)</div>
-          <div>&nbsp;</div>
-          <div>
-            <span className="text-[#9C7DD4]">print</span>(cal.correlation){" "}
-            <span className="text-[#7E8C82]"># Spearman ρ vs human labels</span>
-          </div>
-          <div>
-            <span className="text-[#9C7DD4]">print</span>(cal.variance){" "}
-            <span className="text-[#7E8C82]"># avg score variance across 3 reruns</span>
-          </div>
-        </CodeBlock>
+        <h2 className="m-0 text-[22px] font-semibold tracking-tight">Why the judge model matters</h2>
+        <p className="text-base leading-[1.65] text-[#9FAFA4]">
+          The judge is a single model chosen by the deployment, not per rubric. A smaller or local
+          judge is cheaper and noisier, which widens the variance you will see across re-runs. If
+          your scores are unstable, the judge model is the first thing to suspect, before the
+          criterion wording.
+        </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3.5 mt-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 mt-2">
         <NavCard
-          title="Judges & rubrics →"
+          title="Judges & rubrics"
           desc="Build and refine your scoring criteria."
           onClick={() => go("judges-rubrics")}
         />
         <NavCard
-          title="Regression gates →"
-          desc="Put your calibrated rubric to work in CI."
-          onClick={() => go("regression-gates")}
+          title="Regression testing"
+          desc="Put a calibrated rubric to work."
+          onClick={() => go("regression")}
         />
       </div>
     </div>
   )
 }
 
-function RegressionGates({ go }: { go: (s: Section) => void }) {
+function Regression({ go }: { go: (s: Section) => void }) {
   return (
     <div className="flex flex-col gap-9">
-      <div className="flex flex-col gap-3.5">
-        <span className={`${mono.className} text-[13px] tracking-[0.1em] uppercase text-[#7FD6AE]`}>
-          Evaluation
-        </span>
-        <h1 className={`${serif.className} m-0 text-[44px] font-medium tracking-tight leading-[1.12]`}>
-          Regression gates
-        </h1>
-        <p className="m-0 text-[17px] leading-[1.65] text-[#9FAFA4]">
-          A regression gate compares a new prompt version against a pinned baseline and fails the
-          build if the score drops past a threshold. Ship prompt changes with confidence.
-        </p>
-      </div>
+      <PageHeader eyebrow="Evaluation" title="Regression testing">
+        A regression run compares a new prompt version against a pinned baseline over the same
+        dataset, with the same rubric and the same model, and tells you both whether the score
+        dropped and exactly which rows caused it.
+      </PageHeader>
 
       <div className="flex flex-col gap-4">
         <h2 className="m-0 text-[22px] font-semibold tracking-tight">1. Pin a baseline</h2>
         <p className="text-base leading-[1.65] text-[#9FAFA4]">
-          A baseline is a (prompt version, dataset, rubric) triple that defines expected
-          performance. Set it from the dashboard or via the SDK after a run you&apos;re satisfied with.
+          A baseline is a prompt version, a dataset, and a rubric pinned together, along with the
+          score that combination achieved. Set it from the prompt&apos;s regression page after a run
+          you are happy with. Pinning a new baseline replaces the old one for that prompt.
         </p>
-        <CodeBlock>
-          <div>
-            ultros.baseline.set(
-          </div>
-          <div className="pl-6">
-            prompt=<span className="text-[#7FD6AE]">&quot;support-triage@v13&quot;</span>,
-          </div>
-          <div className="pl-6">
-            dataset=<span className="text-[#7FD6AE]">&quot;tickets-1k&quot;</span>,
-          </div>
-          <div className="pl-6">
-            rubric=<span className="text-[#7FD6AE]">&quot;helpfulness-v2&quot;</span>,
-          </div>
-          <div>)</div>
-        </CodeBlock>
       </div>
 
       <div className="flex flex-col gap-4">
-        <h2 className="m-0 text-[22px] font-semibold tracking-tight">2. Gate in CI</h2>
+        <h2 className="m-0 text-[22px] font-semibold tracking-tight">2. Run a new version against it</h2>
         <p className="text-base leading-[1.65] text-[#9FAFA4]">
-          Call <span className={`${mono.className} text-[#7FD6AE]`}>ultros.regression</span> in
-          your CI pipeline. It exits non-zero if the new version scores below the threshold.
+          A regression run re-runs the baseline&apos;s dataset with the new version, holding the
+          model and sampling settings from the baseline run so the only thing that changed is the
+          prompt. It reports the score delta and a regressed verdict.
         </p>
-        <CodeBlock>
-          <div className="text-[#7E8C82]"># GitHub Actions step</div>
-          <div>- <span className="text-[#7FD6AE]">name</span>: Check prompt regression</div>
-          <div className="pl-4">
-            <span className="text-[#7FD6AE]">run</span>: |
-          </div>
-          <div className="pl-8">
-            ultros regression check \
-          </div>
-          <div className="pl-10">
-            --prompt support-triage@latest \
-          </div>
-          <div className="pl-10">
-            --baseline support-triage@v13 \
-          </div>
-          <div className="pl-10">
-            --min-delta <span className="text-[#9C7DD4]">-0.5</span>
-            <span className="text-[#7E8C82]">  # fail if score drops &gt; 0.5</span>
-          </div>
-        </CodeBlock>
+        <div className="bg-[#121815] border border-[#243029] rounded-[10px] overflow-hidden">
+          {[
+            ["Threshold range", "0.01 to 0.5"],
+            ["Default threshold", "0.05"],
+            ["Regressed when", "score delta < negative threshold"],
+            ["A drop of exactly the threshold", "not a regression"],
+          ].map(([what, value]) => (
+            <div
+              key={what}
+              className="grid grid-cols-[1fr_auto] gap-4 px-5 py-3 border-b border-[#1B231F] last:border-b-0 text-[14.5px]"
+            >
+              <span className="text-[#9FAFA4]">{what}</span>
+              <span className={`${mono.className} text-[#7FD6AE] text-right`}>{value}</span>
+            </div>
+          ))}
+        </div>
         <Callout>
-          The regression run stores the full per-row breakdown in your dashboard. You can drill
-          into exactly which rows regressed and inspect the outputs side-by-side.
+          A row counts as regressed if it flipped from passing to failing, or if its own score
+          dropped by more than the threshold. That row list is stored with the run, so you can open
+          exactly the rows that got worse instead of rereading all 500.
         </Callout>
       </div>
 
       <div className="flex flex-col gap-4">
-        <h2 className="m-0 text-[22px] font-semibold tracking-tight">SDK usage</h2>
-        <CodeBlock>
-          <div>result = ultros.regression.check(</div>
-          <div className="pl-6">
-            new_version=<span className="text-[#7FD6AE]">&quot;support-triage@latest&quot;</span>,
-          </div>
-          <div className="pl-6">
-            min_delta=<span className="text-[#9C7DD4]">-0.5</span>,
-          </div>
-          <div>)</div>
-          <div>&nbsp;</div>
-          <div>
-            <span className="text-[#9C7DD4]">if</span> result.regressed:
-          </div>
-          <div className="pl-6">
-            <span className="text-[#9C7DD4]">print</span>(
-            <span className="text-[#7FD6AE]">f&quot;Score dropped {"{result.delta:.2f}"} on {"{len(result.regressed_rows)}"} rows&quot;</span>
-            )
-          </div>
-          <div className="pl-6">
-            raise SystemExit(<span className="text-[#9C7DD4]">1</span>)
-          </div>
-        </CodeBlock>
+        <h2 className="m-0 text-[22px] font-semibold tracking-tight">3. Watch it over time</h2>
+        <p className="text-base leading-[1.65] text-[#9FAFA4]">
+          Every regression run is kept, and the prompt&apos;s regression page charts score against
+          time so a slow drift across several versions is visible even when no single run tripped
+          the threshold.
+        </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3.5 mt-2">
+      <NotBuilt>
+        There is no CI integration. Ultros has no command-line tool and no API token, so a build
+        pipeline cannot run a regression check or fail a build on the result. Regression runs are
+        launched from the app by a signed-in user. See{" "}
+        <button onClick={() => go("roadmap")} className="text-[#7FD6AE] underline underline-offset-2">
+          Roadmap
+        </button>
+        .
+      </NotBuilt>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 mt-2">
         <NavCard
-          title="CLI →"
-          desc="Full reference for the regression subcommand."
-          onClick={() => go("cli")}
+          title="Calibration"
+          desc="Make sure the rubric can detect a drop."
+          onClick={() => go("calibration")}
         />
         <NavCard
-          title="Core concepts →"
+          title="Core concepts"
           desc="Baselines and experiments explained."
           onClick={() => go("core-concepts")}
         />
@@ -812,202 +785,116 @@ function RegressionGates({ go }: { go: (s: Section) => void }) {
   )
 }
 
-function PythonSDK({ go }: { go: (s: Section) => void }) {
-  const classes = [
-    {
-      name: "ultros.prompts",
-      methods: [
-        { sig: "push(name, file=None, text=None, description=None)", desc: "Create or version a prompt. Returns the new PromptVersion." },
-        { sig: "list()", desc: "List all prompts in the workspace." },
-        { sig: "get(name, version='latest')", desc: "Fetch a specific prompt version." },
-      ],
-    },
-    {
-      name: "ultros.datasets",
-      methods: [
-        { sig: "push(name, file, description=None)", desc: "Upload a CSV or JSONL dataset." },
-        { sig: "list()", desc: "List all datasets." },
-        { sig: "get(name)", desc: "Fetch dataset metadata and row count." },
-      ],
-    },
-    {
-      name: "ultros.rubrics",
-      methods: [
-        { sig: "create(name, criteria, pass_threshold=7.0)", desc: "Create a rubric with a list of criterion dicts." },
-        { sig: "list()", desc: "List all rubrics." },
-        { sig: "get(name)", desc: "Fetch rubric definition." },
-      ],
-    },
-    {
-      name: "ultros",
-      methods: [
-        { sig: "evaluate(prompt, dataset, models, judge, **kwargs)", desc: "Run a batch evaluation. Returns a Run object." },
-        { sig: "regression.check(new_version, min_delta=-0.5)", desc: "Compare against the pinned baseline. Returns RegressionResult." },
-        { sig: "baseline.set(prompt, dataset, rubric)", desc: "Pin a baseline for regression gating." },
-        { sig: "calibrate(rubric, gold_set)", desc: "Measure judge consistency against human labels." },
-      ],
-    },
-  ]
+function formatContext(tokens: number): string {
+  if (tokens >= 1_000_000) return `${tokens / 1_000_000}M`
+  return `${Math.round(tokens / 1000)}K`
+}
 
+const PROVIDER_LABELS: Record<string, string> = {
+  anthropic: "Anthropic",
+  openai: "OpenAI",
+  google: "Google",
+  openrouter: "OpenRouter",
+  ollama: "Ollama (local)",
+}
+
+function Models({ go }: { go: (s: Section) => void }) {
   return (
     <div className="flex flex-col gap-9">
-      <div className="flex flex-col gap-3.5">
-        <span className={`${mono.className} text-[13px] tracking-[0.1em] uppercase text-[#7FD6AE]`}>
-          Reference
-        </span>
-        <h1 className={`${serif.className} m-0 text-[44px] font-medium tracking-tight leading-[1.12]`}>
-          Python SDK
-        </h1>
-        <p className="m-0 text-[17px] leading-[1.65] text-[#9FAFA4]">
-          Python 3.9+. Install with{" "}
-          <span className={`${mono.className} text-[#7FD6AE]`}>pip install ultros</span>. All
-          methods are synchronous by default; async variants are available with the{" "}
-          <span className={`${mono.className} text-[#7FD6AE]`}>ultros.aio</span> namespace.
+      <PageHeader eyebrow="Reference" title="Models & pricing">
+        The full catalog Ultros knows how to price and call. This table is rendered from the same
+        constant the run path and the cost calculation read, so it cannot drift from what the app
+        actually charges you.
+      </PageHeader>
+
+      <Callout>
+        Your model picker shows a subset of this list: only the models whose provider is configured
+        on the deployment you are using. Prices are the provider&apos;s published rates per million
+        tokens, verified 2026-09-04.
+      </Callout>
+
+      <div className="flex flex-col gap-4">
+        <h2 className="m-0 text-[22px] font-semibold tracking-tight">Catalog</h2>
+        <div className="overflow-x-auto -mx-1 px-1">
+          <table className="w-full min-w-[560px] border-collapse text-[14px]">
+            <thead>
+              <tr className="text-left text-xs font-semibold tracking-[0.08em] uppercase text-[#7E8C82]">
+                <th className="py-3 pr-4 font-semibold">Model</th>
+                <th className="py-3 pr-4 font-semibold">Context</th>
+                <th className="py-3 pr-4 font-semibold text-right">In $/M</th>
+                <th className="py-3 pr-4 font-semibold text-right">Out $/M</th>
+                <th className="py-3 font-semibold">Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              {MODEL_CATALOG.map((m) => (
+                <tr key={m.id} className="border-t border-[#1B231F] align-top">
+                  <td className="py-3 pr-4">
+                    <span className="block text-[#ECF1ED] font-medium">{m.displayName}</span>
+                    <span className={`${mono.className} block text-[12px] text-[#7E8C82]`}>{m.id}</span>
+                    <span className="block text-[12px] text-[#7E8C82]">
+                      {PROVIDER_LABELS[m.provider] ?? m.provider}
+                    </span>
+                  </td>
+                  <td className={`${mono.className} py-3 pr-4 text-[#9FAFA4] whitespace-nowrap`}>
+                    {formatContext(m.contextWindow)}
+                  </td>
+                  <td className={`${mono.className} py-3 pr-4 text-[#9FAFA4] text-right whitespace-nowrap`}>
+                    {m.inputPerMillion.toFixed(2)}
+                  </td>
+                  <td className={`${mono.className} py-3 pr-4 text-[#9FAFA4] text-right whitespace-nowrap`}>
+                    {m.outputPerMillion.toFixed(2)}
+                  </td>
+                  <td className="py-3 text-[13px] text-[#7E8C82]">
+                    {[
+                      m.supportsSampling ? null : "no temperature",
+                      m.thinksByDefault ? "thinks by default" : null,
+                    ]
+                      .filter(Boolean)
+                      .join(", ") || "standard"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-4">
+        <h2 className="m-0 text-[22px] font-semibold tracking-tight">Models without a temperature</h2>
+        <p className="text-base leading-[1.65] text-[#9FAFA4]">
+          Anthropic removed the sampling parameters from Claude Opus 4.7 and the Claude 5 family.
+          Sending a temperature to one of those models is rejected outright, so Ultros omits it from
+          the request and greys out the control rather than offering a setting that would have no
+          effect.
         </p>
       </div>
 
       <div className="flex flex-col gap-4">
-        <h2 className="m-0 text-[22px] font-semibold tracking-tight">Authentication</h2>
-        <CodeBlock>
-          <div className="text-[#7E8C82]"># Authenticate via browser (one-time)</div>
-          <div>
-            <span className="text-[#7E8C82]">$ </span>ultros auth login
-          </div>
-          <div>&nbsp;</div>
-          <div className="text-[#7E8C82]"># Or set token directly</div>
-          <div>
-            <span className="text-[#9C7DD4]">import</span> ultros
-          </div>
-          <div>
-            ultros.api_key = <span className="text-[#7FD6AE]">&quot;ultr_…&quot;</span>
-            <span className="text-[#7E8C82]">  # or ULTROS_API_KEY env var</span>
-          </div>
-        </CodeBlock>
-      </div>
-
-      {classes.map((cls) => (
-        <div key={cls.name} className="flex flex-col gap-3">
-          <h2 className={`${mono.className} m-0 text-lg font-medium text-[#7FD6AE]`}>{cls.name}</h2>
-          <div className="flex flex-col gap-0 divide-y divide-[#1B231F]">
-            {cls.methods.map((m) => (
-              <div key={m.sig} className="py-3.5 flex flex-col gap-1">
-                <span className={`${mono.className} text-[13.5px] text-[#ECF1ED]`}>{m.sig}</span>
-                <p className="m-0 text-[14px] leading-[1.6] text-[#9FAFA4]">{m.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      ))}
-
-      <div className="grid grid-cols-2 gap-3.5 mt-2">
-        <NavCard title="CLI →" desc="Command-line interface reference." onClick={() => go("cli")} />
-        <NavCard
-          title="REST API →"
-          desc="HTTP API for non-Python integrations."
-          onClick={() => go("rest-api")}
-        />
-      </div>
-    </div>
-  )
-}
-
-function CLI({ go }: { go: (s: Section) => void }) {
-  const commands = [
-    {
-      group: "Authentication",
-      cmds: [
-        { cmd: "ultros auth login", desc: "Authenticate via browser. Stores a token in ~/.ultros." },
-        { cmd: "ultros auth logout", desc: "Remove stored credentials." },
-        { cmd: "ultros auth status", desc: "Show the currently authenticated user." },
-      ],
-    },
-    {
-      group: "Keys",
-      cmds: [
-        { cmd: "ultros keys add <provider> <key>", desc: "Add a model provider API key." },
-        { cmd: "ultros keys list", desc: "List configured providers." },
-        { cmd: "ultros keys remove <provider>", desc: "Remove a provider key." },
-      ],
-    },
-    {
-      group: "Prompts",
-      cmds: [
-        { cmd: "ultros prompts push <name> <file>", desc: "Create or version a prompt from a file." },
-        { cmd: "ultros prompts list", desc: "List all prompts." },
-        { cmd: "ultros prompts diff <name> v12 v13", desc: "Show a text diff between two versions." },
-      ],
-    },
-    {
-      group: "Datasets",
-      cmds: [
-        { cmd: "ultros datasets push <name> <file>", desc: "Upload a CSV or JSONL dataset." },
-        { cmd: "ultros datasets list", desc: "List all datasets." },
-      ],
-    },
-    {
-      group: "Evaluation",
-      cmds: [
-        { cmd: "ultros eval run --prompt <p> --dataset <d> --rubric <r>", desc: "Launch a batch evaluation and stream progress." },
-        { cmd: "ultros eval status <run-id>", desc: "Check status of an in-progress run." },
-        { cmd: "ultros eval results <run-id>", desc: "Print aggregate results for a completed run." },
-      ],
-    },
-    {
-      group: "Regression",
-      cmds: [
-        { cmd: "ultros regression check --prompt <p> --baseline <b> --min-delta <n>", desc: "Run against the baseline; exit 1 if regressed." },
-        { cmd: "ultros regression history --prompt <p>", desc: "Print score-over-time for all regression runs." },
-        { cmd: "ultros baseline set --prompt <p> --dataset <d> --rubric <r>", desc: "Pin the current latest as the baseline." },
-      ],
-    },
-  ]
-
-  return (
-    <div className="flex flex-col gap-9">
-      <div className="flex flex-col gap-3.5">
-        <span className={`${mono.className} text-[13px] tracking-[0.1em] uppercase text-[#7FD6AE]`}>
-          Reference
-        </span>
-        <h1 className={`${serif.className} m-0 text-[44px] font-medium tracking-tight leading-[1.12]`}>
-          CLI
-        </h1>
-        <p className="m-0 text-[17px] leading-[1.65] text-[#9FAFA4]">
-          The Ultros CLI is installed as part of the Python SDK. All commands accept{" "}
-          <span className={`${mono.className} text-[#7FD6AE]`}>--json</span> for
-          machine-readable output and{" "}
-          <span className={`${mono.className} text-[#7FD6AE]`}>--help</span> for inline usage.
+        <h2 className="m-0 text-[22px] font-semibold tracking-tight">Models that think</h2>
+        <p className="text-base leading-[1.65] text-[#9FAFA4]">
+          Some models reason before answering, and those reasoning tokens are charged against the
+          same output ceiling as the answer. Left alone, a 1024 token limit on a hard question is
+          spent thinking and the answer stops mid-sentence. Ultros adds a fixed allowance of 4096
+          tokens on top of the limit you set for these models, so you get the answer length you
+          asked for. It is an allowance, not a guarantee: a long enough chain of reasoning can still
+          reach the ceiling, and the run will show a{" "}
+          <span className={`${mono.className} text-[#7FD6AE]`}>max_tokens</span> finish reason when
+          it does.
         </p>
+        <Callout>
+          Reasoning tokens are billed as output tokens, so a thinking model costs more per run than
+          its output length suggests. The cost recorded against the run is the real one.
+        </Callout>
       </div>
 
-      {commands.map((group) => (
-        <div key={group.group} className="flex flex-col gap-3">
-          <h2 className="m-0 text-[18px] font-semibold tracking-tight text-[#ECF1ED]">
-            {group.group}
-          </h2>
-          <div className="flex flex-col gap-0 divide-y divide-[#1B231F]">
-            {group.cmds.map((c) => (
-              <div key={c.cmd} className="py-3.5 flex flex-col gap-1">
-                <span className={`${mono.className} text-[13px] text-[#ECF1ED] bg-[#121815] border border-[#243029] rounded-md px-3 py-1.5 self-start`}>
-                  {c.cmd}
-                </span>
-                <p className="m-0 text-[14px] leading-[1.6] text-[#9FAFA4]">{c.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      ))}
-
-      <div className="grid grid-cols-2 gap-3.5 mt-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 mt-2">
         <NavCard
-          title="Python SDK →"
-          desc="Programmatic access from scripts and notebooks."
-          onClick={() => go("python-sdk")}
-        />
-        <NavCard
-          title="REST API →"
-          desc="HTTP endpoints for any language."
+          title="REST API"
+          desc="The endpoints behind every page."
           onClick={() => go("rest-api")}
         />
+        <NavCard title="Roadmap" desc="What is described but not built." onClick={() => go("roadmap")} />
       </div>
     </div>
   )
@@ -1015,25 +902,49 @@ function CLI({ go }: { go: (s: Section) => void }) {
 
 function RestAPI({ go }: { go: (s: Section) => void }) {
   const endpoints = [
-    { method: "GET", path: "/api/prompts", desc: "List all prompts for the authenticated user." },
-    { method: "POST", path: "/api/prompts", desc: "Create a new prompt. Body: { title, description }." },
-    { method: "GET", path: "/api/prompts/:id/versions", desc: "List all versions of a prompt." },
-    { method: "POST", path: "/api/prompts/:id/versions", desc: "Save a new version. Body: { systemPrompt, userPrompt, variables }." },
-    { method: "POST", path: "/api/run", desc: "Execute a prompt version. Streams the response via SSE." },
-    { method: "GET", path: "/api/datasets", desc: "List all datasets." },
-    { method: "POST", path: "/api/datasets", desc: "Upload a dataset. Multipart form: file + metadata." },
-    { method: "GET", path: "/api/datasets/:id", desc: "Fetch dataset metadata and rows." },
-    { method: "POST", path: "/api/datasets/:id/run", desc: "Launch a batch evaluation run." },
-    { method: "GET", path: "/api/rubrics", desc: "List all rubrics." },
+    { method: "GET", path: "/api/models", desc: "Models this deployment can reach." },
+    { method: "GET", path: "/api/prompts", desc: "List your prompts." },
+    { method: "POST", path: "/api/prompts", desc: "Create a prompt. Body: { title, description, tags }." },
+    { method: "GET", path: "/api/prompts/:id", desc: "One prompt with its versions." },
+    { method: "PATCH", path: "/api/prompts/:id", desc: "Update prompt metadata." },
+    { method: "DELETE", path: "/api/prompts/:id", desc: "Soft delete. Runs and evals survive for usage accounting." },
+    { method: "GET", path: "/api/prompts/:id/versions", desc: "List versions of a prompt." },
+    { method: "POST", path: "/api/prompts/:id/versions", desc: "Save a version. Body: { systemPrompt, userPrompt, variables, label }." },
+    { method: "POST", path: "/api/run", desc: "Run a version. Streams plain text back as it generates." },
+    { method: "POST", path: "/api/compare", desc: "Run one version against up to 3 models at once." },
+    { method: "GET", path: "/api/prompts/:id/runs", desc: "Run history for a prompt." },
+    { method: "GET", path: "/api/datasets", desc: "List your datasets." },
+    { method: "POST", path: "/api/datasets", desc: "Create a dataset. JSON body with exactly one of csvText or rows." },
+    { method: "GET", path: "/api/datasets/:id", desc: "Dataset metadata and rows." },
+    { method: "DELETE", path: "/api/datasets/:id", desc: "Delete a dataset. Blocked while runs reference it." },
+    { method: "POST", path: "/api/datasets/:id/run-estimate", desc: "Cost estimate for a batch run, before you commit to it." },
+    { method: "POST", path: "/api/datasets/:id/run", desc: "Launch a batch run. Requires confirm: true." },
+    { method: "GET", path: "/api/dataset-runs/:id", desc: "Batch run status and aggregates." },
+    { method: "GET", path: "/api/dataset-runs/:id/rows", desc: "Per-row results." },
+    { method: "GET", path: "/api/dataset-runs/:id/export", desc: "Per-row results as CSV." },
+    { method: "GET", path: "/api/datasets/:id/runs", desc: "Batch runs for one dataset." },
+    { method: "GET", path: "/api/rubrics", desc: "List your rubrics." },
     { method: "POST", path: "/api/rubrics", desc: "Create a rubric. Body: { name, criteria, passThreshold }." },
-    { method: "POST", path: "/api/experiments", desc: "Create and launch an experiment." },
-    { method: "GET", path: "/api/experiments/:id", desc: "Get experiment status and aggregate results." },
-    { method: "GET", path: "/api/experiments/:id/results", desc: "Per-variant/model breakdown." },
+    { method: "GET", path: "/api/rubrics/:id", desc: "One rubric with its criteria." },
+    { method: "PATCH", path: "/api/rubrics/:id", desc: "Update a rubric." },
+    { method: "DELETE", path: "/api/rubrics/:id", desc: "Delete a rubric." },
+    { method: "POST", path: "/api/runs/:runId/eval", desc: "Score one run against a rubric. AI judge criteria are queued." },
+    { method: "GET", path: "/api/evals/:id", desc: "One evaluation with its per-criterion scores." },
+    { method: "GET", path: "/api/prompts/:id/evals", desc: "Eval history for a prompt." },
+    { method: "GET", path: "/api/prompts/:id/leaderboard", desc: "Scores by version and model." },
+    { method: "POST", path: "/api/experiments", desc: "Create and launch an experiment. Requires confirm: true." },
+    { method: "GET", path: "/api/experiments/:id", desc: "Experiment status and aggregates." },
+    { method: "GET", path: "/api/experiments/:id/results", desc: "Per-variant and per-model breakdown." },
+    { method: "GET", path: "/api/experiments/:id/rows", desc: "Per-row drill-down for one cell." },
     { method: "POST", path: "/api/prompts/:id/baseline", desc: "Pin a baseline. Body: { promptVersionId, datasetId, rubricId }." },
-    { method: "POST", path: "/api/prompts/:id/regression", desc: "Run regression check against the pinned baseline." },
-    { method: "GET", path: "/api/prompts/:id/regression/history", desc: "Score-over-time for all regression runs." },
-    { method: "GET", path: "/api/usage", desc: "Usage stats for the authenticated user." },
-    { method: "POST", path: "/api/share", desc: "Create a read-only public share link." },
+    { method: "POST", path: "/api/prompts/:id/regression", desc: "Run against the pinned baseline." },
+    { method: "GET", path: "/api/prompts/:id/regression/history", desc: "Score over time for all regression runs." },
+    { method: "GET", path: "/api/usage", desc: "Your usage and cost totals." },
+    { method: "GET", path: "/api/usage/export", desc: "Usage as CSV." },
+    { method: "GET", path: "/api/settings", desc: "Monthly budget and month-to-date spend." },
+    { method: "PATCH", path: "/api/settings", desc: "Set or clear the monthly budget." },
+    { method: "POST", path: "/api/share", desc: "Create a read-only public link." },
+    { method: "GET", path: "/api/share/:token", desc: "Public view of a shared resource. No authentication." },
   ]
 
   const methodColor: Record<string, string> = {
@@ -1045,38 +956,90 @@ function RestAPI({ go }: { go: (s: Section) => void }) {
 
   return (
     <div className="flex flex-col gap-9">
-      <div className="flex flex-col gap-3.5">
-        <span className={`${mono.className} text-[13px] tracking-[0.1em] uppercase text-[#7FD6AE]`}>
-          Reference
-        </span>
-        <h1 className={`${serif.className} m-0 text-[44px] font-medium tracking-tight leading-[1.12]`}>
-          REST API
-        </h1>
-        <p className="m-0 text-[17px] leading-[1.65] text-[#9FAFA4]">
-          All endpoints require a{" "}
-          <span className={`${mono.className} text-[#7FD6AE]`}>Bearer</span> token in the{" "}
-          <span className={`${mono.className} text-[#7FD6AE]`}>Authorization</span> header.
-          Responses follow the shape{" "}
-          <span className={`${mono.className} text-[#7FD6AE]`}>
-            {"{ data: …, error: null }"}
-          </span>{" "}
-          or{" "}
-          <span className={`${mono.className} text-[#7FD6AE]`}>
-            {'{ data: null, error: "message" }'}
-          </span>
-          .
+      <PageHeader eyebrow="Reference" title="REST API">
+        These are the routes the app itself calls. They are documented because the app is open
+        source and you may want to read or extend them, not because they are a published integration
+        surface.
+      </PageHeader>
+
+      <NotBuilt>
+        There are no API tokens. Every route below except the public share view is authenticated by
+        a Clerk session cookie, which means it is reachable from a signed-in browser and from your
+        own local development server, but not from a script or a CI job holding a bearer token.
+        Issuing API keys is on the{" "}
+        <button onClick={() => go("roadmap")} className="text-[#7FD6AE] underline underline-offset-2">
+          Roadmap
+        </button>
+        .
+      </NotBuilt>
+
+      <div className="flex flex-col gap-4">
+        <h2 className="m-0 text-[22px] font-semibold tracking-tight">Response shape</h2>
+        <p className="text-base leading-[1.65] text-[#9FAFA4]">
+          Every JSON response uses one envelope. Errors carry a stable machine-readable code
+          alongside a message that is always safe to show a user, so a client can branch on the code
+          and never has to match on prose.
         </p>
+        <CodeBlock>
+          <div className="text-[#7E8C82]"># success</div>
+          <div>
+            {"{ "}
+            <span className="text-[#7FD6AE]">&quot;data&quot;</span>: {"{ … }"},{" "}
+            <span className="text-[#7FD6AE]">&quot;error&quot;</span>:{" "}
+            <span className="text-[#9C7DD4]">null</span>
+            {" }"}
+          </div>
+          <div>&nbsp;</div>
+          <div className="text-[#7E8C82]"># failure</div>
+          <div>
+            {"{ "}
+            <span className="text-[#7FD6AE]">&quot;data&quot;</span>:{" "}
+            <span className="text-[#9C7DD4]">null</span>,{" "}
+            <span className="text-[#7FD6AE]">&quot;error&quot;</span>: {"{ "}
+            <span className="text-[#7FD6AE]">&quot;code&quot;</span>:{" "}
+            <span className="text-[#7FD6AE]">&quot;VALIDATION_ERROR&quot;</span>,{" "}
+            <span className="text-[#7FD6AE]">&quot;message&quot;</span>:{" "}
+            <span className="text-[#7FD6AE]">&quot;…&quot;</span>
+            {" } }"}
+          </div>
+        </CodeBlock>
+        <p className="text-[14.5px] leading-[1.6] text-[#7E8C82]">
+          Codes: UNAUTHORIZED (401), FORBIDDEN (403), NOT_FOUND (404), VALIDATION_ERROR (400),
+          INVALID_JSON (400), RATE_LIMITED (429), CONFLICT (409), INTERNAL (500),
+          SERVICE_UNAVAILABLE (503).
+        </p>
+        <Callout>
+          <span className={`${mono.className} text-[#7FD6AE]`}>POST /api/run</span> is the one
+          exception. It streams the model&apos;s output back as plain text rather than returning the
+          envelope, because the response is written as it generates. It is not server-sent events.
+        </Callout>
       </div>
 
       <div className="flex flex-col gap-4">
-        <h2 className="m-0 text-[22px] font-semibold tracking-tight">Authentication</h2>
+        <h2 className="m-0 text-[22px] font-semibold tracking-tight">Creating a dataset</h2>
+        <p className="text-base leading-[1.65] text-[#9FAFA4]">
+          The upload is a JSON body, not a multipart form. Send exactly one of{" "}
+          <span className={`${mono.className} text-[#7FD6AE]`}>csvText</span> or{" "}
+          <span className={`${mono.className} text-[#7FD6AE]`}>rows</span>; sending both, or neither,
+          is a validation error.
+        </p>
         <CodeBlock>
-          <div>
-            <span className="text-[#7E8C82]">$ </span>curl https://ultros.app/api/prompts \
+          <div>{"{"}</div>
+          <div className="pl-4">
+            <span className="text-[#7FD6AE]">&quot;name&quot;</span>:{" "}
+            <span className="text-[#7FD6AE]">&quot;support tickets, sample&quot;</span>,
           </div>
-          <div className="pl-6">
-            -H <span className="text-[#7FD6AE]">&quot;Authorization: Bearer ultr_…&quot;</span>
+          <div className="pl-4">
+            <span className="text-[#7FD6AE]">&quot;description&quot;</span>:{" "}
+            <span className="text-[#7FD6AE]">&quot;20 rows, hand labelled&quot;</span>,
           </div>
+          <div className="pl-4">
+            <span className="text-[#7FD6AE]">&quot;csvText&quot;</span>:{" "}
+            <span className="text-[#7FD6AE]">
+              &quot;input,expectedOutput\nSummarise…,Billing…&quot;
+            </span>
+          </div>
+          <div>{"}"}</div>
         </CodeBlock>
       </div>
 
@@ -1084,31 +1047,106 @@ function RestAPI({ go }: { go: (s: Section) => void }) {
         <h2 className="m-0 text-[22px] font-semibold tracking-tight">Endpoints</h2>
         <div className="flex flex-col gap-0 divide-y divide-[#1B231F]">
           {endpoints.map((e) => (
-            <div key={e.method + e.path} className="py-3 flex items-baseline gap-3">
-              <span
-                className={`${mono.className} text-[12px] font-semibold border rounded px-1.5 py-0.5 shrink-0 ${methodColor[e.method] ?? ""}`}
-              >
-                {e.method}
-              </span>
-              <span className={`${mono.className} text-[13.5px] text-[#ECF1ED] shrink-0`}>
-                {e.path}
-              </span>
+            <div
+              key={e.method + e.path}
+              className="py-3 flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-3"
+            >
+              <div className="flex items-baseline gap-3 shrink-0">
+                <span
+                  className={`${mono.className} text-[12px] font-semibold border rounded px-1.5 py-0.5 ${methodColor[e.method] ?? ""}`}
+                >
+                  {e.method}
+                </span>
+                <span className={`${mono.className} text-[13.5px] text-[#ECF1ED]`}>{e.path}</span>
+              </div>
               <span className="text-[13.5px] text-[#7E8C82]">{e.desc}</span>
             </div>
           ))}
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3.5 mt-2">
+      <p className="text-[14.5px] leading-[1.6] text-[#7E8C82]">
+        Not listed: the Clerk webhook and the queue worker routes under{" "}
+        <span className={`${mono.className}`}>/api/jobs</span>. Those are called by Clerk and by the
+        job queue, authenticated by signature rather than by a session, and they are not part of any
+        user-facing flow.
+      </p>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 mt-2">
         <NavCard
-          title="Python SDK →"
-          desc="Higher-level client with auth built in."
-          onClick={() => go("python-sdk")}
+          title="Models & pricing"
+          desc="What the run endpoints can call."
+          onClick={() => go("models")}
         />
+        <NavCard title="Roadmap" desc="What is described but not built." onClick={() => go("roadmap")} />
+      </div>
+    </div>
+  )
+}
+
+function Roadmap({ go }: { go: (s: Section) => void }) {
+  const notBuilt = [
+    {
+      title: "Python SDK",
+      desc: "There is no ultros package on PyPI and no client library in any language. Earlier versions of this page documented one, including an async namespace and a set of push and evaluate calls. None of it existed. The page has been corrected.",
+    },
+    {
+      title: "Command-line tool",
+      desc: "There is no ultros command. Authentication, key management, pushing prompts and datasets, launching evaluations, and regression checks are all browser operations today.",
+    },
+    {
+      title: "API tokens",
+      desc: "Routes are authenticated by a Clerk session cookie. There is no bearer token to issue, rotate, or revoke, so nothing outside a signed-in browser can call the API on your behalf.",
+    },
+    {
+      title: "CI regression gates",
+      desc: "Gating a build on a regression run needs the two items above. Until then a regression run is something you launch and read in the app.",
+    },
+    {
+      title: "Per-account provider keys",
+      desc: "Provider keys are configured once for the whole deployment, from the environment. You cannot add your own key in Settings, and billing for model calls is not split per account. Settings covers your monthly budget, usage export, and share links.",
+    },
+    {
+      title: "Calibration reporting",
+      desc: "Judge calibration is a method described under Calibration, carried out with runs and exports. There is no correlation or variance report generated for you.",
+    },
+  ]
+
+  return (
+    <div className="flex flex-col gap-9">
+      <PageHeader eyebrow="Reference" title="Roadmap">
+        Everything on this page is described somewhere in the product story and does not exist in
+        the code. It is listed here so no page has to imply otherwise.
+      </PageHeader>
+
+      <div className="flex flex-col gap-0 divide-y divide-[#1B231F]">
+        {notBuilt.map((item) => (
+          <div key={item.title} className="py-5 flex flex-col gap-2">
+            <div className="flex items-center gap-3 flex-wrap">
+              <span className="text-base font-semibold text-[#ECF1ED]">{item.title}</span>
+              <span
+                className={`${mono.className} text-[11px] tracking-[0.08em] uppercase text-[#E4BC7A] bg-[#D9A24E]/10 border border-[#D9A24E]/30 rounded px-1.5 py-0.5`}
+              >
+                Not built
+              </span>
+            </div>
+            <p className="m-0 text-[14.5px] leading-[1.6] text-[#9FAFA4]">{item.desc}</p>
+          </div>
+        ))}
+      </div>
+
+      <Callout>
+        What is built is everything else in these docs: the prompt workspace, versioning, multi-model
+        runs and comparison, rubrics with AI judge and deterministic criteria, dataset batch runs,
+        experiments, regression testing, usage and budgets, and read-only share links.
+      </Callout>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 mt-2">
+        <NavCard title="Overview" desc="What you can do today." onClick={() => go("overview")} />
         <NavCard
-          title="CLI →"
-          desc="Terminal interface to the same API."
-          onClick={() => go("cli")}
+          title="REST API"
+          desc="The routes the app calls."
+          onClick={() => go("rest-api")}
         />
       </div>
     </div>
@@ -1116,49 +1154,41 @@ function RestAPI({ go }: { go: (s: Section) => void }) {
 }
 
 const contentMap: Record<Section, (props: { go: (s: Section) => void }) => React.ReactElement> = {
-  installation: Installation,
+  overview: Overview,
   quickstart: Quickstart,
   "core-concepts": CoreConcepts,
   datasets: Datasets,
   "judges-rubrics": JudgesRubrics,
   calibration: Calibration,
-  "regression-gates": RegressionGates,
-  "python-sdk": PythonSDK,
-  cli: CLI,
+  regression: Regression,
+  models: Models,
   "rest-api": RestAPI,
+  roadmap: Roadmap,
 }
 
 export default function DocsPage() {
-  const [active, setActive] = useState<Section>("quickstart")
+  const [active, setActive] = useState<Section>("overview")
   const Content = contentMap[active]
 
   return (
     <div className={`${sans.className} min-h-screen bg-[#0B0F0D] text-[#ECF1ED] selection:bg-[#4FB286]/35`}>
       {/* Nav */}
-      <nav className="max-w-[1120px] mx-auto px-8 py-7 flex items-center justify-between border-b border-[#1B231F]">
-        <Link
-          href="/"
-          className="flex items-center gap-2.5 text-[#ECF1ED] no-underline"
-        >
+      <nav className="max-w-[1120px] mx-auto px-5 sm:px-8 py-5 sm:py-7 flex flex-wrap items-center justify-between gap-y-4 border-b border-[#1B231F]">
+        <Link href="/" className="flex items-center gap-2.5 text-[#ECF1ED] no-underline">
           <UltrosLogo />
-          <span className={`${serif.className} text-[22px] font-semibold tracking-tight`}>
-            Ultros
-          </span>
+          <span className={`${serif.className} text-[22px] font-semibold tracking-tight`}>Ultros</span>
           <span className="text-[14px] font-medium text-[#7E8C82] border-l border-[#243029] pl-2.5 ml-0.5">
             Docs
           </span>
         </Link>
-        <div className="flex items-center gap-8">
+        <div className="flex items-center gap-5 sm:gap-8">
           <Link
             href="/#product"
             className="text-[15px] font-medium text-[#9FAFA4] hover:text-[#ECF1ED] transition-colors whitespace-nowrap"
           >
             Product
           </Link>
-          <Link
-            href="/docs"
-            className="text-[15px] font-semibold text-[#ECF1ED] whitespace-nowrap"
-          >
+          <Link href="/docs" className="text-[15px] font-semibold text-[#ECF1ED] whitespace-nowrap">
             Docs
           </Link>
           <Link
@@ -1177,9 +1207,12 @@ export default function DocsPage() {
       </nav>
 
       {/* Body */}
-      <div className="max-w-[1120px] mx-auto px-8 grid grid-cols-[230px_1fr] gap-16 items-start">
+      <div className="max-w-[1120px] mx-auto px-5 sm:px-8 grid grid-cols-1 lg:grid-cols-[230px_1fr] gap-8 lg:gap-16 items-start">
         {/* Sidebar */}
-        <aside className="sticky top-0 py-12 flex flex-col gap-8">
+        <nav
+          aria-label="Documentation sections"
+          className="lg:sticky lg:top-0 pt-8 lg:py-12 flex flex-col gap-6 lg:gap-8"
+        >
           {sidebarGroups.map((group) => (
             <div key={group.label} className="flex flex-col gap-2.5">
               <span className="text-[12px] font-semibold tracking-[0.12em] uppercase text-[#7E8C82]">
@@ -1189,6 +1222,7 @@ export default function DocsPage() {
                 <button
                   key={item.id}
                   onClick={() => setActive(item.id)}
+                  aria-current={active === item.id ? "page" : undefined}
                   className={`text-[15px] text-left py-[3px] transition-colors ${
                     active === item.id
                       ? "font-semibold text-[#7FD6AE] pl-3 -ml-3 border-l-2 border-[#4FB286] bg-[#4FB286]/[0.07]"
@@ -1200,17 +1234,17 @@ export default function DocsPage() {
               ))}
             </div>
           ))}
-        </aside>
+        </nav>
 
         {/* Content */}
-        <main className="py-12 pb-[110px] max-w-[720px]">
+        <main className="py-8 lg:py-12 pb-[80px] lg:pb-[110px] max-w-[720px] min-w-0">
           <Content go={setActive} />
         </main>
       </div>
 
       {/* Footer */}
       <footer className="border-t border-[#1B231F]">
-        <div className="max-w-[1120px] mx-auto px-8 py-9 flex items-center justify-between">
+        <div className="max-w-[1120px] mx-auto px-5 sm:px-8 py-9 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <UltrosLogo size={20} />
             <span className={`${serif.className} text-lg font-semibold`}>Ultros</span>
@@ -1219,7 +1253,9 @@ export default function DocsPage() {
             <Link href="/docs" className="text-sm text-[#7E8C82] hover:text-[#9FAFA4] transition-colors">
               Docs
             </Link>
-            <span className="text-sm text-[#7E8C82]">An AI evaluation platform. Every run scored, every regression caught.</span>
+            <span className="text-sm text-[#7E8C82]">
+              An AI evaluation platform. Every run scored, every regression caught.
+            </span>
           </div>
         </div>
       </footer>
