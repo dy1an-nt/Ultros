@@ -1,0 +1,25 @@
+version: 2
+
+# Updates arrive as pull requests and merge only on approval; CI runs on each.
+# Minor and patch bumps are grouped into one weekly PR. A major bump gets its
+# own PR, because it is the kind that needs reading (Sentry 11 changed what
+# data it collects by default).
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "fix(deps)"
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: "ci(deps)"

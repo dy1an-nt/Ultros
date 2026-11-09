@@ -1,0 +1,29 @@
+name: Demo health
+
+# The README links a public shared experiment as the no-sign-in demo. This
+# checks daily that the link still resolves, so a dead demo is a failed-run
+# email the same day instead of something a visitor finds first.
+on:
+  schedule:
+    - cron: "0 15 * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+env:
+  APP_URL: https://ultros.vercel.app
+  SHARE_TOKEN: pXilc3XRgfl69SECGxsFzYEubQeQD0SH
+
+jobs:
+  demo:
+    name: Public demo resolves
+    runs-on: ubuntu-latest
+    steps:
+      - name: Landing page
+        run: curl --fail --silent --show-error --max-time 30 --output /dev/null "$APP_URL/"
+      # The API route is the one that reaches the database; the page around it
+      # renders a friendly message even when the lookup fails.
+      - name: Shared experiment
+        run: |
+          curl --fail --silent --show-error --max-time 30 "$APP_URL/api/share/$SHARE_TOKEN" \
+            | jq --exit-status '.data.resourceType == "experiment"'
