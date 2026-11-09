@@ -3,6 +3,7 @@ import { headers } from "next/headers"
 import type { Metadata } from "next"
 import { resolveShareByToken } from "@/lib/share/resolve"
 import { checkRateLimit } from "@/lib/rateLimit"
+import { logger } from "@/lib/logger"
 import {
   PublicBatchView,
   PublicExperimentView,
@@ -23,7 +24,18 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
   const ip = h.get("x-forwarded-for")?.split(",")[0].trim() ?? "unknown"
   const limited = await checkRateLimit("sharePublic", ip)
 
-  const share = limited.ok ? await resolveShareByToken(token) : null
+  // A database outage must not surface as a framework error page on the one
+  // URL handed to people outside the app.
+  let unavailable = false
+  let share: Awaited<ReturnType<typeof resolveShareByToken>> = null
+  if (limited.ok) {
+    try {
+      share = await resolveShareByToken(token)
+    } catch (err) {
+      logger.exception("share resolve failed", err)
+      unavailable = true
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gray-950 text-gray-200">
@@ -44,6 +56,10 @@ export default async function SharePage({ params }: { params: Promise<{ token: s
         {!limited.ok ? (
           <div className="text-center py-24 text-gray-500">
             Too many requests, try again in a moment.
+          </div>
+        ) : unavailable ? (
+          <div className="text-center py-24 text-gray-500">
+            This shared result is temporarily unavailable. Try again in a few minutes.
           </div>
         ) : !share ? (
           <div className="text-center py-24 text-gray-500">

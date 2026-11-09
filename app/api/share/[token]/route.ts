@@ -4,6 +4,7 @@ import { checkRateLimit, clientIp, rateLimitResponse } from "@/lib/rateLimit"
 import { resolveShareByToken } from "@/lib/share/resolve"
 import { withUser } from "@/lib/api/handler"
 import { errorResponse, jsonOk } from "@/lib/api/errors"
+import { logger } from "@/lib/logger"
 
 // Public resolve, no auth, limited per IP. Unknown and revoked tokens return
 // byte-identical 404s; capability URLs must not leak which guesses were close.
@@ -14,7 +15,13 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ toke
   const limited = await checkRateLimit("sharePublic", clientIp(req))
   if (!limited.ok) return rateLimitResponse(limited)
 
-  const share = await resolveShareByToken(token)
+  let share
+  try {
+    share = await resolveShareByToken(token)
+  } catch (err) {
+    logger.exception("share resolve failed", err)
+    return errorResponse("SERVICE_UNAVAILABLE")
+  }
   if (!share) {
     return errorResponse("NOT_FOUND")
   }
