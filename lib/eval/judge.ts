@@ -5,7 +5,7 @@ import { isModelAvailable, supportsSampling } from "@/lib/ai/models"
 import { calculateCost } from "@/lib/ai/pricing"
 import type { AiJudgeConfig, Criterion, CriterionScore } from "@/types/eval"
 
-const DEFAULT_JUDGE_MODEL = "claude-haiku-4-5"
+const DEFAULT_JUDGE_MODEL = "claude-haiku-5-5"
 
 export function getJudgeModel(): string {
   const model = process.env.JUDGE_MODEL || DEFAULT_JUDGE_MODEL

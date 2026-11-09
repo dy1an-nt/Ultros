@@ -1,5 +1,7 @@
-// Context windows and capability flags verified against GET /v1/models on
-// 2026-09-04; prices verified as of 2026-09-04.
+// Anthropic and OpenRouter entries verified as of 2026-11-09: Anthropic ids and
+// context windows against GET /v1/models, OpenRouter ids, context windows,
+// and prices against its public GET /api/v1/models. The OpenAI and Google
+// direct entries were last verified on 2026-09-04.
 //
 // MODEL_CATALOG is imported by the public /docs page so the published prices
 // come from the same constant the biller reads. Nothing secret may live in
@@ -33,6 +35,12 @@ export const THINKING_TOKEN_HEADROOM = 4096
 
 export const MODEL_CATALOG: ModelInfo[] = [
   // Anthropic (direct)
+  // Haiku 5.5 is priced per prompt size: these rates hold up to 100K input
+  // tokens, and a longer prompt bills at $0.50 / $2.50.
+  { id: "claude-haiku-5-5", displayName: "Claude Haiku 5.5", provider: "anthropic", category: "direct", contextWindow: 1000000, inputPerMillion: 0.10, outputPerMillion: 0.50, supportsSampling: false, thinksByDefault: true },
+  { id: "claude-sonnet-5-5", displayName: "Claude Sonnet 5.5", provider: "anthropic", category: "direct", contextWindow: 1000000, inputPerMillion: 2.00, outputPerMillion: 10.00, supportsSampling: false, thinksByDefault: true },
+  { id: "claude-opus-5-5", displayName: "Claude Opus 5.5", provider: "anthropic", category: "direct", contextWindow: 1000000, inputPerMillion: 4.00, outputPerMillion: 20.00, supportsSampling: false, thinksByDefault: true },
+  { id: "claude-fable-5-2", displayName: "Claude Fable 5.2", provider: "anthropic", category: "direct", contextWindow: 1000000, inputPerMillion: 8.00, outputPerMillion: 40.00, supportsSampling: false, thinksByDefault: true },
   { id: "claude-haiku-4-5", displayName: "Claude Haiku 4.5", provider: "anthropic", category: "direct", contextWindow: 200000, inputPerMillion: 1.00, outputPerMillion: 5.00, supportsSampling: true, thinksByDefault: false },
   { id: "claude-sonnet-4-6", displayName: "Claude Sonnet 4.6", provider: "anthropic", category: "direct", contextWindow: 1000000, inputPerMillion: 3.00, outputPerMillion: 15.00, supportsSampling: true, thinksByDefault: false },
   { id: "claude-sonnet-5", displayName: "Claude Sonnet 5", provider: "anthropic", category: "direct", contextWindow: 1000000, inputPerMillion: 2.00, outputPerMillion: 10.00, supportsSampling: false, thinksByDefault: true },
@@ -46,15 +54,16 @@ export const MODEL_CATALOG: ModelInfo[] = [
   // Google Gemini (direct)
   { id: "gemini-2.0-flash", displayName: "Gemini 2.0 Flash", provider: "google", category: "direct", contextWindow: 1000000, inputPerMillion: 0.10, outputPerMillion: 0.40, supportsSampling: true, thinksByDefault: false },
   { id: "gemini-2.5-pro", displayName: "Gemini 2.5 Pro", provider: "google", category: "direct", contextWindow: 1000000, inputPerMillion: 1.25, outputPerMillion: 10.00, supportsSampling: true, thinksByDefault: false },
-  // OpenRouter (long-tail)
-  { id: "mistralai/mistral-7b-instruct", displayName: "Mistral 7B Instruct", provider: "openrouter", category: "openrouter", contextWindow: 32768, inputPerMillion: 0.07, outputPerMillion: 0.07, supportsSampling: true, thinksByDefault: false },
-  { id: "mistralai/mixtral-8x7b-instruct", displayName: "Mixtral 8x7B", provider: "openrouter", category: "openrouter", contextWindow: 32768, inputPerMillion: 0.24, outputPerMillion: 0.24, supportsSampling: true, thinksByDefault: false },
-  { id: "meta-llama/llama-3.1-8b-instruct", displayName: "Llama 3.1 8B", provider: "openrouter", category: "openrouter", contextWindow: 128000, inputPerMillion: 0.06, outputPerMillion: 0.06, supportsSampling: true, thinksByDefault: false },
-  { id: "meta-llama/llama-3.3-70b-instruct", displayName: "Llama 3.3 70B", provider: "openrouter", category: "openrouter", contextWindow: 128000, inputPerMillion: 0.30, outputPerMillion: 0.30, supportsSampling: true, thinksByDefault: false },
-  { id: "deepseek/deepseek-r1", displayName: "DeepSeek R1", provider: "openrouter", category: "openrouter", contextWindow: 64000, inputPerMillion: 0.55, outputPerMillion: 2.19, supportsSampling: true, thinksByDefault: true },
-  { id: "qwen/qwen-2.5-72b-instruct", displayName: "Qwen 2.5 72B", provider: "openrouter", category: "openrouter", contextWindow: 32000, inputPerMillion: 0.35, outputPerMillion: 0.40, supportsSampling: true, thinksByDefault: false },
-  { id: "cohere/command-r-plus", displayName: "Cohere Command R+", provider: "openrouter", category: "openrouter", contextWindow: 128000, inputPerMillion: 2.50, outputPerMillion: 10.00, supportsSampling: true, thinksByDefault: false },
-  { id: "nousresearch/hermes-3-llama-3.1-70b", displayName: "Hermes 3 70B", provider: "openrouter", category: "openrouter", contextWindow: 128000, inputPerMillion: 0.40, outputPerMillion: 0.40, supportsSampling: true, thinksByDefault: false },
+  // OpenRouter (long-tail). Reasoning defaults vary by upstream host, so
+  // thinksByDefault is true for every model that accepts a reasoning parameter.
+  { id: "meta-llama/llama-3.1-8b-instruct", displayName: "Llama 3.1 8B", provider: "openrouter", category: "openrouter", contextWindow: 131072, inputPerMillion: 0.02, outputPerMillion: 0.04, supportsSampling: true, thinksByDefault: false },
+  { id: "meta-llama/llama-3.3-70b-instruct", displayName: "Llama 3.3 70B", provider: "openrouter", category: "openrouter", contextWindow: 131072, inputPerMillion: 0.59, outputPerMillion: 0.79, supportsSampling: true, thinksByDefault: false },
+  { id: "meta-llama/llama-4-maverick", displayName: "Llama 4 Maverick", provider: "openrouter", category: "openrouter", contextWindow: 524288, inputPerMillion: 0.35, outputPerMillion: 1.00, supportsSampling: true, thinksByDefault: false },
+  { id: "mistralai/mistral-small-2603", displayName: "Mistral Small 4", provider: "openrouter", category: "openrouter", contextWindow: 262144, inputPerMillion: 0.15, outputPerMillion: 0.60, supportsSampling: true, thinksByDefault: true },
+  { id: "mistralai/mistral-large-4-0", displayName: "Mistral Large 4", provider: "openrouter", category: "openrouter", contextWindow: 1048576, inputPerMillion: 0.70, outputPerMillion: 2.10, supportsSampling: true, thinksByDefault: true },
+  { id: "deepseek/deepseek-v4.1-flash", displayName: "DeepSeek V4.1 Flash", provider: "openrouter", category: "openrouter", contextWindow: 1048576, inputPerMillion: 0.051, outputPerMillion: 0.567, supportsSampling: true, thinksByDefault: true },
+  { id: "qwen/qwen3.8-flash", displayName: "Qwen 3.8 Flash", provider: "openrouter", category: "openrouter", contextWindow: 1000000, inputPerMillion: 0.15, outputPerMillion: 0.47, supportsSampling: true, thinksByDefault: true },
+  { id: "x-ai/grok-4.7", displayName: "Grok 4.7", provider: "openrouter", category: "openrouter", contextWindow: 500000, inputPerMillion: 2.00, outputPerMillion: 6.00, supportsSampling: true, thinksByDefault: true },
   // Ollama (local inference, $0, dev only; hidden unless OLLAMA_BASE_URL is set)
   { id: "qwen3:8b", displayName: "Qwen 3 8B (local)", provider: "ollama", category: "local", contextWindow: 40960, inputPerMillion: 0, outputPerMillion: 0, supportsSampling: true, thinksByDefault: true },
 ]
