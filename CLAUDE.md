@@ -4,7 +4,7 @@
 
 AI evaluation and prompt experimentation platform. Developers test prompts against multiple models, run them across datasets, score outputs automatically (AI-as-judge + rubrics), and catch performance regressions between prompt versions. Every run is a first-class, scored, tracked experiment.
 
-**Positioning:** Not a prompt-sharing community. An AI evaluation platform. Think LangSmith / HumanLoop / PromptLayer. Pairs with RestaurantIQ in the portfolio to demonstrate both traditional full-stack SaaS and modern AI infrastructure engineering.
+**Positioning:** Not a prompt-sharing community. An offline AI evaluation platform: experiments, scoring, and regression gates before a prompt ships. Think Braintrust experiments or Promptfoo, not production tracing (Langfuse, LangSmith). Pairs with RestaurantIQ in the portfolio to demonstrate both traditional full-stack SaaS and modern AI infrastructure engineering.
 
 ## Skills
 
@@ -58,7 +58,7 @@ This project runs on a usage-limited plan, and the lead session may be any Claud
 
 | Layer | Technology |
 |-------|-----------|
-| Framework | Next.js 14+ (App Router, TypeScript) |
+| Framework | Next.js 16 (App Router, TypeScript) |
 | Styling | Tailwind CSS + shadcn/ui |
 | Client state | Zustand |
 | Server state | TanStack Query |
@@ -337,7 +337,7 @@ OPENROUTER_API_KEY=
 # Setting this makes Ollama-hosted models (qwen3:8b) appear in the catalog.
 OLLAMA_BASE_URL=
 
-# Eval judge model (optional; defaults to claude-haiku-4-5).
+# Eval judge model (optional; defaults to claude-haiku-5-5).
 # JUDGE_MODEL=qwen3:8b runs ai_judge evals free on local Ollama, weaker and noisier
 # scoring than Haiku, so keep the default when judge consistency matters.
 JUDGE_MODEL=

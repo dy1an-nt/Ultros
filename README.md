@@ -5,7 +5,7 @@
 
 **AI evaluation and prompt experimentation platform.** Test prompts against multiple models, run them across datasets, score every output automatically (AI-as-judge + deterministic rubrics), and catch performance regressions between prompt versions, before your users do.
 
-Positioned alongside LangSmith / HumanLoop / PromptLayer: every run is a first-class, scored, tracked experiment.
+It covers the offline half of the LLM tooling stack: experiments, scoring, and regression gates on prompts before they ship, the ground Braintrust experiments and Promptfoo cover. It does not trace production traffic or agents, which is the other half that Langfuse and LangSmith lead on. Every run is a first-class, scored, tracked experiment.
 
 **Live at [ultros.vercel.app](https://ultros.vercel.app).** No account needed to see real output: [this shared experiment](https://ultros.vercel.app/share/pXilc3XRgfl69SECGxsFzYEubQeQD0SH) compares two prompt versions across Claude and GPT-4o on a 20-row dataset, scored and laid out in a win matrix.
 
@@ -145,7 +145,7 @@ CI gates every push: lint, typecheck, unit tests, integration tests against a fr
 
 ```bash
 npm test                  # 153 unit tests: the pure core (lib/**) plus component and hook suites in jsdom
-npm run test:integration  # 222 route-level integration tests against local Postgres
+npm run test:integration  # 230 route-level integration tests against local Postgres
 npm run typecheck
 ```
 
