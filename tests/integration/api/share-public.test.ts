@@ -1,5 +1,6 @@
-import { describe, it, expect } from "vitest"
+import { describe, it, expect, vi } from "vitest"
 import { GET, DELETE } from "@/app/api/share/[token]/route"
+import * as resolve from "@/lib/share/resolve"
 import { signInAs } from "../helpers/clerk"
 import { prisma } from "../helpers/db"
 import {
@@ -192,6 +193,22 @@ describe("GET /api/share/:token (public)", () => {
     expect((await get(share.token)).status).toBe(200)
     await prisma.prompt.update({ where: { id: prompt.id }, data: { deletedAt: new Date() } })
     expect((await get(share.token)).status).toBe(404)
+  })
+
+  it("answers 503 in the envelope, with no driver detail, when the lookup throws", async () => {
+    const spy = vi
+      .spyOn(resolve, "resolveShareByToken")
+      .mockRejectedValueOnce(new Error("connect ECONNREFUSED db.internal:5432"))
+
+    const res = await get("anytoken")
+    spy.mockRestore()
+
+    expect(res.status).toBe(503)
+    const body = await res.json()
+    expect(body).toEqual({
+      data: null,
+      error: { code: "SERVICE_UNAVAILABLE", message: "Service temporarily unavailable" },
+    })
   })
 })
 

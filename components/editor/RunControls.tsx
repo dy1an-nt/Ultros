@@ -11,7 +11,7 @@ const PROVIDER_LABELS: Record<string, string> = {
   ollama: "Ollama (local)",
 }
 
-const FALLBACK_DEFAULT_MODEL = "claude-haiku-4-5"
+const FALLBACK_DEFAULT_MODEL = "claude-haiku-5-5"
 
 interface Props {
   onRun: (model: string, temperature: number, maxTokens: number) => Promise<void>

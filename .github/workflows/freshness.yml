@@ -1,0 +1,55 @@
+name: Freshness
+
+# Weekly comparison of the model catalog with what the providers serve. It
+# never changes code: drift is reported in one issue, and a person decides
+# what to do about it.
+on:
+  schedule:
+    - cron: "0 16 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: freshness
+  cancel-in-progress: true
+
+jobs:
+  catalog:
+    name: Model catalog drift
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - id: check
+        run: npm run -s check:freshness > report.md
+        env:
+          # Optional. Without it the Anthropic comparison is skipped and the
+          # report says so.
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      - run: cat report.md >> "$GITHUB_STEP_SUMMARY"
+      # One issue, edited in place, so a week of unaddressed drift does not
+      # become a week of duplicate issues. It closes itself once the catalog
+      # matches again.
+      - name: Open, update, or close the drift issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DRIFT: ${{ steps.check.outputs.drift }}
+        run: |
+          gh label create catalog-drift --color FBCA04 --description "Model catalog differs from the providers" --force
+          existing=$(gh issue list --label catalog-drift --state open --json number --jq '.[0].number // empty')
+          if [ "$DRIFT" = "true" ]; then
+            if [ -n "$existing" ]; then
+              gh issue edit "$existing" --body-file report.md
+            else
+              gh issue create --title "Model catalog drift" --label catalog-drift --body-file report.md
+            fi
+          elif [ -n "$existing" ]; then
+            gh issue close "$existing" --comment "The catalog matches the providers again."
+          fi
